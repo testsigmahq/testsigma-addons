@@ -9,7 +9,6 @@ Testsigma welcomes everyone to build add-ons for the most complex unsolved test 
 * Learn more about Testsigma add-ons [here](https://testsigma.com/docs/addons/what-is-an-addon/)
 * Check out the existing add-ons [here](https://testsigma.com/addons)
 
-<br>
 
 ## **Creating an Account**
 
@@ -18,7 +17,6 @@ Try Testsigma add-ons by creating an account in our cloud environment. Alternati
 * [Create an account on Testsigma Cloud](https://testsigma.com/signup)
 * [Deploy Testsigma on my machine](https://testsigma.com/docs/getting-started/setup/overview/)
 
-<br>
 
 ## **Contribute**
 
@@ -29,7 +27,6 @@ We love our contributors! If you'd like to contribute anything from a bug-fix in
 * 👾 Explore some [good first add-ons](https://github.com/testsigmahq/testsigma-addons/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+addon%22)
 * 📕 Read our [Code of Conduct](CODE_OF_CONDUCT.md)
 
-<br>
 
 ## **Help Center**
 
@@ -41,7 +38,6 @@ We love our contributors! If you'd like to contribute anything from a bug-fix in
 
 Still, having trouble? We want to help! Reach out to us on [Discord](https://discord.com/invite/5caWS7R6QX) to get support and ask questions on our [community forum](https://github.com/testsigmahq/testsigma/discussions).
 
-<br>
 
 ## **License**
 
