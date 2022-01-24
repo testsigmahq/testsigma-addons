@@ -34,11 +34,11 @@ We love our contributors! If you'd like to contribute anything from a bug-fix in
 * 📄 Learn how to use: [Documentation](https://testsigma.com/docs)
 * 📄 Find solutions in our [Tutorials](https://testsigma.com/tutorials/)
 * ⚠️ Open an issue/bug right here on [GitHub](https://github.com/testsigmahq/testsigma-addons/issues/new/choose)
-* See our guides and tutorials on [YouTube](https://www.youtube.com/testsigma)
+* 🎦 See our guides and tutorials on [YouTube](https://www.youtube.com/testsigma)
 
 Still, having trouble? We want to help! Reach out to us on [Discord](https://discord.com/invite/5caWS7R6QX) to get support and ask questions on our [community forum](https://github.com/testsigmahq/testsigma/discussions).
 
 
 ## **License**
 
-Appsmith is available under the [Apache License 2.0] (LICENSE). Use it wisely.
+The source code in this directory is under [Apache License 2.0](LICENSE).
