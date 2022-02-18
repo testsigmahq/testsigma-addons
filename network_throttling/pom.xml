@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://maven.apache.org/POM/4.0.0"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.testsigma.addons</groupId>
-    <artifactId>cookie_actions</artifactId>
-    <version>1.1.0</version>
+    <artifactId>network_throttling</artifactId>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -15,6 +15,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <testsigma.sdk.version>1.0.0.rc1</testsigma.sdk.version>
         <junit.jupiter.version>5.8.0-M1</junit.jupiter.version>
+        <testsigma.addon.maven.plugin>1.0.0</testsigma.addon.maven.plugin>
         <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
         <lombok.version>1.18.20</lombok.version>
 
@@ -58,7 +59,7 @@
 
     </dependencies>
     <build>
-        <finalName>cookie_actions</finalName>
+        <finalName>network_throttling</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
