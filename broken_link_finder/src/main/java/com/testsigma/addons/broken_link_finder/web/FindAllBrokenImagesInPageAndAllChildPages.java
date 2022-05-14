@@ -90,7 +90,8 @@ public class FindAllBrokenImagesInPageAndAllChildPages extends WebAction {
         }
     }
 
-    void collectValidLinks(String URL, Integer nestedIterationsLevel) {
+    Boolean collectValidLinks(String URL, Integer nestedIterationsLevel) {
+        if(URL==null) return false;
         driver.get(URL);
         String href = "";
         List<WebElement> links = driver.findElements(By.tagName("a"));
@@ -147,7 +148,10 @@ public class FindAllBrokenImagesInPageAndAllChildPages extends WebAction {
         if (nestedIterationsLevel > 0) {
             nestedIterationsLevel--;
             Integer nextNestedIterationsLevel = nestedIterationsLevel;
-            links.forEach(link -> collectValidLinks(link.getAttribute("href"), nextNestedIterationsLevel));
+            for(int i= 0; i< links.size();i++){
+              return collectValidLinks(links.get(i).getAttribute("href"), nextNestedIterationsLevel);
+            }
         }
+        return true;
     }
 }
