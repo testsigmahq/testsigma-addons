@@ -149,7 +149,7 @@ public class FindAllBrokenImagesInPageAndAllChildPages extends WebAction {
             nestedIterationsLevel--;
             Integer nextNestedIterationsLevel = nestedIterationsLevel;
             for(int i= 0; i< links.size();i++){
-              Boolean collected = collectValidLinks(links.get(i).getAttribute("href"), nextNestedIterationsLevel)
+              Boolean collected = collectValidLinks(links.get(i).getAttribute("href"), nextNestedIterationsLevel);
               if(collected ==  false){
                   logger.info("Skipping Element as its URL is Null, Element - " + links.get(i));
               }
