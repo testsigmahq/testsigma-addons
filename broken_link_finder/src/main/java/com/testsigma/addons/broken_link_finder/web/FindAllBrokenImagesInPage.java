@@ -38,11 +38,19 @@ public class FindAllBrokenImagesInPage extends WebAction {
                 for (WebElement img : image_list) {
                     if (img != null) {
                         HttpClient client = HttpClientBuilder.create().build();
-                        HttpGet request = new HttpGet(img.getAttribute("src"));
-                        HttpResponse response = client.execute(request);
-                        if (response.getStatusLine().getStatusCode() != 200) {
-                            System.out.println(img.getAttribute("outerHTML") + " has broken image.");
-                            brokenImages.add(img.getAttribute("src"));
+                        String src = img.getAttribute("src");
+                        try {
+                            if (src != null) {
+                                HttpGet request = new HttpGet(src);
+                                HttpResponse response = client.execute(request);
+                                if (response.getStatusLine().getStatusCode() != 200) {
+                                    System.out.println(img.getAttribute("outerHTML") + " has broken image.");
+                                    brokenImages.add(img.getAttribute("src"));
+                                }
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            log(e.getMessage());
                         }
                     }
                 }

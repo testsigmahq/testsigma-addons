@@ -32,6 +32,7 @@ public class FindAllBrokenLinksInPage extends WebAction {
         try{
             String homePage = url.getValue().toString();
             String url = "";
+            driver.get(homePage);
             List<WebElement> links = driver.findElements(By.tagName("a"));
             HttpURLConnection huc = null;
             int respCode = 200;
@@ -44,7 +45,6 @@ public class FindAllBrokenLinksInPage extends WebAction {
 
             while (it.hasNext()) {
                 url = it.next().getAttribute("href");
-
                 if (url == null || url.isEmpty()) {
                     anchorTagsWithEmptyURLs++;
                     System.out.println("URL is either not configured for anchor tag or it is empty");

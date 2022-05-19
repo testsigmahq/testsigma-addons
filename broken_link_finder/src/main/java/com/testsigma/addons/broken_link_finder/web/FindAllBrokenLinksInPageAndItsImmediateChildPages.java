@@ -62,7 +62,7 @@ public class FindAllBrokenLinksInPageAndItsImmediateChildPages extends WebAction
         while (it.hasNext()) {
             href = it.next().getAttribute("href");
 
-            if (href == null || href.isEmpty() || href.startsWith("tel:")) {
+            if (href == null || href.isEmpty() || href.startsWith("tel:") || href.startsWith("mailto:") || href.startsWith("javascript:") ) {
                 anchorTagsWithEmptyURLs++;
                 System.out.println("URL is either not configured for anchor tag or it is empty");
                 continue;

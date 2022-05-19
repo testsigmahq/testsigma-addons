@@ -71,18 +71,20 @@ public class FindAllBrokenImagesInPageAndItsImmediateChildPages extends WebActio
             for (WebElement img : image_list) {
                 if (img != null) {
                     String src = img.getAttribute("src");
-                    validatedImages.add(src);
-                    if (validatedImages.contains(src)) {
-                        if (brokenImages.contains(src)) {
-                            System.out.println(img.getAttribute("outerHTML") + " has broken image.");
-                        }
-                    } else {
-                        HttpClient client = HttpClientBuilder.create().build();
-                        HttpGet request = new HttpGet(src);
-                        HttpResponse response = client.execute(request);
-                        if (response.getStatusLine().getStatusCode() != 200) {
-                            System.out.println(img.getAttribute("outerHTML") + " has broken image.");
-                            brokenImages.add(src);
+                    if(src != null) {
+                        validatedImages.add(src);
+                        if (validatedImages.contains(src)) {
+                            if (brokenImages.contains(src)) {
+                                System.out.println(img.getAttribute("outerHTML") + " has broken image.");
+                            }
+                        } else {
+                            HttpClient client = HttpClientBuilder.create().build();
+                            HttpGet request = new HttpGet(src);
+                            HttpResponse response = client.execute(request);
+                            if (response.getStatusLine().getStatusCode() != 200) {
+                                System.out.println(img.getAttribute("outerHTML") + " has broken image.");
+                                brokenImages.add(src);
+                            }
                         }
                     }
                 }
@@ -93,7 +95,8 @@ public class FindAllBrokenImagesInPageAndItsImmediateChildPages extends WebActio
         }
     }
 
-    void collectValidLinks(String url) {
+    Boolean collectValidLinks(String url) {
+        if(url==null || url.isEmpty()) return false;
         driver.get(url);
         String href = "";
         List<WebElement> links = driver.findElements(By.tagName("a"));
@@ -103,7 +106,7 @@ public class FindAllBrokenImagesInPageAndItsImmediateChildPages extends WebActio
         while (it.hasNext()) {
             href = it.next().getAttribute("href");
 
-            if (href == null || href.isEmpty() || href.startsWith("tel:")) {
+            if (href == null || href.isEmpty() || href.startsWith("tel:") || href.startsWith("mailto:") || href.startsWith("javascript:") ){
                 anchorTagsWithEmptyURLs++;
                 System.out.println("URL is either not configured for anchor tag or it is empty");
                 continue;
@@ -145,5 +148,6 @@ public class FindAllBrokenImagesInPageAndItsImmediateChildPages extends WebActio
                 e.printStackTrace();
             }
         }
+        return true;
     }
 }

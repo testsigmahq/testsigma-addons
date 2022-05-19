@@ -64,7 +64,8 @@ public class ReportErrorsInPageAndAllChildPages extends WebAction {
 
     }
 
-    void collectValidLinks(String url, Integer nestedIterationsLevel) {
+    Boolean collectValidLinks(String url, Integer nestedIterationsLevel) {
+        if(url == null || url.isEmpty() || url.startsWith("tel:") || url.startsWith("mailto:") || url.startsWith("javascript:") ) return false;
         driver.get(url);
         String href = "";
         List<WebElement> links = driver.findElements(By.tagName("a"));
@@ -74,7 +75,7 @@ public class ReportErrorsInPageAndAllChildPages extends WebAction {
         while (it.hasNext()) {
             href = it.next().getAttribute("href");
 
-            if (href == null || href.isEmpty() || href.startsWith("tel:")) {
+            if (href == null || href.isEmpty() || href.startsWith("tel:") || href.startsWith("mailto:") || href.startsWith("javascript:") ) {
                 anchorTagsWithEmptyURLs++;
                 System.out.println("URL is either not configured for anchor tag or it is empty");
                 continue;
@@ -121,8 +122,15 @@ public class ReportErrorsInPageAndAllChildPages extends WebAction {
         if (nestedIterationsLevel > 0) {
             nestedIterationsLevel--;
             Integer nextNestedIterationsLevel = nestedIterationsLevel;
-            links.forEach(link -> collectValidLinks(link.getAttribute("href"), nextNestedIterationsLevel));
+            for(int i= 0; i< links.size();i++){
+                Boolean collected = collectValidLinks(links.get(i).getAttribute("href"), nextNestedIterationsLevel);
+                if(collected ==  false){
+                    logger.info("Skipping Element as its 'href' is "+ links.get(i).getAttribute("href") +", Element - " + links.get(i));
+                }
+            }
+
         }
+        return true;
     }
 
 }
