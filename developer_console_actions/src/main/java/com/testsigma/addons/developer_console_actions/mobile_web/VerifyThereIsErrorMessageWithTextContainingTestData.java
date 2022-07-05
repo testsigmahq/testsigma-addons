@@ -17,6 +17,7 @@ public class VerifyThereIsErrorMessageWithTextContainingTestData extends com.tes
 
     @Override
     public Result execute() throws NoSuchElementException {
+        super.setTestData(testData);
         return super.execute();
     }
 }

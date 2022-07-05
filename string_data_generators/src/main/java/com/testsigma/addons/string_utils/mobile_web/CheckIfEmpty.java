@@ -21,6 +21,8 @@ public class CheckIfEmpty extends com.testsigma.addons.string_utils.web.CheckIfE
 
     @Override
     public Result execute() throws NoSuchElementException {
+        super.setTestData(testData);
+        super.setOperator(operator);
         return super.execute();
     }
 }

@@ -23,6 +23,9 @@ public class ToCompare extends com.testsigma.addons.string_utils.web.ToCompare {
 
     @Override
     public Result execute() throws NoSuchElementException {
+        super.setTestData1(testData1);
+        super.setOperator(operator);
+        super.setTestData2(testData2);
         return super.execute();
     }
 }

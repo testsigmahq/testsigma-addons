@@ -21,6 +21,9 @@ public class StoreTestDataParameterIntoRuntimeVariable extends com.testsigma.add
     private com.testsigma.sdk.RunTimeData runTimeData;
     @Override
     public Result execute() throws NoSuchElementException {
+        super.setTestData1(testData1);
+        super.setTestData2(testData2);
+        super.setRunTimeData(runTimeData);
         return super.execute();
     }
 }

@@ -22,6 +22,9 @@ public class CheckIfContains extends com.testsigma.addons.string_utils.web.Check
     private com.testsigma.sdk.TestData value;
 
     public Result execute() throws NoSuchElementException {
+        super.setTestData(testData);
+        super.setOperator(operator);
+        super.setValue(value);
         return super.execute();
     }
 }

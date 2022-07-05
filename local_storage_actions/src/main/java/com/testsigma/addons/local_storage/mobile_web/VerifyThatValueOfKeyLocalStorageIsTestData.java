@@ -19,6 +19,8 @@ public class VerifyThatValueOfKeyLocalStorageIsTestData extends com.testsigma.ad
 
     @Override
     public Result execute() throws NoSuchElementException {
+        super.setKey(key);
+        super.setExpectedValue(expectedValue);
         return super.execute();
     }
 }
