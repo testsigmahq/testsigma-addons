@@ -51,8 +51,8 @@ public class FindAllBrokenImagesInPageAndItsImmediateChildPages extends WebActio
                collectBrokenImages(link);
            });
            if (brokenImages.size() > 0) {
-               setErrorMessage(" Broken Images [" + brokenImages.size() + "] : " + brokenImages.toArray());
-               return Result.FAILED;
+               setSuccessMessage(" Broken Images [" + brokenImages.size() + "] : " + brokenImages.toArray());
+               return Result.SUCCESS;
            } else {
                setSuccessMessage("There are no Broken Images in the page");
                return Result.SUCCESS;
@@ -98,6 +98,9 @@ public class FindAllBrokenImagesInPageAndItsImmediateChildPages extends WebActio
     Boolean collectValidLinks(String url) {
         if(url==null || url.isEmpty()) return false;
         driver.get(url);
+
+        String url1 = url.substring(url.indexOf("://")+3);
+        url1 = url1.indexOf("/") != -1 ? url1.substring(0, url1.indexOf("/")) : url1;
         String href = "";
         List<WebElement> links = driver.findElements(By.tagName("a"));
         System.out.println(links.size());
@@ -117,7 +120,7 @@ public class FindAllBrokenImagesInPageAndItsImmediateChildPages extends WebActio
             }
             validatedLinks.add(href);
 
-            if (!href.startsWith(this.URL.getValue().toString())) {
+            if (!href.startsWith(url1)) {
                 skippedURLs.add(href);
                 System.out.println("URL belongs to another domain, skipping it.");
                 continue;

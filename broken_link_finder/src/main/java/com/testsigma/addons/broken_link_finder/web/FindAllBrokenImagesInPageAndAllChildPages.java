@@ -47,13 +47,14 @@ public class FindAllBrokenImagesInPageAndAllChildPages extends WebAction {
             collectBrokenImages(URL.getValue().toString());
             validLinks.forEach(link -> collectBrokenImages(link));
             if (brokenImages.size() > 0) {
-                setErrorMessage(" Broken Images [" + brokenImages.size() + "] : " + brokenImages.toArray());
-                return Result.FAILED;
+                setSuccessMessage(" Broken Images [" + brokenImages.size() + "] : " + brokenImages.toArray());
+                return Result.SUCCESS;
             } else {
                 setSuccessMessage("There are no Broken Images in the page");
                 return Result.SUCCESS;
             }
         } catch (Exception exception) {
+            logger.info("Exception while finding broken images "+ exception);
             setErrorMessage("error while finding Broken Images ");
             return Result.FAILED;
         }
@@ -90,13 +91,16 @@ public class FindAllBrokenImagesInPageAndAllChildPages extends WebAction {
         }
     }
 
-    Boolean collectValidLinks(String URL, Integer nestedIterationsLevel) {
+Boolean collectValidLinks(String URL, Integer nestedIterationsLevel) {
         if(URL==null) return false;
         driver.get(URL);
         String href = "";
+        String url = URL.substring(URL.indexOf("://")+3);
+        url = url.indexOf("/") != -1 ? url.substring(0, url.indexOf("/")) : url;
         List<WebElement> links = driver.findElements(By.tagName("a"));
 
         Iterator<WebElement> it = links.iterator();
+
 
         while (it.hasNext()) {
             href = it.next().getAttribute("href");
@@ -113,7 +117,7 @@ public class FindAllBrokenImagesInPageAndAllChildPages extends WebAction {
             validatedLinks.add(href);
             System.out.println(href);
 
-            if (!URL.startsWith(this.URL.getValue().toString())) {
+            if (!href.startsWith(url)) {
                 skippedURLs.add(href);
                 System.out.println("URL belongs to another domain, skipping it.");
                 continue;
