@@ -19,6 +19,8 @@ public class StoreCookieValueWithNameIntoVariableName extends com.testsigma.addo
 
     @Override
     public Result execute() throws NoSuchElementException {
+        super.setCookieValue(cookieValue);
+        super.setCookieName(cookieName);
         return super.execute();
     }
 }

@@ -19,6 +19,8 @@ public class VerifyCookieValueWithNameIsTestData extends com.testsigma.addons.co
 
     @Override
     public Result execute() throws NoSuchElementException {
+        super.setCookieName(cookieName);
+        super.setCookieValue(cookieValue);
         return super.execute();
     }
 }

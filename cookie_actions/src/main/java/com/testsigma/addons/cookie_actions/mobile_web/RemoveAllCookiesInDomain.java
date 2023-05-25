@@ -14,6 +14,12 @@ import org.openqa.selenium.NoSuchElementException;
 public class RemoveAllCookiesInDomain extends com.testsigma.addons.cookie_actions.web.RemoveAllCookiesInDomain {
     @TestData(reference = "domain")
     private com.testsigma.sdk.TestData domain;
+
+    @Override
+    public Result execute() throws NoSuchElementException {
+        super.setDomain(domain);
+        return super.execute();
+    }
 }
 
 
