@@ -12,7 +12,7 @@ import org.openqa.selenium.support.ui.Select;
 import java.util.List;
 
 @Data
-@Action(actionText = "Print selected options from element_locator list",
+@Action(actionText = "Print Selected Options from element_locator list",
     description = "Prints all selected option in the list",
     applicationType = ApplicationType.MOBILE_WEB)
 public class PrintSelectedoption extends com.testsigma.addons.debug.web.PrintSelectedoption {

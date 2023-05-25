@@ -26,7 +26,7 @@ public class PrintCookies extends WebAction {
 
       Set<Cookie> cookies = driver.manage().getCookies();
       int size = cookies.size();
-      setSuccessMessage("No of Cookies available is  " + size + "  The following cookies are " + cookies);
+      setSuccessMessage("No of Cookies available is" + size + "  The following cookies are" + cookies);
 
 
     } catch (Exception e) {

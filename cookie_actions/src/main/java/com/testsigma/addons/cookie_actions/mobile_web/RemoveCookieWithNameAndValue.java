@@ -19,8 +19,6 @@ public class RemoveCookieWithNameAndValue extends com.testsigma.addons.cookie_ac
 
     @Override
     public Result execute() throws NoSuchElementException {
-        super.setCookieName(cookieName);
-        super.setCookieValue(cookieValue);
         return super.execute();
     }
 }

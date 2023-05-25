@@ -34,7 +34,7 @@ public class PrintOptionsCount extends com.testsigma.addons.debug.web.PrintOptio
       Select se = new Select(webElement);
       List<WebElement> ele = se.getOptions();
       int size = ele.size();
-      setSuccessMessage("Number of options present in the list is " + size);
+      setSuccessMessage("Number of options present in the list is" + size);
       System.out.println("Text from the element is" + size);
     } else {
       logger.info("Operation Failed Please check if element is correct or page has loaded");

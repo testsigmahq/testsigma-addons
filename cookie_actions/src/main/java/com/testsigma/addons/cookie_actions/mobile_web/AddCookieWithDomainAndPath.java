@@ -30,11 +30,6 @@ public class AddCookieWithDomainAndPath extends com.testsigma.addons.cookie_acti
 
   @Override
   public Result execute() throws NoSuchElementException {
-    super.setCookieName(cookieName);
-    super.setCookieValue(cookieValue);
-    super.setCookieExpiry(cookieExpiry);
-    super.setCookieDomain(cookieDomain);
-    super.setCookiePath(cookiePath);
     return super.execute();
   }
 }

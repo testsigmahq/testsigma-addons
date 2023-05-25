@@ -24,8 +24,6 @@ public class AddCookieOnSession extends com.testsigma.addons.cookie_actions.web.
 
   @Override
   public Result execute() throws NoSuchElementException {
-    super.setCookieName(cookieName);
-    super.setCookieValue(cookieValue);
     return super.execute();
   }
 }

@@ -19,8 +19,6 @@ public class VerifyCookieExpiryIsMoreThanTestDataHours extends com.testsigma.add
 
     @Override
     public Result execute() throws NoSuchElementException {
-        super.setCookieName(cookieName);
-        super.setNumberOfHours(numberOfHours);
         return super.execute();
     }
 }

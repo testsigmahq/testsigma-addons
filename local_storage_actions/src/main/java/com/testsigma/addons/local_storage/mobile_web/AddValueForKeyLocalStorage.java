@@ -19,8 +19,6 @@ public class AddValueForKeyLocalStorage extends com.testsigma.addons.local_stora
 
     @Override
     public Result execute() throws NoSuchElementException {
-        super.setKey(key);
-        super.setValue(value);
         return super.execute();
     }
 }

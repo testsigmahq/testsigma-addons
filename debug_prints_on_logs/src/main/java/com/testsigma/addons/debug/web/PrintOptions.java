@@ -40,7 +40,7 @@ public class PrintOptions extends WebAction {
       for (int i = 0; i <= size - 1; i++) {
         sb.append(ele.get(i).getText() + " ");
       }
-      setSuccessMessage("All the options in the list are " + sb + "  and the count of options is " + size);
+      setSuccessMessage("All the options in the list are " + sb + "  and the count of options is" + size);
       System.out.println("All the options in the list are " + sb);
     } else {
       logger.info("Operation Failed Please check if element is correct or page has loaded");

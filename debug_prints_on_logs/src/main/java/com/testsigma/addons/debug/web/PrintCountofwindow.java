@@ -9,7 +9,7 @@ import org.openqa.selenium.NoSuchElementException;
 import java.util.Set;
 
 @Data
-@Action(actionText = "Print count of currently opened windows",
+@Action(actionText = "Print count of currently open windows",
     description = "Prints Count of all open windows tab",
     applicationType = ApplicationType.WEB)
 public class PrintCountofwindow extends WebAction {
@@ -26,7 +26,7 @@ public class PrintCountofwindow extends WebAction {
       Set<String> ls = driver.getWindowHandles();
       int ow = ls.size();
       logger.info("Got Count of Windows" + ow);
-      setSuccessMessage("The count of currently opened windows is " + ow);
+      setSuccessMessage("The count of currently opened windows is" + ow);
      
 
     } catch (Exception e) {

@@ -41,7 +41,7 @@ public class PrintSelectedoption extends WebAction {
         sb.append(ps.get(i).getText() + " ");
       }
       setSuccessMessage("Selected options are " + sb);
-     
+      System.out.println("Selected Option are " + sb);
     } else {
       logger.info("Operation Failed Please check if element is correct or page has loaded");
       setErrorMessage("Could get size of list from the element Check Logger for more info. Element may not be displayed or doesnot have a select tag associated with it");

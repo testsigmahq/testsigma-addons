@@ -30,10 +30,6 @@ public class AddCookieWithExpiryAndDomain extends com.testsigma.addons.cookie_ac
 
   @Override
   public Result execute() throws NoSuchElementException {
-    super.setCookieName(cookieName);
-    super.setCookieValue(cookieValue);
-    super.setCookieExpiry(cookieExpiry);
-    super.setCookieDomain(cookieDomain);
     return super.execute();
   }
 }

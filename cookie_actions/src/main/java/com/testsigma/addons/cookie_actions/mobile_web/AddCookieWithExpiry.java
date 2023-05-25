@@ -27,9 +27,6 @@ public class AddCookieWithExpiry extends com.testsigma.addons.cookie_actions.web
 
   @Override
   public Result execute() throws NoSuchElementException {
-    super.setCookieName(cookieName);
-    super.setCookieValue(cookieValue);
-    super.setCookieExpiry(cookieExpiry);
     return super.execute();
   }
 }

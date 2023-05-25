@@ -17,7 +17,6 @@ public class VerifyCookieWithNameExists extends com.testsigma.addons.cookie_acti
 
     @Override
     public Result execute() throws NoSuchElementException {
-        super.setCookieName(cookieName);
         return super.execute();
     }
 }

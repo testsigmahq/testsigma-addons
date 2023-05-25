@@ -30,7 +30,7 @@ public class PrintElementTextOnLogs extends com.testsigma.addons.debug.web.Print
     if (webElement.isDisplayed() && webElement.isEnabled() && js.executeScript("return document.readyState").equals("complete")) {
       String text = webElement.getText();
       logger.info("Text of the element is" + text);
-      setSuccessMessage("Text from the element is  " + text);
+      setSuccessMessage("Text from the element is" + text);
       System.out.println("Text from the element is" + text);
     } else {
       logger.info("Operation Failed Please check if element is correct or page has loaded");

@@ -17,7 +17,6 @@ public class RemoveKeyFromLocalStorage extends com.testsigma.addons.local_storag
 
     @Override
     public Result execute() throws NoSuchElementException {
-        super.setKey(key);
         return super.execute();
     }
 }
