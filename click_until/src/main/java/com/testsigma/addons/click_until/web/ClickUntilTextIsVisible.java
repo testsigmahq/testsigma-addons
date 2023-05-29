@@ -23,6 +23,7 @@ public class ClickUntilTextIsVisible extends WebAction {
 
     private static final int NO_OF_CLICKS = 20;
     private static final Integer dummy = 1;
+
     private static final String SUCCESS_MESSAGE = "Expected text is found. Total no of clicks performed: <b>%s</b>";
     private static final String ERROR_MESSAGE = "Expected text is not found. Total no of clicks performed: <b>%s</b>";
     private static final String SUCCESS_MESSAGE_TEXT_PRESENT_BEFORE_CLICK = "Expected text is already present in current page, Not performing any click action.";
