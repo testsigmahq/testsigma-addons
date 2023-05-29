@@ -39,8 +39,7 @@ jobs:
       - name: Display changed directories
         run: |
           echo "Changed directories: ${{ steps.changes.outputs.directories }}"
-          echo "Changed directories: ${{ steps.changes.outputs.directories }}"
-
+          
       - name: Build and commit changes
         run: |
           for dir in ${{ steps.changes.outputs.directories }}; do
