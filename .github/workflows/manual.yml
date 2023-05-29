@@ -4,10 +4,7 @@ on:
   pull_request:
     branches:
       - fix/dev-action-main
-    types:
-      - closed
-      - synchronize
-
+    types: [ opened, synchronize, reopened, closed ]
 jobs:
   build:
     runs-on: ubuntu-latest
