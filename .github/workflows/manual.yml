@@ -1,9 +1,11 @@
 name : Build Addon - Automation
 
 on:
-  pull_request_target:
+  pull_request:
     branches:
       - fix/dev-action-main
+    types:
+      - closed
 
 jobs:
   build:
@@ -24,14 +26,26 @@ jobs:
           sudo apt-get install -y xmlstarlet
 
       - name: Detect changed directories
+        if: github.event.pull_request.merged == true
         id: changes
         run: |
-          git fetch origin pull/${{ github.event.pull_request.number }}/merge --no-tags
-          changed_files=$(git diff --name-only origin/fix/dev-action-main)
+          changed_files=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
+          echo "Changed files : $changed_files"
           changed_dirs=$(dirname $changed_files | sort -u)
-          echo "Changes files : $changed_files"
-           echo "Changes directories : $changed_dirs"
-          echo "::set-output name=directories::$changed_dirs"
+          echo "Changed files : $changed_dirs"
+          root_dirs=()
+          for dir in $changed_dirs; do
+            if [[ $dir != *".github"* ]]; then
+              relative_dir=$(dirname "$dir")
+              echo "Relative : $relative_dir"
+              while [[ ! -f "$relative_dir/pom.xml" ]]; do
+                relative_dir=$(dirname "$relative_dir")
+                echo "-- relative : $relative_dir"
+              done
+              root_dirs+=("$relative_dir")
+            fi
+          done
+          echo "::set-output name=directories::${root_dirs[@]}"
 
       - name: Display changed directories
         run: |
