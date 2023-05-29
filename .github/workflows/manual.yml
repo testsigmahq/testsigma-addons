@@ -1,9 +1,11 @@
 name : Build Addon - Automation
 
 on:
-  pull_request_target:
+  pull_request:
     branches:
       - fix/dev-action-main
+    types:
+      - closed
 
 jobs:
   build:
@@ -24,10 +26,10 @@ jobs:
           sudo apt-get install -y xmlstarlet
 
       - name: Detect changed directories
+        if: github.event.pull_request.merged == true
         id: changes
         run: |
-          git fetch origin pull/${{ github.event.pull_request.number }}/merge --no-tags
-          changed_files=$(git diff --name-only origin/fix/dev-action-main)
+          changed_files=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
           echo "Changed files : $changed_files"
           changed_dirs=$(dirname $changed_files | sort -u)
           echo "Changed files : $changed_dirs"
