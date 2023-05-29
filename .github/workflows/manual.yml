@@ -1,11 +1,9 @@
 name : Build Addon - Automation
 
 on:
-  pull_request:
+  pull_request_target:
     branches:
       - dev
-    types:
-      - closed
 
 jobs:
   build:
@@ -20,15 +18,8 @@ jobs:
           java-version: '11'
           distribution: 'zulu'
 
-#      - name: Build with Maven
-#        run: mvn --batch-mode --update-snapshots package
-#
-#      - name: Install xmlstarlet
-#        run: |
-#          sudo apt-get update
-#          sudo apt-get install -y xmlstarlet
-
       - name: Detect changed directories
+        if: github.event.pull_request.merged == true
         id: changes
         run: |
           git fetch origin pull/${{ github.event.pull_request.number }}/merge --no-tags
@@ -36,24 +27,12 @@ jobs:
           changed_dirs=$(dirname $changed_files | sort -u)
           echo "::set-output name=directories::$changed_dirs"
 
-#      - name: Display changed directories
-#        run: |
-#          echo "Changed directories: ${{ steps.changes.outputs.directories }}"
-
       - name: Build and commit changes
         run: |
           for dir in ${{ steps.changes.outputs.directories }}; do
             echo "Building $dir"
-#            zip -r $dir_source.zip $dir
-#            cd $dir
-#            mvn clean install
             version=$(xmlstarlet sel -t -v "/*[local-name()='project']/*[local-name()='version']" -n pom.xml)
             echo "-- Version $version"
-#            cd ..
-#            mkdir $dir/build/$version && cp /target/$dir.jar /target/original-$dir.jar ../$dir_source.zip/ $dir/build/$version/
-#            git add $dir/build/
-#            git commit
-#            git push origin dev
           done
           
       
