@@ -5,6 +5,7 @@ on:
     branches:
       - fix/dev-action-main
     types: [ opened, synchronize, reopened, closed ]
+
 jobs:
   build:
     runs-on: ubuntu-latest
