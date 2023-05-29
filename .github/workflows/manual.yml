@@ -3,7 +3,7 @@ name : Build Addon - Automation
 on:
   pull_request_target:
     branches:
-      - dev-action-main
+      - fix/dev-action-main
 
 jobs:
   build:
@@ -17,9 +17,6 @@ jobs:
         with:
           java-version: '11'
           distribution: 'zulu'
-
-      - name: Build with Maven
-        run: mvn --batch-mode --update-snapshots package
 
       - name: Install xmlstarlet
         run: |
