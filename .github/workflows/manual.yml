@@ -9,6 +9,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: "0"
+      
 
       - name: Setup Java version
         uses: actions/setup-java@v3
