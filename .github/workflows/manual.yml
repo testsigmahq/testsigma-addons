@@ -27,11 +27,17 @@ jobs:
         id: changes
         run: |
           git fetch origin pull/${{ github.event.pull_request.number }}/merge --no-tags
-          changed_files=$(git diff --name-only origin/fix/dev-action-main)
+          changed_files=$( git diff --name-only origin/fix/dev-action-main)
           changed_dirs=$(dirname $changed_files | sort -u)
-          echo "Changes files : $changed_files"
-           echo "Changes directories : $changed_dirs"
-          echo "::set-output name=directories::$changed_dirs"
+          root_dirs=()
+          for dir in $changed_dirs; do
+            relative_dir=$(dirname "$dir")
+            while [[ ! -f "$relative_dir/pom.xml" ]]; do
+              relative_dir=$(dirname "$relative_dir")
+            done
+            root_dirs+=("$relative_dir")
+          done
+          echo "::set-output name=directories::${root_dirs[@]}
 
       - name: Display changed directories
         run: |
