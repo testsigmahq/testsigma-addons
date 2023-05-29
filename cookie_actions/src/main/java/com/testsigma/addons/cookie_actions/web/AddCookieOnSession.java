@@ -30,6 +30,7 @@ public class AddCookieOnSession extends WebAction {
   @Override
   public Result execute() throws NoSuchElementException {
     Result result = Result.SUCCESS;
+    
     logger.info("Initiating execution and starting to add cookies");
 
     try {
