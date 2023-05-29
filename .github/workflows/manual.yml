@@ -27,7 +27,7 @@ jobs:
         id: changes
         run: |
           git fetch origin pull/${{ github.event.pull_request.number }}/merge --no-tags
-          changed_files=$(git diff --name-only origin/main)
+          changed_files=$(git diff --name-only origin/fix/dev-action-main)
           changed_dirs=$(dirname $changed_files | sort -u)
           echo "::set-output name=directories::$changed_dirs"
 
