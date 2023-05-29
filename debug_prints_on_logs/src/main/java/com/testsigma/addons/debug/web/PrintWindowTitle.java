@@ -8,7 +8,7 @@ import org.openqa.selenium.NoSuchElementException;
 
 @Data
 @Action(actionText = "Print current window title",
-    description = "Prints current window title",
+    description = "Prints Current Window Title",
     applicationType = ApplicationType.WEB)
 public class PrintWindowTitle extends WebAction {
 

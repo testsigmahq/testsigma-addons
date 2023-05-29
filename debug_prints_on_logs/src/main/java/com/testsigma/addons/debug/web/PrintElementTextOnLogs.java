@@ -10,7 +10,7 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 
 @Data
-@Action(actionText = "Print text from element",
+@Action(actionText = "Print text from element element",
     description = "Prints text from element",
     applicationType = ApplicationType.WEB)
 public class PrintElementTextOnLogs extends WebAction {
@@ -31,7 +31,7 @@ public class PrintElementTextOnLogs extends WebAction {
     if (webElement.isDisplayed() && webElement.isEnabled() && js.executeScript("return document.readyState").equals("complete")) {
       String text = webElement.getText();
       logger.info("Text of the element is" + text);
-      setSuccessMessage("Text from the element is  " + text);
+      setSuccessMessage("Text from the element is" + text);
       System.out.println("Text from the element is" + text);
     } else {
       logger.info("Operation Failed Please check if element is correct or page has loaded");

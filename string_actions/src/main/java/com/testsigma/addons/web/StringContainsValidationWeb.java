@@ -28,22 +28,23 @@ public class StringContainsValidationWeb extends WebAction {
     logger.debug(" test-data1: "+ this.testData1.getValue()+"test data2:"+this.testData2.getValue());
     com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
     
-    String str1=String.valueOf(testData1.getValue());
-    String str2=String.valueOf(testData2.getValue());
+    String str1=String.valueOf(testData1.getValue().toString()).replaceAll("[$,@,%,#]","");
+    String str2=String.valueOf(testData2.getValue().toString()).replaceAll("[$,@,%,#]","");
     
-  
+   logger.info("String 1 is "+str1 + "String 2 is "+str2);
     	if(str1.toLowerCase().contains(str2.toLowerCase())) {
     		logger.info("String 1 Contains String 2");
     		setSuccessMessage("Successfully executed  "+str1+"  contains "+str2);
-    		//System.out.println("Successfully executed  "+str1+"  contains "+str2);
+    		
     		 result = com.testsigma.sdk.Result.SUCCESS;
     	}
     	else {
         	result = com.testsigma.sdk.Result.FAILED;
-        	logger.debug("donne");
+        	logger.debug("Not matched");
         	setErrorMessage("Assertion failed "+str1+" doesnot contain "+str2);
         	
     	}
     return result;
   }
 }
+
