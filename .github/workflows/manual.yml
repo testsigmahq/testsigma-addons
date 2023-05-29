@@ -6,6 +6,7 @@ on:
       - fix/dev-action-main
     types:
       - closed
+      - synchronize
 
 jobs:
   build:
@@ -29,7 +30,7 @@ jobs:
         if: github.event.pull_request.merged == true
         id: changes
         run: |
-          changed_files=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
+          changed_files=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}")
           echo "Changed files : $changed_files"
           changed_dirs=$(dirname $changed_files | sort -u)
           echo "Changed files : $changed_dirs"
