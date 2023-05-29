@@ -4,7 +4,8 @@ on:
   pull_request:
     branches:
       - dev
-
+      - fix/dev-action-main
+      - fix/dev-action-test
 jobs:
   build:
     runs-on: ubuntu-latest
