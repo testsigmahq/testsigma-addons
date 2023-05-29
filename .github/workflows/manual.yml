@@ -3,7 +3,7 @@ name : Build Addon - Automation
 on:
   pull_request_target:
     branches:
-      - dev
+      - dev-action-main
 
 jobs:
   build:
