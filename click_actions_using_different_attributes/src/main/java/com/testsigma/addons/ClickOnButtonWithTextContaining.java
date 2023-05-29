@@ -19,11 +19,8 @@ public class ClickOnButtonWithTextContaining extends ClickOnElementBasedOnAttrib
     @Override
     public Result execute() throws NoSuchElementException {
         super.setOperator("contains");
-
         super.setAttribute("text");
-        
         super.setElementType("button");
-        
         super.setValue(testData);
         return super.execute();
     }
