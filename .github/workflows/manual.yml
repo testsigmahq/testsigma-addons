@@ -24,8 +24,6 @@ jobs:
           sudo apt-get install -y xmlstarlet
 
       - name: Detect changed directories
-        if: github.event.pull_request.merged == true
-        id: changes
         run: |
           changed_files=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}")
           echo "Changed files : $changed_files"
