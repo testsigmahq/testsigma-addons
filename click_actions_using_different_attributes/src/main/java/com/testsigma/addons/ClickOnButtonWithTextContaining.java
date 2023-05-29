@@ -21,6 +21,7 @@ public class ClickOnButtonWithTextContaining extends ClickOnElementBasedOnAttrib
         super.setOperator("contains");
 
         super.setAttribute("text");
+        
         super.setElementType("button");
         
         super.setValue(testData);
