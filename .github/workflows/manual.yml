@@ -27,7 +27,7 @@ jobs:
         id: changes
         run: |
           git fetch origin pull/${{ github.event.pull_request.number }}/merge --no-tags
-          changed_files=$( git diff --name-only origin/fix/dev-action-main)
+          changed_files=$(git diff --name-only origin/fix/dev-action-main)
           changed_dirs=$(dirname $changed_files | sort -u)
           root_dirs=()
           for dir in $changed_dirs; do
@@ -37,7 +37,7 @@ jobs:
             done
             root_dirs+=("$relative_dir")
           done
-          echo "::set-output name=directories::${root_dirs[@]}
+          echo "::set-output name=directories::${root_dirs[@]}"
 
       - name: Display changed directories
         run: |
