@@ -2,9 +2,7 @@ name : Build Addon - Automation
 
 on:
   pull_request:
-    branches:
-      - fix/dev-action-main
-    types: [ opened, synchronize, reopened, closed ]
+    types: [ opened, synchronize, reopened ]
 jobs:
   build:
     runs-on: ubuntu-latest
