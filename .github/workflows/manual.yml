@@ -61,10 +61,13 @@ jobs:
             echo "-- Version $version"
             mvn clean install
             cd ../
-            mkdir $dir/build/$version && cp /target/$dir.jar /target/original-$dir.jar ../$dir_source.zip/ $dir/build/$version/
+            mkdir -p $dir/build/$version && cp /target/$dir.jar /target/original-$dir.jar ../$dir_source.zip/ $dir/build/$version/
             cd $dir/build/$version
-            pwd 
+            pwd
             ls
+            git add .
+            git commit -m "build files added to the path $dir/build/$version"
+            git push
           done
           
       
