@@ -60,10 +60,11 @@ jobs:
             version=$(xmlstarlet sel -t -v "/*[local-name()='project']/*[local-name()='version']" -n pom.xml)
             echo "Addon latest version : $version"
             sudo mkdir -p /build/$version
+            ls
             mvn clean install
             ls target
             echo "Copy build files to the /build/$version/ location"
-            sudo zip -r /build/$version/$dir_source.zip .
+            zip -r /build/$version/$dir_source.zip .
             ls /build/$version
             pwd
             sudo cp target/$dir.jar target/original-$dir.jar /build/$version/
