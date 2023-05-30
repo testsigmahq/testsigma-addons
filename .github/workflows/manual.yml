@@ -56,17 +56,13 @@ jobs:
           for dir in ${{ steps.changes.outputs.directories }}; do
             echo "Building $dir"
             cd $dir
-            pwd
             version=$(xmlstarlet sel -t -v "/*[local-name()='project']/*[local-name()='version']" -n pom.xml)
             echo "Addon latest version : $version"
-            sudo mkdir -p /build/$version
-            ls
             mvn clean install
-            ls target
             echo "Copy build files to the /build/$version/ location"
-            zip -r /build/$version/$dir_source.zip .
-            ls /build/$version
-            pwd
+            zip -r $dir_source.zip .
+            sudo mkdir -p /build/$version
+            sudo cp $dir_source.zip /build/$version
             sudo cp target/$dir.jar target/original-$dir.jar /build/$version/
             cd /build/$version
             pwd
