@@ -55,12 +55,16 @@ jobs:
         run: |
           for dir in ${{ steps.changes.outputs.directories }}; do
             echo "Building $dir"
-            pwd
             cd $dir
             pwd
-            ls
             version=$(xmlstarlet sel -t -v "/*[local-name()='project']/*[local-name()='version']" -n pom.xml)
             echo "-- Version $version"
+            mvn clean install
+            cd ../
+            mkdir $dir/build/$version && cp /target/$dir.jar /target/original-$dir.jar ../$dir_source.zip/ $dir/build/$version/
+            cd $dir/build/$version
+            pwd 
+            ls
           done
           
       
