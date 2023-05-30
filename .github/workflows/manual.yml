@@ -2,17 +2,16 @@ name : Build Addon - Automation
 
 on:
   pull_request:
-    branches:
-      - fix/dev-action-main
-    types:
-      - closed
-
+    types: [ opened, synchronize, reopened ]
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: "0"
+
 
       - name: Setup Java version
         uses: actions/setup-java@v3
@@ -24,12 +23,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y xmlstarlet
+          changed_files=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}")      
+          echo "Changed files : $changed_files"
 
       - name: Detect changed directories
-        if: github.event.pull_request.merged == true
-        id: changes
         run: |
-          changed_files=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
+          changed_files=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}")
           echo "Changed files : $changed_files"
           changed_dirs=$(dirname $changed_files | sort -u)
           echo "Changed files : $changed_dirs"
