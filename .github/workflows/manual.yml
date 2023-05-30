@@ -61,7 +61,7 @@ jobs:
             echo "-- Version $version"
             mvn clean install
             ls
-            mkdir -p /build/$version && cp /target/$dir.jar /target/original-$dir.jar ../$dir_source.zip/ /build/$version/
+            sudo mkdir -p /build/$version && cp /target/$dir.jar /target/original-$dir.jar ../$dir_source.zip/ /build/$version/
             cd /build/$version
             pwd
             ls
