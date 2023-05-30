@@ -71,7 +71,7 @@ jobs:
             pwd
             ls
             echo "Committing the changes"
-            cd ../../../
+            cd ../../
             pwd
             ls
             git add .
