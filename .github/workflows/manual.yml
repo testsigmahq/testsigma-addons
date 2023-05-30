@@ -64,11 +64,8 @@ jobs:
             sudo mkdir -p /build/$version
             sudo cp $dir_source.zip /build/$version
             sudo cp target/$dir.jar target/original-$dir.jar /build/$version/
-            cd /build/$version
-            pwd
-            ls
+            ls /build/$version
             echo "Committing the changes"
-            cd ../../
             pwd
             ls
             git add .
