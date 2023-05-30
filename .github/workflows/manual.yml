@@ -72,6 +72,8 @@ jobs:
             ls
             echo "Committing the changes"
             cd ../../../
+            pwd
+            ls
             git add .
             git commit -m "build files added to the path $dir/build/$version"
             git push
