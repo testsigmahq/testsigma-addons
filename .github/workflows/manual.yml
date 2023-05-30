@@ -65,7 +65,7 @@ jobs:
             zip -r ../$dir_source.zip .
             echo "Copy build files to the /build/$version/ location"
             pwd
-            sudo mkdir -p /build/$version && cp /target/$dir.jar /target/original-$dir.jar ../$dir_source.zip /build/$version/
+            sudo mkdir -p /build/$version && cp target/$dir.jar target/original-$dir.jar ../$dir_source.zip /build/$version/
             cd /build/$version
             pwd
             ls
