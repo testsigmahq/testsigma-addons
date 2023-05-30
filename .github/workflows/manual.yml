@@ -60,14 +60,15 @@ jobs:
             version=$(xmlstarlet sel -t -v "/*[local-name()='project']/*[local-name()='version']" -n pom.xml)
             echo "-- Version $version"
             mvn clean install
-            cd ../
-            mkdir -p $dir/build/$version && cp /target/$dir.jar /target/original-$dir.jar ../$dir_source.zip/ $dir/build/$version/
-            cd $dir/build/$version
+            ls
+            mkdir -p /build/$version && cp /target/$dir.jar /target/original-$dir.jar ../$dir_source.zip/ /build/$version/
+            cd /build/$version
             pwd
             ls
             git add .
             git commit -m "build files added to the path $dir/build/$version"
             git push
+            cd ../../../
           done
           
       
