@@ -64,16 +64,17 @@ jobs:
             ls target
             echo "Copy build files to the /build/$version/ location"
             sudo zip -r /build/$version/$dir_source.zip .
+            ls /build/$version
             pwd
             sudo cp target/$dir.jar target/original-$dir.jar /build/$version/
             cd /build/$version
             pwd
             ls
             echo "Committing the changes"
+            cd ../../../
             git add .
             git commit -m "build files added to the path $dir/build/$version"
             git push
-            cd ../../../
           done
           
       
