@@ -60,12 +60,12 @@ jobs:
             version=$(xmlstarlet sel -t -v "/*[local-name()='project']/*[local-name()='version']" -n pom.xml)
             echo "-- Version $version"
             mvn clean install
-            ls 
             ls target
             echo "Creating an archive" 
             zip -r ../$dir_source.zip .
             echo "Copy build files to the /build/$version/ location"
-            sudo mkdir -p /build/$version && cp /target/$dir.jar /target/original-$dir.jar ../$dir_source.zip/ /build/$version/
+            pwd
+            sudo mkdir -p /build/$version && cp /target/$dir.jar /target/original-$dir.jar ../$dir_source.zip /build/$version/
             cd /build/$version
             pwd
             ls
