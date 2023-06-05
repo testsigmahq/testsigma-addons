@@ -12,6 +12,16 @@ jobs:
         with:
           fetch-depth: "0"
 
+      - name: Set environment variables
+        run: |
+          echo "DEV_ADDON_URL=https://0e56-106-51-86-166.ngrok-free.app" >> $GITHUB_ENV
+          echo "BLACKPEARL_ADDON_URL=https://blackpearl-kibbutz.testsigma.com" >> $GITHUB_ENV
+          echo "DEVTESTING_ADDON_URL=https://devtesting-kibbutz.testsigma.com" >> $GITHUB_ENV
+          echo "PRESTAGING_ADDON_URL=https://prestaging-kibbutz.testsigma.com" >> $GITHUB_ENV
+          echo "STAGING_ADDON_URL=https://staging-kibbutz.testsigma.com" >> $GITHUB_ENV
+          echo "PROD_ADDON_URL=https://app-kibbutz.testsigma.com" >> $GITHUB_ENV
+
+
       - name: Setup Java version
         uses: actions/setup-java@v3
         with:
@@ -26,6 +36,7 @@ jobs:
           echo "Changed files : $changed_files"
 
       - name: Detect changed directories
+        id: changes
         run: |
           changed_files=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}")
           echo "Changed files : $changed_files"
@@ -53,8 +64,26 @@ jobs:
         run: |
           for dir in ${{ steps.changes.outputs.directories }}; do
             echo "Building $dir"
+            cd $dir
             version=$(xmlstarlet sel -t -v "/*[local-name()='project']/*[local-name()='version']" -n pom.xml)
-            echo "-- Version $version"
+            echo "Addon latest version : $version"
+            mvn clean install
+            echo "Copy build files to the /build/$version/ location"
+            zip -r $dir_source.zip .
+            sudo mkdir -p /build/$version
+            sudo cp $dir_source.zip /build/$version
+            sudo cp target/$dir.jar target/original-$dir.jar /build/$version/
+            ls /build/$version
+            echo "Committing the changes"
+            pwd
+            ls
+            git add .
+            git commit -m "build files added to the path $dir/build/$version"
+            git push
+            curl --location --request PUT '${{ env.DEV_ADDON_URL }}/api/v1/plugins' \
+            --header 'Authorization: Bearer ${{ secrets.DEV_V1_TOKEN }}' \
+            --form 'file=@"/build/$version/$dir_source.zip"' \
+            --form 'buildTool="MAVEN"'
           done
           
       
