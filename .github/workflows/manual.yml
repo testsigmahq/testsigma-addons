@@ -84,8 +84,11 @@ jobs:
             echo "Committing the changes"
             pwd
             ls
+            echo "Actor : $github.actor"
             git config --global user.email "${{ github.actor }}@users.noreply.github.com"
             git config --global user.name "${{ github.actor }}"
+            git branch -a   
+            git checkout $GIT_BRANCH
             git add .
             git commit -m "build files added to the path $dir/build/$version"
             git push origin $GIT_BRANCH
