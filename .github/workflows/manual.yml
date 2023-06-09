@@ -73,7 +73,7 @@ jobs:
             echo "Setting Variables $dir"
             cd $dir
             version=$(xmlstarlet sel -t -v "/*[local-name()='project']/*[local-name()='version']" -n pom.xml)
-            version_dir=$dir/build/$version
+            version_dir=/build/$version
             archival="$dir"_source.zip
             echo "Building $dir With latest version : $version"
             mvn clean install
