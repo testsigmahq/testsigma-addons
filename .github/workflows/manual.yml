@@ -2,7 +2,7 @@ name : Build Addon - Automation
 
 on:
   pull_request:
-    types: [ opened, synchronize, reopened ]
+    types: [ opened, reopened ]
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,6 +21,10 @@ jobs:
           echo "STAGING_ADDON_URL=https://staging-kibbutz.testsigma.com" >> $GITHUB_ENV
           echo "PROD_ADDON_URL=https://app-kibbutz.testsigma.com" >> $GITHUB_ENV
 
+      - name : SSH repo access
+        uses:  webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY}}
 
       - name: Setup Java version
         uses: actions/setup-java@v3
