@@ -20,6 +20,7 @@ jobs:
           echo "PRESTAGING_ADDON_URL=https://prestaging-kibbutz.testsigma.com" >> $GITHUB_ENV
           echo "STAGING_ADDON_URL=https://staging-kibbutz.testsigma.com" >> $GITHUB_ENV
           echo "PROD_ADDON_URL=https://app-kibbutz.testsigma.com" >> $GITHUB_ENV
+          echo "GIT_BRANCH=dev-action-main" >> $GITHUB_ENV
 
       - name : SSH repo access
         uses:  webfactory/ssh-agent@v0.5.4
@@ -87,7 +88,7 @@ jobs:
             git config --global user.name "${{ github.actor }}"
             git add .
             git commit -m "build files added to the path $dir/build/$version"
-            git push
+            git push origin $GIT_BRANCH
             curl --location --request PUT '${{ env.DEV_ADDON_URL }}/api/v1/plugins' \
             --header 'Authorization: Bearer ${{ secrets.DEV_V1_TOKEN }}' \
             --form 'sourceCode=@"/build/$version/$dir_source.zip"' \
