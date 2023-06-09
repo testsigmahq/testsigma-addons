@@ -41,17 +41,18 @@ jobs:
           changed_files=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}")
           echo "Changed files : $changed_files"
           changed_dirs=$(dirname $changed_files | sort -u)
-          echo "Changed files : $changed_dirs"
+          echo "Changed dirs : $changed_dirs"
           root_dirs=()
           for dir in $changed_dirs; do
             if [[ $dir != *".github"* ]]; then
-              relative_dir=$(dirname "$dir")
+              relative_dir="$dir"
               echo "Relative : $relative_dir"
               while [[ ! -f "$relative_dir/pom.xml" ]]; do
                 relative_dir=$(dirname "$relative_dir")
                 echo "-- relative : $relative_dir"
               done
-              root_dirs+=("$relative_dir")
+              if [[ -f "$relative_dir/pom.xml" ]]; do
+                root_dirs+=("$relative_dir")
             fi
           done
           echo "::set-output name=directories::${root_dirs[@]}"
