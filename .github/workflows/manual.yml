@@ -78,6 +78,7 @@ jobs:
             archival="$dir"_source.zip
             echo "Archiving the build files to $archival"
             zip -r $archival .
+            ls
             echo "Creating an directory for version : $dir/build/$version"
             sudo mkdir -p $dir/build/$version
             echo "Copy build files to the location : $dir/build/$version/ "
@@ -85,9 +86,7 @@ jobs:
             sudo cp target/$dir.jar target/original-$dir.jar $dir/build/$version/
             ls $dir/build/$version
             echo "Committing the changes"
-            pwd
-            ls
-            echo "Actor : $github.actor"
+            echo "Github Actor : ${{ github.actor }}"
             git config --global user.email "${{ github.actor }}@users.noreply.github.com"
             git config --global user.name "${{ github.actor }}"
             git branch -a   
