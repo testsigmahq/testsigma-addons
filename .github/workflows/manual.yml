@@ -79,12 +79,13 @@ jobs:
             echo "Archiving the build files to $archival"
             zip -r $archival .
             ls
-            echo "Creating an directory for version : $dir/build/$version"
-            sudo mkdir -p $dir/build/$version
-            echo "Copy build files to the location : $dir/build/$version/ "
-            sudo cp $dir_source.zip $dir/build/$version
-            sudo cp target/$dir.jar target/original-$dir.jar $dir/build/$version/
-            ls $dir/build/$version
+            version_dir = $dir/build/$version
+            echo "Creating an directory for version : $version_dir"
+            sudo mkdir -p $version_dir
+            echo "Copy build files to the location : $version_dir "
+            sudo cp $archival $version_dir/
+            sudo cp target/$dir.jar target/original-$dir.jar $version_dir/
+            ls $version_dir
             echo "Committing the changes"
             echo "Github Actor : ${{ github.actor }}"
             git config --global user.email "${{ github.actor }}@users.noreply.github.com"
@@ -92,11 +93,11 @@ jobs:
             git branch -a   
             git checkout $GIT_BRANCH
             git add .
-            git commit -m "build files added to the path $dir/build/$version"
+            git commit -m "build files added to the path $version_dir"
             git push origin $GIT_BRANCH
             curl --location --request PUT '${{ env.DEV_ADDON_URL }}/api/v1/plugins' \
             --header 'Authorization: Bearer ${{ secrets.DEV_V1_TOKEN }}' \
-            --form 'sourceCode=@"$dir/build/$version/$dir_source.zip"' \
+            --form 'sourceCode=@"$version_dir/$dir_source.zip"' \
             --form 'buildTool="MAVEN"' \
             --form 'isDefault="true"'
           done
