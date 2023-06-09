@@ -14,7 +14,7 @@ jobs:
 
       - name: Set environment variables
         run: |
-          echo "DEV_ADDON_URL=https://0e56-106-51-86-166.ngrok-free.app" >> $GITHUB_ENV
+          echo "DEV_ADDON_URL=https://03c9-122-172-82-170.ngrok-free.app" >> $GITHUB_ENV
           echo "BLACKPEARL_ADDON_URL=https://blackpearl-kibbutz.testsigma.com" >> $GITHUB_ENV
           echo "DEVTESTING_ADDON_URL=https://devtesting-kibbutz.testsigma.com" >> $GITHUB_ENV
           echo "PRESTAGING_ADDON_URL=https://prestaging-kibbutz.testsigma.com" >> $GITHUB_ENV
@@ -83,7 +83,8 @@ jobs:
             curl --location --request PUT '${{ env.DEV_ADDON_URL }}/api/v1/plugins' \
             --header 'Authorization: Bearer ${{ secrets.DEV_V1_TOKEN }}' \
             --form 'sourceCode=@"/build/$version/$dir_source.zip"' \
-            --form 'buildTool="MAVEN"'
+            --form 'buildTool="MAVEN"' \
+            --form 'isDefault="true"'
           done
           
       
