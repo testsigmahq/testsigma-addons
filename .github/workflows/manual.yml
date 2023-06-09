@@ -49,7 +49,7 @@ jobs:
           echo "Changed dirs : $changed_dirs"
           root_dirs=()
           for dir in $changed_dirs; do
-            if [[ $dir != *".github"* ]]; then
+            if [[ $dir != *"."* ]]; then
               relative_dir="$dir"
               echo "Relative : $relative_dir"
               while [[ ! -f "$relative_dir/pom.xml" ]]; do
