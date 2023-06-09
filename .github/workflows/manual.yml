@@ -75,11 +75,12 @@ jobs:
             version=$(xmlstarlet sel -t -v "/*[local-name()='project']/*[local-name()='version']" -n pom.xml)
             echo "Addon latest version : $version"
             mvn clean install
-            echo "Archiving the build files to $dir_source.zip"
-            zip -r $dir_source.zip .
+            archival="$dir"_source.zip
+            echo "Archiving the build files to $archival"
+            zip -r $archival .
             echo "Creating an directory for version : $dir/build/$version"
             sudo mkdir -p $dir/build/$version
-            echo "Copy build files to the $dir/build/$version/ location"
+            echo "Copy build files to the location : $dir/build/$version/ "
             sudo cp $dir_source.zip $dir/build/$version
             sudo cp target/$dir.jar target/original-$dir.jar $dir/build/$version/
             ls $dir/build/$version
@@ -96,7 +97,7 @@ jobs:
             git push origin $GIT_BRANCH
             curl --location --request PUT '${{ env.DEV_ADDON_URL }}/api/v1/plugins' \
             --header 'Authorization: Bearer ${{ secrets.DEV_V1_TOKEN }}' \
-            --form 'sourceCode=@"/build/$version/$dir_source.zip"' \
+            --form 'sourceCode=@"$dir/build/$version/$dir_source.zip"' \
             --form 'buildTool="MAVEN"' \
             --form 'isDefault="true"'
           done
