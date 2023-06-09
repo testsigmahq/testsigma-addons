@@ -51,8 +51,9 @@ jobs:
                 relative_dir=$(dirname "$relative_dir")
                 echo "-- relative : $relative_dir"
               done
-              if [[ -f "$relative_dir/pom.xml" ]]; do
+              if [[ -f "$relative_dir/pom.xml" ]]; then
                 root_dirs+=("$relative_dir")
+              fi
             fi
           done
           echo "::set-output name=directories::${root_dirs[@]}"
