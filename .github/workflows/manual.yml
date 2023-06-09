@@ -79,7 +79,7 @@ jobs:
             echo "Archiving the build files to $archival"
             zip -r $archival .
             ls
-            version_dir = $dir/build/$version
+            version_dir=$dir/build/$version
             echo "Creating an directory for version : $version_dir"
             sudo mkdir -p $version_dir
             echo "Copy build files to the location : $version_dir "
