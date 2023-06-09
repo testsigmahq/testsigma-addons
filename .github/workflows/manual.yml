@@ -82,7 +82,7 @@ jobs:
             echo "Creating an directory for version : $version_dir"
             sudo mkdir -p $version_dir
             echo "Copy build files to the location : $version_dir "
-            sudo cp $archival $version_dir/
+            sudo mv $archival $version_dir/
             sudo cp target/$dir.jar target/original-$dir.jar $version_dir/
             ls $version_dir
             echo "Committing the changes"
