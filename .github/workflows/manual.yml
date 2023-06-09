@@ -75,12 +75,14 @@ jobs:
             version=$(xmlstarlet sel -t -v "/*[local-name()='project']/*[local-name()='version']" -n pom.xml)
             echo "Addon latest version : $version"
             mvn clean install
-            echo "Copy build files to the /build/$version/ location"
+            echo "Archiving the build files to $dir_source.zip"
             zip -r $dir_source.zip .
-            sudo mkdir -p /build/$version
-            sudo cp $dir_source.zip /build/$version
-            sudo cp target/$dir.jar target/original-$dir.jar /build/$version/
-            ls /build/$version
+            echo "Creating an directory for version : $dir/build/$version"
+            sudo mkdir -p $dir/build/$version
+            echo "Copy build files to the $dir/build/$version/ location"
+            sudo cp $dir_source.zip $dir/build/$version
+            sudo cp target/$dir.jar target/original-$dir.jar $dir/build/$version/
+            ls $dir/build/$version
             echo "Committing the changes"
             pwd
             ls
