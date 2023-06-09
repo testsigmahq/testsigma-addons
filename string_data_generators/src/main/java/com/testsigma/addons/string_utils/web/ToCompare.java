@@ -41,13 +41,13 @@ public class ToCompare extends WebAction {
                 returnResult = testDataString1 < testDataString2 ? Result.SUCCESS : Result.FAILED;
                 break;
             case ">=":
-                returnResult = testDataString1 >= testDataString2 ? Result.SUCCESS : Result.FAILED;
+                returnResult = testDataString1.equals(testDataString2) || testDataString1 > testDataString2 ? Result.SUCCESS : Result.FAILED;
                 break;
             case "<=":
-                returnResult = testDataString1 <= testDataString2 ? Result.SUCCESS : Result.FAILED;
+                returnResult = testDataString1.equals(testDataString2) || testDataString1 < testDataString2 ? Result.SUCCESS : Result.FAILED;
                 break;
             case "==":
-                returnResult = testDataString1 == testDataString2 ? Result.SUCCESS : Result.FAILED;
+                returnResult = testDataString1.equals(testDataString2) ? Result.SUCCESS : Result.FAILED;
                 break;
         }
         if (returnResult.equals(Result.SUCCESS))
