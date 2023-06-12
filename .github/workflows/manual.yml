@@ -14,7 +14,7 @@ jobs:
 
       - name: Set environment variables
         run: |
-          echo "DEV_ADDON_URL=https://8b3c-202-83-17-140.ngrok-free.app" >> $GITHUB_ENV
+          echo "DEV_ADDON_URL=https://07e8-122-172-87-149.ngrok-free.app" >> $GITHUB_ENV
           echo "BLACKPEARL_ADDON_URL=https://blackpearl-kibbutz.testsigma.com" >> $GITHUB_ENV
           echo "DEVTESTING_ADDON_URL=https://devtesting-kibbutz.testsigma.com" >> $GITHUB_ENV
           echo "PRESTAGING_ADDON_URL=https://prestaging-kibbutz.testsigma.com" >> $GITHUB_ENV
