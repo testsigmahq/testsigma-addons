@@ -14,7 +14,7 @@ jobs:
 
       - name: Set environment variables
         run: |
-          echo "DEV_ADDON_URL=https://03c9-122-172-82-170.ngrok-free.app" >> $GITHUB_ENV
+          echo "DEV_ADDON_URL=https://8b3c-202-83-17-140.ngrok-free.app" >> $GITHUB_ENV
           echo "BLACKPEARL_ADDON_URL=https://blackpearl-kibbutz.testsigma.com" >> $GITHUB_ENV
           echo "DEVTESTING_ADDON_URL=https://devtesting-kibbutz.testsigma.com" >> $GITHUB_ENV
           echo "PRESTAGING_ADDON_URL=https://prestaging-kibbutz.testsigma.com" >> $GITHUB_ENV
@@ -95,10 +95,16 @@ jobs:
             git commit -m "build files added to the path $version_dir"
             git push origin $GIT_BRANCH
             ls $version_dir
+            pwd
+            ls $version_dir/$archival
+            cd $version_dir
+            pwd
+            ls
+            ls $archival
             echo "$version_dir/$archival"
             curl --location --request PUT '${{ env.DEV_ADDON_URL }}/api/v1/plugins' \
             --header 'Authorization: Bearer ${{ secrets.DEV_V1_TOKEN }}' \
-            --form 'sourceCode=@"$version_dir/$archival"' \
+            --form 'sourceCode=@"$archival"' \
             --form 'buildTool="MAVEN"' \
             --form 'isDefault="true"'
           done
