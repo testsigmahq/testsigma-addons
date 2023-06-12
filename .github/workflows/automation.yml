@@ -2,7 +2,7 @@ name : Build Addon - Automation
 
 on:
   pull_request:
-    types: [ opened, reopened ]
+    types: [ merged ]
 jobs:
   build:
     runs-on: ubuntu-latest
