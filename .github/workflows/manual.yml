@@ -101,10 +101,12 @@ jobs:
             pwd
             ls
             ls $archival
-            echo "$version_dir/$archival"
+            ls -l
+            absolute_path=$(readlink -f "$archival")
+            echo "Absolute file path: $absolute_path"
             curl --location --request PUT '${{ env.DEV_ADDON_URL }}/api/v1/plugins' \
             --header 'Authorization: Bearer ${{ secrets.DEV_V1_TOKEN }}' \
-            --form 'sourceCode=@"$archival"' \
+            --form 'sourceCode=@"$absolute_path"' \
             --form 'buildTool="MAVEN"' \
             --form 'isDefault="true"'
           done
