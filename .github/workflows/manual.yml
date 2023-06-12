@@ -106,7 +106,7 @@ jobs:
             echo "Absolute file path: $absolute_path"
             curl --location --request PUT '${{ env.DEV_ADDON_URL }}/api/v1/plugins' \
             --header 'Authorization: Bearer ${{ secrets.DEV_V1_TOKEN }}' \
-            --form 'sourceCode=@"$absolute_path"' \
+            --form "sourceCode=@\"$archive_zip\""  \
             --form 'buildTool="MAVEN"' \
             --form 'isDefault="true"'
           done
