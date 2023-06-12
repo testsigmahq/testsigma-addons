@@ -94,21 +94,38 @@ jobs:
             git add .
             git commit -m "build files added to the path $version_dir"
             git push origin $GIT_BRANCH
-            ls $version_dir
-            pwd
-            ls $version_dir/$archival
             cd $version_dir
-            pwd
-            ls
-            ls $archival
-            ls -l
-            absolute_path=$(readlink -f "$archival")
-            echo "Absolute file path: $absolute_path"
+            echo "Updating the $dir addon in stacks"
             curl --location --request PUT '${{ env.DEV_ADDON_URL }}/api/v1/plugins' \
             --header 'Authorization: Bearer ${{ secrets.DEV_V1_TOKEN }}' \
             --form "sourceCode=@\"$archival\""  \
             --form 'buildTool="MAVEN"' \
             --form 'isDefault="true"'
+            curl --location --request PUT '${{ env.BLACKPEARL_ADDON_URL }}/api/v1/plugins' \
+              --header 'Authorization: Bearer ${{ secrets.DEV_V1_TOKEN }}' \
+              --form "sourceCode=@\"$archival\""  \
+              --form 'buildTool="MAVEN"' \
+              --form 'isDefault="true"'
+           curl --location --request PUT '${{ env.DEVTESTING_ADDON_URL }}/api/v1/plugins' \
+              --header 'Authorization: Bearer ${{ secrets.DEV_V1_TOKEN }}' \
+              --form "sourceCode=@\"$archival\""  \
+              --form 'buildTool="MAVEN"' \
+              --form 'isDefault="true"'
+           curl --location --request PUT '${{ env.PRESTAGING_ADDON_URL }}/api/v1/plugins' \
+              --header 'Authorization: Bearer ${{ secrets.DEV_V1_TOKEN }}' \
+              --form "sourceCode=@\"$archival\""  \
+              --form 'buildTool="MAVEN"' \
+              --form 'isDefault="true"'
+           curl --location --request PUT '${{ env.STAGING_ADDON_URL }}/api/v1/plugins' \
+              --header 'Authorization: Bearer ${{ secrets.DEV_V1_TOKEN }}' \
+              --form "sourceCode=@\"$archival\""  \
+              --form 'buildTool="MAVEN"' \
+              --form 'isDefault="true"'
+           curl --location --request PUT '${{ env.PROD_ADDON_URL }}/api/v1/plugins' \
+              --header 'Authorization: Bearer ${{ secrets.DEV_V1_TOKEN }}' \
+              --form "sourceCode=@\"$archival\""  \
+              --form 'buildTool="MAVEN"' \
+              --form 'isDefault="true"'
           done
           
       
