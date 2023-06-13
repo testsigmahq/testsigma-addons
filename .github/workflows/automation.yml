@@ -21,7 +21,7 @@ jobs:
           echo "PRESTAGING_ADDON_URL=https://prestaging-kibbutz.testsigma.com" >> $GITHUB_ENV
           echo "STAGING_ADDON_URL=https://staging-kibbutz.testsigma.com" >> $GITHUB_ENV
           echo "PROD_ADDON_URL=https://app-kibbutz.testsigma.com" >> $GITHUB_ENV
-          echo "GIT_BRANCH=fix/dev-action-main" >> $GITHUB_ENV
+          echo "GIT_BRANCH=dev" >> $GITHUB_ENV
 
       - name : SSH repo access
         uses:  webfactory/ssh-agent@v0.5.4
