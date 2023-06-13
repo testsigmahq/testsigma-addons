@@ -38,8 +38,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y xmlstarlet
-          changed_files=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}")      
-          echo "Changed files : $changed_files"
 
       - name: Detect changed directories
         id: changes

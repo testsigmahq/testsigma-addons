@@ -1,0 +1,72 @@
+name : Build Addon - Manual
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment'
+        required: true
+        type: choice
+        options:
+          - main
+          - dev
+          - fix/dev-action-main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: "0"
+
+      - name: SSH repo access
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY}}
+
+      - name: Setup Java version
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'zulu'
+
+      - name: Install xmlstarlet
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xmlstarlet
+
+      - name: Build and commit changes
+        run: |
+          echo "Environment value: ${{ github.event.inputs.environment }} "
+          directories=$(find "." -mindepth 1 -type d)
+          echo $directories;
+          for dir in ${{ directories }}; do
+            echo "Setting Variables $dir"
+            cd $dir
+            version=$(xmlstarlet sel -t -v "/*[local-name()='project']/*[local-name()='version']" -n pom.xml)
+            version_dir=build/$version
+            archival="$dir"_source.zip
+            echo "Building $dir With latest version : $version"
+            mvn clean install
+            echo "Archiving the build files to $archival"
+            zip -r $archival . -x "build/*"
+            echo "Creating an directory for version : $version_dir"
+            sudo mkdir -p $version_dir
+            echo "Copy build files to the location : $version_dir "
+            sudo mv $archival $version_dir/
+            sudo cp target/$dir.jar target/original-$dir.jar $version_dir/
+            ls $version_dir
+            echo "Committing the changes"
+            echo "Github Actor : ${{ github.actor }}"
+            git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+            git config --global user.name "${{ github.actor }}"
+            git branch -a   
+            git checkout ${{ github.event.inputs.environment }}
+            git add .
+            git commit -m "build files added to the path $version_dir"
+            git push origin ${{ github.event.inputs.environment }}
+          done
+          
+          
