@@ -15,12 +15,14 @@ jobs:
 
       - name: Set environment variables
         run: |
-          echo "DEV_ADDON_URL=https://07e8-122-172-87-149.ngrok-free.app" >> $GITHUB_ENV
           echo "BLACKPEARL_ADDON_URL=https://blackpearl-kibbutz.testsigma.com" >> $GITHUB_ENV
+          echo "VIKING_ADDON_URL=https://vikings-kibbutz.testsigma.com" >> $GITHUB_ENV
+          echo "DEMONS_ADDON_URL=https://demons-kibbutz.testsigma.com" >> $GITHUB_ENV
+          echo "DEVELOPMENT_ADDON_URL=https://development-kibbutz.testsigma.com" >> $GITHUB_ENV
           echo "DEVTESTING_ADDON_URL=https://devtesting-kibbutz.testsigma.com" >> $GITHUB_ENV
           echo "PRESTAGING_ADDON_URL=https://prestaging-kibbutz.testsigma.com" >> $GITHUB_ENV
           echo "STAGING_ADDON_URL=https://staging-kibbutz.testsigma.com" >> $GITHUB_ENV
-          echo "PROD_ADDON_URL=https://app-kibbutz.testsigma.com" >> $GITHUB_ENV
+          echo "PROD_ADDON_URL=https://kibbutz.testsigma.com" >> $GITHUB_ENV
           echo "GIT_BRANCH=dev" >> $GITHUB_ENV
 
       - name : SSH repo access
@@ -95,33 +97,43 @@ jobs:
             git push origin $GIT_BRANCH
             cd $version_dir
             echo "Updating the $dir addon in stacks"
-            curl --location --request PUT '${{ env.DEV_ADDON_URL }}/api/v1/plugins' \
-            --header 'Authorization: Bearer ${{ secrets.DEV_V1_TOKEN }}' \
-            --form "sourceCode=@\"$archival\""  \
-            --form 'buildTool="MAVEN"' \
-            --form 'isDefault="true"'
             curl --location --request PUT '${{ env.BLACKPEARL_ADDON_URL }}/api/v1/plugins' \
-              --header 'Authorization: Bearer ${{ secrets.DEV_V1_TOKEN }}' \
+              --header 'Authorization: Bearer ${{ secrets.BLACKPEARL_V1_TOKEN }}' \
               --form "sourceCode=@\"$archival\""  \
               --form 'buildTool="MAVEN"' \
               --form 'isDefault="true"'
-           curl --location --request PUT '${{ env.DEVTESTING_ADDON_URL }}/api/v1/plugins' \
-              --header 'Authorization: Bearer ${{ secrets.DEV_V1_TOKEN }}' \
+           curl --location --request PUT '${{ env.VIKING_ADDON_URL }}/api/v1/plugins' \
+              --header 'Authorization: Bearer ${{ secrets.VIKING_V1_TOKEN }}' \
+              --form "sourceCode=@\"$archival\""  \
+              --form 'buildTool="MAVEN"' \
+              --form 'isDefault="true"'
+           curl --location --request PUT '${{ env.DEMONS_ADDON_URL }}/api/v1/plugins' \
+              --header 'Authorization: Bearer ${{ secrets.DEMONS_V1_TOKEN }}' \
+              --form "sourceCode=@\"$archival\""  \
+              --form 'buildTool="MAVEN"' \
+              --form 'isDefault="true"'
+          curl --location --request PUT '${{ env.DEVELOPMENT_ADDON_URL }}/api/v1/plugins' \
+              --header 'Authorization: Bearer ${{ secrets.DEVELOPMENT_V1_TOKEN }}' \
+              --form "sourceCode=@\"$archival\""  \
+              --form 'buildTool="MAVEN"' \
+              --form 'isDefault="true"'
+          curl --location --request PUT '${{ env.DEVTESTING_ADDON_URL }}/api/v1/plugins' \
+              --header 'Authorization: Bearer ${{ secrets.DEVTESTING_V1_TOKEN }}' \
               --form "sourceCode=@\"$archival\""  \
               --form 'buildTool="MAVEN"' \
               --form 'isDefault="true"'
            curl --location --request PUT '${{ env.PRESTAGING_ADDON_URL }}/api/v1/plugins' \
-              --header 'Authorization: Bearer ${{ secrets.DEV_V1_TOKEN }}' \
+              --header 'Authorization: Bearer ${{ secrets.PRESTAGING_V1_TOKEN }}' \
               --form "sourceCode=@\"$archival\""  \
               --form 'buildTool="MAVEN"' \
               --form 'isDefault="true"'
            curl --location --request PUT '${{ env.STAGING_ADDON_URL }}/api/v1/plugins' \
-              --header 'Authorization: Bearer ${{ secrets.DEV_V1_TOKEN }}' \
+              --header 'Authorization: Bearer ${{ secrets.STAGING_V1_TOKEN }}' \
               --form "sourceCode=@\"$archival\""  \
               --form 'buildTool="MAVEN"' \
               --form 'isDefault="true"'
            curl --location --request PUT '${{ env.PROD_ADDON_URL }}/api/v1/plugins' \
-              --header 'Authorization: Bearer ${{ secrets.DEV_V1_TOKEN }}' \
+              --header 'Authorization: Bearer ${{ secrets.PROD_V1_TOKEN }}' \
               --form "sourceCode=@\"$archival\""  \
               --form 'buildTool="MAVEN"' \
               --form 'isDefault="true"'
