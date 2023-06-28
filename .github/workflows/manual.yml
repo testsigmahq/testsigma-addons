@@ -58,9 +58,9 @@ jobs:
       - name: Build and commit changes
         run: |
           echo "Environment value: ${{ github.event.inputs.environment }} "
-          directories=$(find "." -mindepth 1 -type d)
+          directories=$(find . -maxdepth 1 -type d)
           echo $directories;
-          for dir in ${{ directories }}; do
+          for dir in $directories; do
             echo "Setting Variables $dir"
             cd $dir
             version=$(xmlstarlet sel -t -v "/*[local-name()='project']/*[local-name()='version']" -n pom.xml)
