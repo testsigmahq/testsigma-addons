@@ -58,7 +58,7 @@ jobs:
       - name: Build and commit changes
         run: |
           echo "Environment value: ${{ github.event.inputs.environment }} "
-          directories=$(find . -maxdepth 1 -type d)
+          directories=$(find . -mindepth 1 -maxdepth 1 -type d)
           echo $directories;
           for dir in $directories; do
             echo "Setting Variables $dir"
