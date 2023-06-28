@@ -1,25 +1,11 @@
-name : Build Addon - Manual
+name : Build Addon - Automation
 
 on:
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment To Deploy Addons'
-        required: true
-        type: choice
-        options:
-          - none
-          - production
-          - staging
-          - prestaging
-          - devtesting
-          - blackpearl
-          - vikings
-          - demons
-          - development
-
+  pull_request:
+    types: [ closed ]
 jobs:
   build:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
@@ -39,8 +25,8 @@ jobs:
           echo "PROD_ADDON_URL=https://kibbutz.testsigma.com" >> $GITHUB_ENV
           echo "GIT_BRANCH=dev" >> $GITHUB_ENV
 
-      - name: SSH repo access
-        uses: webfactory/ssh-agent@v0.5.4
+      - name : SSH repo access
+        uses:  webfactory/ssh-agent@v0.5.4
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY}}
 
@@ -55,12 +41,36 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y xmlstarlet
 
+      - name: Detect changed directories
+        id: changes
+        run: |
+          changed_files=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}")
+          echo "Changed files : $changed_files"
+          changed_dirs=$(dirname $changed_files | sort -u)
+          echo "Changed dirs : $changed_dirs"
+          root_dirs=()
+          for dir in $changed_dirs; do
+            if [[ $dir != *"."* ]]; then
+              relative_dir="$dir"
+              echo "Relative : $relative_dir"
+              while [[ ! -f "$relative_dir/pom.xml" ]]; do
+                relative_dir=$(dirname "$relative_dir")
+                echo "-- relative : $relative_dir"
+              done
+              if [[ -f "$relative_dir/pom.xml" ]]; then
+                root_dirs+=("$relative_dir")
+              fi
+            fi
+          done
+          echo "::set-output name=directories::${root_dirs[@]}"
+
+      - name: Display changed directories
+        run: |
+          echo "Changed directories: ${{ steps.changes.outputs.directories }}"
+
       - name: Build and commit changes
         run: |
-          echo "Environment value: ${{ github.event.inputs.environment }} "
-          directories=$(find "." -mindepth 1 -type d)
-          echo $directories;
-          for dir in ${{ directories }}; do
+          for dir in ${{ steps.changes.outputs.directories }}; do
             echo "Setting Variables $dir"
             cd $dir
             version=$(xmlstarlet sel -t -v "/*[local-name()='project']/*[local-name()='version']" -n pom.xml)
@@ -85,57 +95,51 @@ jobs:
             git add .
             git commit -m "build files added to the path $version_dir"
             git push origin $GIT_BRANCH
-            
-            ENVIRONMENT=${{ github.event.inputs.Environment }}
-            if [[ "$ENVIRONMENT" == "production"* ]]; then
-              curl --location --request PUT '${{ env.PROD_ADDON_URL }}/api/v1/plugins' \
-              --header 'Authorization: Bearer ${{ secrets.PROD_V1_TOKEN }}' \
-              --form "sourceCode=@\"$archival\""  \
-              --form 'buildTool="MAVEN"' \
-              --form 'isDefault="true"'
-            elif [[ "$ENVIRONMENT" == "staging"* ]]; then
-              curl --location --request PUT '${{ env.STAGING_ADDON_URL }}/api/v1/plugins' \
-              --header 'Authorization: Bearer ${{ secrets.STAGING_V1_TOKEN }}' \
-              --form "sourceCode=@\"$archival\""  \
-              --form 'buildTool="MAVEN"' \
-              --form 'isDefault="true"'
-            elif [[ "$ENVIRONMENT" == "prestaging"* ]]; then
-              curl --location --request PUT '${{ env.PRESTAGING_ADDON_URL }}/api/v1/plugins' \
-              --header 'Authorization: Bearer ${{ secrets.PRESTAGING_V1_TOKEN }}' \
-              --form "sourceCode=@\"$archival\""  \
-              --form 'buildTool="MAVEN"' \
-              --form 'isDefault="true"'
-            elif [[ "$ENVIRONMENT" == "devtesting"* ]]; then
-              curl --location --request PUT '${{ env.DEVTESTING_ADDON_URL }}/api/v1/plugins' \
-              --header 'Authorization: Bearer ${{ secrets.DEVTESTING_V1_TOKEN }}' \
-              --form "sourceCode=@\"$archival\""  \
-              --form 'buildTool="MAVEN"' \
-              --form 'isDefault="true"'
-            elif [[ "$ENVIRONMENT" == "blackpearl"* ]]; then
-              curl --location --request PUT '${{ env.BLACKPEARL_ADDON_URL }}/api/v1/plugins' \
+            cd $version_dir
+            echo "Updating the $dir addon in stacks"
+            curl --location --request PUT '${{ env.BLACKPEARL_ADDON_URL }}/api/v1/plugins' \
               --header 'Authorization: Bearer ${{ secrets.BLACKPEARL_V1_TOKEN }}' \
               --form "sourceCode=@\"$archival\""  \
               --form 'buildTool="MAVEN"' \
               --form 'isDefault="true"'
-            elif [[ "$ENVIRONMENT" == "vikings"* ]]; then
-              curl --location --request PUT '${{ env.VIKING_ADDON_URL }}/api/v1/plugins' \
+            curl --location --request PUT '${{ env.VIKING_ADDON_URL }}/api/v1/plugins' \
               --header 'Authorization: Bearer ${{ secrets.VIKING_V1_TOKEN }}' \
               --form "sourceCode=@\"$archival\""  \
               --form 'buildTool="MAVEN"' \
               --form 'isDefault="true"'
-            elif [[ "$ENVIRONMENT" == "demons"* ]]; then
-              curl --location --request PUT '${{ env.DEMONS_ADDON_URL }}/api/v1/plugins' \
+            curl --location --request PUT '${{ env.DEMONS_ADDON_URL }}/api/v1/plugins' \
               --header 'Authorization: Bearer ${{ secrets.DEMONS_V1_TOKEN }}' \
               --form "sourceCode=@\"$archival\""  \
               --form 'buildTool="MAVEN"' \
               --form 'isDefault="true"'
-            elif [[ "$ENVIRONMENT" == "development"* ]]; then
-              curl --location --request PUT '${{ env.DEVELOPMENT_ADDON_URL }}/api/v1/plugins' \
+            curl --location --request PUT '${{ env.DEVELOPMENT_ADDON_URL }}/api/v1/plugins' \
               --header 'Authorization: Bearer ${{ secrets.DEVELOPMENT_V1_TOKEN }}' \
               --form "sourceCode=@\"$archival\""  \
               --form 'buildTool="MAVEN"' \
               --form 'isDefault="true"'
-            fi
+            curl --location --request PUT '${{ env.DEVTESTING_ADDON_URL }}/api/v1/plugins' \
+              --header 'Authorization: Bearer ${{ secrets.DEVTESTING_V1_TOKEN }}' \
+              --form "sourceCode=@\"$archival\""  \
+              --form 'buildTool="MAVEN"' \
+              --form 'isDefault="true"'
+#            curl --location --request PUT '${{ env.PRESTAGING_ADDON_URL }}/api/v1/plugins' \
+#              --header 'Authorization: Bearer ${{ secrets.PRESTAGING_V1_TOKEN }}' \
+#              --form "sourceCode=@\"$archival\""  \
+#              --form 'buildTool="MAVEN"' \
+#              --form 'isDefault="true"'
+#            curl --location --request PUT '${{ env.STAGING_ADDON_URL }}/api/v1/plugins' \
+#              --header 'Authorization: Bearer ${{ secrets.STAGING_V1_TOKEN }}' \
+#              --form "sourceCode=@\"$archival\""  \
+#              --form 'buildTool="MAVEN"' \
+#              --form 'isDefault="true"'
+#            curl --location --request PUT '${{ env.PROD_ADDON_URL }}/api/v1/plugins' \
+#              --header 'Authorization: Bearer ${{ secrets.PROD_V1_TOKEN }}' \
+#              --form "sourceCode=@\"$archival\""  \
+#              --form 'buildTool="MAVEN"' \
+#              --form 'isDefault="true"'
           done
           
-          
+      
+
+
+
