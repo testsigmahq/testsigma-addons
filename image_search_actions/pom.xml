@@ -5,7 +5,7 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.testsigma.addons</groupId>
-    <artifactId>imageservice</artifactId>
+    <artifactId>image_search_actions</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
@@ -64,7 +64,7 @@
 
     </dependencies>
     <build>
-        <finalName>imageservice</finalName>
+        <finalName>image_search_actions</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
