@@ -139,6 +139,9 @@ jobs:
                 --form 'buildTool="MAVEN"' \
                 --form 'isDefault="true"'
               fi
+              cd ../../../
+              pwd
+              ls
             fi
           done
           
