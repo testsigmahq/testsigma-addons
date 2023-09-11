@@ -60,7 +60,7 @@ public class FindAllBrokenLinksInPage extends WebAction {
                 validatedLinks.add(url);
                 System.out.println(url);
 
-                if (!href.startsWith(url1)) {
+                if (!url.startsWith(url1)) {
                     skippedURLs.add(url);
                     System.out.println("URL belongs to another domain, skipping it.");
                     continue;
