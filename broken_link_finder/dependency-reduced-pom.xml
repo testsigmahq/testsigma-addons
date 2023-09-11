@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.testsigma.addons</groupId>
   <artifactId>broken_link_finder</artifactId>
-  <version>1.0.1</version>
+  <version>1.0.2</version>
   <build>
     <finalName>broken_link_finder</finalName>
     <plugins>
