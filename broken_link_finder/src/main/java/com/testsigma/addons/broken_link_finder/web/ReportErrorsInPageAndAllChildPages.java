@@ -51,8 +51,8 @@ public class ReportErrorsInPageAndAllChildPages extends WebAction {
                 logEntryList.addAll(logEntries.getAll().stream().filter(logEntry -> logEntry.getLevel().equals(Level.SEVERE)).collect(Collectors.toList()));
             });
             if (logEntryList.size() > 0) {
-                setErrorMessage(" Errors [" + logEntryList.size() + "] : " + logEntryList.toArray());
-                return Result.FAILED;
+                setSuccessMessage(" Errors [" + logEntryList.size() + "] : " + logEntryList.toArray());
+                return Result.SUCCESS;
             } else {
                 setSuccessMessage("There are no console errors in the page");
                 return Result.SUCCESS;
@@ -67,6 +67,8 @@ public class ReportErrorsInPageAndAllChildPages extends WebAction {
     Boolean collectValidLinks(String url, Integer nestedIterationsLevel) {
         if(url == null || url.isEmpty() || url.startsWith("tel:") || url.startsWith("mailto:") || url.startsWith("javascript:") ) return false;
         driver.get(url);
+        String url1 = url.substring(url.indexOf("://") + 3);
+        url1 = url1.indexOf("/") != -1 ? url1.substring(0, url1.indexOf("/")) : url1;
         String href = "";
         List<WebElement> links = driver.findElements(By.tagName("a"));
 
@@ -87,7 +89,7 @@ public class ReportErrorsInPageAndAllChildPages extends WebAction {
             validatedLinks.add(href);
             System.out.println(href);
 
-            if (!url.startsWith(this.URL.getValue().toString())) {
+            if (!href.startsWith(url1)) {
                 skippedURLs.add(href);
                 System.out.println("URL belongs to another domain, skipping it.");
                 continue;

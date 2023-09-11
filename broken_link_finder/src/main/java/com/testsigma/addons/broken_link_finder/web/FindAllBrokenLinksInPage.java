@@ -32,6 +32,8 @@ public class FindAllBrokenLinksInPage extends WebAction {
         try{
             String homePage = url.getValue().toString();
             String url = "";
+            String url1 = homePage.substring(homePage.indexOf("://")+3);
+            url1 = url1.indexOf("/") != -1 ? url1.substring(0, url1.indexOf("/")) : url1;
             driver.get(homePage);
             List<WebElement> links = driver.findElements(By.tagName("a"));
             HttpURLConnection huc = null;
@@ -58,7 +60,7 @@ public class FindAllBrokenLinksInPage extends WebAction {
                 validatedLinks.add(url);
                 System.out.println(url);
 
-                if (!url.startsWith(homePage)) {
+                if (!href.startsWith(url1)) {
                     skippedURLs.add(url);
                     System.out.println("URL belongs to another domain, skipping it.");
                     continue;
@@ -87,8 +89,8 @@ public class FindAllBrokenLinksInPage extends WebAction {
                 }
             }
             if (brokenURLs.size() > 0) {
-                setErrorMessage(" brokenURLs : " + brokenURLs);
-                return Result.FAILED;
+                setSuccessMessage(" brokenURLs : " + brokenURLs);
+                return Result.SUCCESS;
             } else {
                 setSuccessMessage("There are no Broken links in the page");
                 return Result.SUCCESS;

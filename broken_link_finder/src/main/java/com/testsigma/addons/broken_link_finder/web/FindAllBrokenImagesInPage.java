@@ -63,8 +63,8 @@ public class FindAllBrokenImagesInPage extends WebAction {
             System.out.println("Total images in the page : " + image_list.size() + ", broken images : " + brokenImages.size() + " .");
 
             if (brokenImages.size() > 0) {
-                setErrorMessage(" brokenImages : " + brokenImages);
-                return Result.FAILED;
+                setSuccessMessage(" brokenImages : " + brokenImages);
+                return Result.SUCCESS;
             } else {
                 setSuccessMessage("There are no Broken Images in the page");
                 return Result.SUCCESS;

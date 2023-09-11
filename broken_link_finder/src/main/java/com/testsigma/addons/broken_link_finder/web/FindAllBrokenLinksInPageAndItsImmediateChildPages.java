@@ -54,6 +54,9 @@ public class FindAllBrokenLinksInPageAndItsImmediateChildPages extends WebAction
 
     void collectBrokenUrls(String URL) {
         driver.get(URL);
+
+        String url = URL.substring(URL.indexOf("://")+3);
+        url = url.indexOf("/") != -1 ? url.substring(0, url.indexOf("/")) : url;
         String href = "";
         List<WebElement> links = driver.findElements(By.tagName("a"));
 
@@ -74,7 +77,7 @@ public class FindAllBrokenLinksInPageAndItsImmediateChildPages extends WebAction
             validatedLinks.add(href);
             System.out.println(href);
 
-            if (!URL.startsWith(this.URL.getValue().toString())) {
+            if (!href.startsWith(url)) {
                 skippedURLs.add(href);
                 System.out.println("URL belongs to another domain, skipping it.");
                 continue;

@@ -47,6 +47,7 @@ public class FindAllBrokenLinksInPageAndAllChildPages extends WebAction {
                 return Result.SUCCESS;
             }
         }catch (Exception exception){
+            System.out.println("Exception while finding broken links in child page " + exception);
             setErrorMessage("error while finding Broken Images ");
             return Result.FAILED;
         }
@@ -56,6 +57,9 @@ public class FindAllBrokenLinksInPageAndAllChildPages extends WebAction {
     void collectBrokenUrls(String URL, Integer nestedIterationsLevel) {
         driver.get(URL);
         String href = "";
+        String url = URL.substring(URL.indexOf("://") + 3);
+        url = url.indexOf("/") != -1 ? url.substring(0, url.indexOf("/")) : url;
+
         List<WebElement> links = driver.findElements(By.tagName("a"));
 
         Iterator<WebElement> it = links.iterator();
@@ -75,7 +79,7 @@ public class FindAllBrokenLinksInPageAndAllChildPages extends WebAction {
             validatedLinks.add(href);
             System.out.println(href);
 
-            if (!URL.startsWith(this.URL.getValue().toString())) {
+            if (!href.startsWith(url)) {
                 skippedURLs.add(href);
                 System.out.println("URL belongs to another domain, skipping it.");
                 continue;
