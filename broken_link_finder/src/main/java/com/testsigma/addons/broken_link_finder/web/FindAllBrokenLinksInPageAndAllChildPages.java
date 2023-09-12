@@ -38,16 +38,16 @@ public class FindAllBrokenLinksInPageAndAllChildPages extends WebAction {
         try{
             collectBrokenUrls(URL.getValue().toString(), 0);
             validatedLinks.forEach(link -> collectBrokenUrls(link, 4));
-            System.out.println(validatedLinks);
+            log(validatedLinks.toString());
             if (brokenURLs.size() > 0) {
-                setErrorMessage(" brokenURLs : " + brokenURLs);
-                return Result.FAILED;
+                setSuccessMessage("Broken URLs : " + brokenURLs);
+                return Result.SUCCESS;
             } else {
                 setSuccessMessage("There are no Broken links in the page");
                 return Result.SUCCESS;
             }
         }catch (Exception exception){
-            System.out.println("Exception while finding broken links in child page " + exception);
+            log("Exception while finding broken links in child page " + exception);
             setErrorMessage("error while finding Broken Images ");
             return Result.FAILED;
         }
@@ -59,58 +59,63 @@ public class FindAllBrokenLinksInPageAndAllChildPages extends WebAction {
         String href = "";
         String url = URL.substring(URL.indexOf("://") + 3);
         url = url.indexOf("/") != -1 ? url.substring(0, url.indexOf("/")) : url;
+        try {
+            List<WebElement> links = driver.findElements(By.tagName("a"));
 
-        List<WebElement> links = driver.findElements(By.tagName("a"));
+            Iterator<WebElement> it = links.iterator();
 
-        Iterator<WebElement> it = links.iterator();
+            while (it.hasNext()) {
+                href = it.next().getAttribute("href");
 
-        while (it.hasNext()) {
-            href = it.next().getAttribute("href");
-
-            if (href == null || href.isEmpty() || href.startsWith("tel:") || href.startsWith("mailto:") || href.startsWith("javascript:") ) {
-                anchorTagsWithEmptyURLs++;
-                System.out.println("URL is either not configured for anchor tag or it is empty");
-                continue;
-            }
-
-            if (validatedLinks.contains(href)) {
-                continue;
-            }
-            validatedLinks.add(href);
-            System.out.println(href);
-
-            if (!href.startsWith(url)) {
-                skippedURLs.add(href);
-                System.out.println("URL belongs to another domain, skipping it.");
-                continue;
-            }
-
-            try {
-                huc = (HttpURLConnection) (new URL(href).openConnection());
-
-                huc.setRequestMethod("HEAD");
-
-                huc.connect();
-
-                respCode = huc.getResponseCode();
-
-                if (respCode >= 400) {
-                    brokenURLs.add(href);
-                    System.out.println(href + " is a broken link");
-                } else {
-                    System.out.println(href + " is a valid link");
+                if (href == null || href.isEmpty() || href.startsWith("tel:") || href.startsWith("mailto:") || href.startsWith("javascript:")) {
+                    anchorTagsWithEmptyURLs++;
+                    log("URL is either not configured for anchor tag or it is empty");
+                    continue;
                 }
 
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
+                if (validatedLinks.contains(href)) {
+                    continue;
+                }
+                if (nestedIterationsLevel == 0) {
+                    validatedLinks.add(href);
+                }
+
+                if (!href.contains(url)) {
+                    skippedURLs.add(href);
+                    log("URL belongs to another domain, skipping it.");
+                    continue;
+                }
+
+                try {
+                    huc = (HttpURLConnection) (new URL(href).openConnection());
+
+                    huc.setRequestMethod("HEAD");
+
+                    huc.connect();
+
+                    respCode = huc.getResponseCode();
+
+                    if (respCode >= 400) {
+                        brokenURLs.add(href);
+                        log(href + " is a broken link");
+                    } else {
+                        log(href + " is a valid link");
+                    }
+
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
-        }
-        if (nestedIterationsLevel > 0) {
-            nestedIterationsLevel--;
-            Integer nextNestedIterationsLevel = nestedIterationsLevel;
-            links.forEach(link -> collectBrokenUrls(link.getAttribute("href"), nextNestedIterationsLevel));
+            /*if (nestedIterationsLevel > 0) {
+                nestedIterationsLevel--;
+                Integer nextNestedIterationsLevel = nestedIterationsLevel;
+                links.forEach(link -> collectBrokenUrls(link.getAttribute("href"), nextNestedIterationsLevel));
+            }*/
+        } catch(Exception e){
+            e.printStackTrace();
+            return;
         }
     }
 }
