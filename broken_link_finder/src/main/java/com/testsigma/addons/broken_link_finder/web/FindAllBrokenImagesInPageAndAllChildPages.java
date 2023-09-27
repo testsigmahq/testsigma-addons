@@ -47,14 +47,14 @@ public class FindAllBrokenImagesInPageAndAllChildPages extends WebAction {
             collectBrokenImages(URL.getValue().toString());
             validLinks.forEach(link -> collectBrokenImages(link));
             if (brokenImages.size() > 0) {
-                setSuccessMessage(" Broken Images [" + brokenImages.size() + "] : " + brokenImages.toArray());
+                setSuccessMessage("Broken Images [" + brokenImages.size() + "] : " + brokenImages);
                 return Result.SUCCESS;
             } else {
                 setSuccessMessage("There are no Broken Images in the page");
                 return Result.SUCCESS;
             }
         } catch (Exception exception) {
-            logger.info("Exception while finding broken images "+ exception);
+            log("Exception while finding broken images "+ exception);
             setErrorMessage("error while finding Broken Images ");
             return Result.FAILED;
         }
@@ -69,18 +69,19 @@ public class FindAllBrokenImagesInPageAndAllChildPages extends WebAction {
             for (WebElement img : image_list) {
                 if (img != null) {
                     String src = img.getAttribute("src");
-                    validatedImages.add(src);
                     if (validatedImages.contains(src)) {
                         if (brokenImages.contains(src)) {
-                            System.out.println(img.getAttribute("outerHTML") + " has broken image.");
+                            log(img.getAttribute("outerHTML") + " has broken image.");
                         }
                     } else {
                         HttpClient client = HttpClientBuilder.create().build();
                         HttpGet request = new HttpGet(src);
                         HttpResponse response = client.execute(request);
                         if (response.getStatusLine().getStatusCode() != 200) {
-                            System.out.println(img.getAttribute("outerHTML") + " has broken image.");
+                            log(img.getAttribute("outerHTML") + " has broken image.");
                             brokenImages.add(src);
+                        } else{
+                            validatedImages.add(src);
                         }
                     }
                 }
@@ -91,14 +92,13 @@ public class FindAllBrokenImagesInPageAndAllChildPages extends WebAction {
         }
     }
 
-Boolean collectValidLinks(String URL, Integer nestedIterationsLevel) {
+    Boolean collectValidLinks(String URL, Integer nestedIterationsLevel) {
         if(URL==null) return false;
         driver.get(URL);
         String href = "";
         String url = URL.substring(URL.indexOf("://")+3);
         url = url.indexOf("/") != -1 ? url.substring(0, url.indexOf("/")) : url;
         List<WebElement> links = driver.findElements(By.tagName("a"));
-
         Iterator<WebElement> it = links.iterator();
 
 
@@ -107,7 +107,7 @@ Boolean collectValidLinks(String URL, Integer nestedIterationsLevel) {
 
             if (href == null || href.isEmpty() || href.startsWith("tel:")) {
                 anchorTagsWithEmptyURLs++;
-                System.out.println("URL is either not configured for anchor tag or it is empty");
+                log("URL is either not configured for anchor tag or it is empty");
                 continue;
             }
 
@@ -115,11 +115,9 @@ Boolean collectValidLinks(String URL, Integer nestedIterationsLevel) {
                 continue;
             }
             validatedLinks.add(href);
-            System.out.println(href);
-
-            if (!href.startsWith(url)) {
+            if (!href.contains(url)) {
                 skippedURLs.add(href);
-                System.out.println("URL belongs to another domain, skipping it.");
+                log("URL belongs to another domain, skipping it.");
                 continue;
             }
 
@@ -134,12 +132,12 @@ Boolean collectValidLinks(String URL, Integer nestedIterationsLevel) {
 
                 if (respCode >= 400) {
                     brokenURLs.add(href);
-                    System.out.println(href + " is a broken link");
+                    log(href + " is a broken link");
                 } else {
                     if (!href.equals(this.URL.getValue().toString())) {
                         validLinks.add(href);
                     }
-                    System.out.println(href + " is a valid link");
+                    log(href + " is a valid link");
                 }
 
             } catch (MalformedURLException e) {
@@ -153,11 +151,11 @@ Boolean collectValidLinks(String URL, Integer nestedIterationsLevel) {
             nestedIterationsLevel--;
             Integer nextNestedIterationsLevel = nestedIterationsLevel;
             for(int i= 0; i< links.size();i++){
-              Boolean collected = collectValidLinks(links.get(i).getAttribute("href"), nextNestedIterationsLevel);
-              if(collected ==  false){
-                  logger.info("Skipping Element as its URL is Null, Element - " + links.get(i));
-              }
-              return collected;
+                Boolean collected = collectValidLinks(links.get(i).getAttribute("href"), nextNestedIterationsLevel);
+                if(collected ==  false){
+                    log("Skipping Element as its URL is Null, Element - " + links.get(i));
+                }
+                return collected;
             }
         }
         return true;
