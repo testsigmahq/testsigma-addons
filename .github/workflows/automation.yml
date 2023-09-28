@@ -63,7 +63,7 @@ jobs:
             fi
           done
           echo "::set-output name=directories::${root_dirs[@]}"
-          
+
       - name: Build and commit changes
         run: |
           echo "Changed directories: ${{ steps.changes.outputs.directories }}"
