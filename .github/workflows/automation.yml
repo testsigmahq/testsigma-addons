@@ -63,13 +63,10 @@ jobs:
             fi
           done
           echo "::set-output name=directories::${root_dirs[@]}"
-
-      - name: Display changed directories
-        run: |
-          echo "Changed directories: ${{ steps.changes.outputs.directories }}"
-
+          
       - name: Build and commit changes
         run: |
+          echo "Changed directories: ${{ steps.changes.outputs.directories }}"
           for dir in ${{ steps.changes.outputs.directories }}; do
             echo "Setting Variables $dir"
             cd $dir
