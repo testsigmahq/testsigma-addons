@@ -39,7 +39,7 @@ public class StringCompare extends WebAction {
     	else {
         	result = com.testsigma.sdk.Result.FAILED;
         	logger.debug("donne");
-        	setErrorMessage("Operation failed strings doesnot match");
+        	setErrorMessage("Operation failed strings does not match");
         	
     	}
     	
