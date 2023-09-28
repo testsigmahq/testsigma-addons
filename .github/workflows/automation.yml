@@ -2,7 +2,8 @@ name : Build Addon - Automation
 
 on:
   pull_request:
-    types: [ closed ]
+    types: [closed]
+
 jobs:
   build:
     if: github.event.pull_request.merged == true
@@ -25,8 +26,8 @@ jobs:
           echo "PROD_ADDON_URL=https://kibbutz.testsigma.com" >> $GITHUB_ENV
           echo "GIT_BRANCH=dev" >> $GITHUB_ENV
 
-      - name : SSH repo access
-        uses:  webfactory/ssh-agent@v0.5.4
+      - name: SSH repo access
+        uses: webfactory/ssh-agent@v0.5.4
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY}}
 
@@ -74,8 +75,9 @@ jobs:
             echo "Setting Variables $dir"
             cd $dir
             version=$(xmlstarlet sel -t -v "/*[local-name()='project']/*[local-name()='version']" -n pom.xml)
+            artifactId=$(xmlstarlet sel -t -v "/*[local-name()='project']/*[local-name()='artifactId']" -n pom.xml)
             version_dir=build/$version
-            archival="$dir"_source.zip
+            archival="$artifactId"_source.zip
             echo "Building $dir With latest version : $version"
             mvn clean install
             echo "Archiving the build files to $archival"
@@ -84,9 +86,9 @@ jobs:
             sudo mkdir -p $version_dir
             echo "Copy build files to the location : $version_dir "
             sudo mv $archival $version_dir/
-            sudo cp target/$dir.jar target/original-$dir.jar $version_dir/
+            sudo cp target/$artifactId.jar target/original-$artifactId.jar $version_dir/
+            echo "Committing the file changes"
             ls $version_dir
-            echo "Committing the changes"
             echo "Github Actor : ${{ github.actor }}"
             git config --global user.email "${{ github.actor }}@users.noreply.github.com"
             git config --global user.name "${{ github.actor }}"
@@ -138,8 +140,3 @@ jobs:
 #              --form 'buildTool="MAVEN"' \
 #              --form 'isDefault="true"'
           done
-          
-      
-
-
-

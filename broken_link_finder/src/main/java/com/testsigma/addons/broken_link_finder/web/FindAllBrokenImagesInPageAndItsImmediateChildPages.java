@@ -43,24 +43,24 @@ public class FindAllBrokenImagesInPageAndItsImmediateChildPages extends WebActio
 
     @Override
     public com.testsigma.sdk.Result execute() throws NoSuchElementException {
-       try{
-           collectValidLinks(URL.getValue().toString());
-           collectBrokenImages(URL.getValue().toString());
-           System.out.println(validLinks.size());
-           validLinks.forEach(link -> {
-               collectBrokenImages(link);
-           });
-           if (brokenImages.size() > 0) {
-               setErrorMessage(" Broken Images [" + brokenImages.size() + "] : " + brokenImages.toArray());
-               return Result.FAILED;
-           } else {
-               setSuccessMessage("There are no Broken Images in the page");
-               return Result.SUCCESS;
-           }
-       }catch (Exception exception){
-           setErrorMessage("error while finding Broken Images ");
-           return Result.FAILED;
-       }
+        try{
+            collectValidLinks(URL.getValue().toString());
+            collectBrokenImages(URL.getValue().toString());
+
+            validLinks.forEach(link -> {
+                collectBrokenImages(link);
+            });
+            if (brokenImages.size() > 0) {
+                setSuccessMessage(" Broken Images [" + brokenImages.size() + "] : " + brokenImages);
+                return Result.SUCCESS;
+            } else {
+                setSuccessMessage("There are no Broken Images in the page");
+                return Result.SUCCESS;
+            }
+        }catch (Exception exception){
+            setErrorMessage("error while finding Broken Images ");
+            return Result.FAILED;
+        }
     }
 
     void collectBrokenImages(String URL) {
@@ -72,18 +72,20 @@ public class FindAllBrokenImagesInPageAndItsImmediateChildPages extends WebActio
                 if (img != null) {
                     String src = img.getAttribute("src");
                     if(src != null) {
-                        validatedImages.add(src);
+
                         if (validatedImages.contains(src)) {
                             if (brokenImages.contains(src)) {
-                                System.out.println(img.getAttribute("outerHTML") + " has broken image.");
+                                log(img.getAttribute("outerHTML") + " has broken image.");
                             }
                         } else {
                             HttpClient client = HttpClientBuilder.create().build();
                             HttpGet request = new HttpGet(src);
                             HttpResponse response = client.execute(request);
                             if (response.getStatusLine().getStatusCode() != 200) {
-                                System.out.println(img.getAttribute("outerHTML") + " has broken image.");
+                                log(img.getAttribute("outerHTML") + " has broken image.");
                                 brokenImages.add(src);
+                            } else{
+                                validatedImages.add(src);
                             }
                         }
                     }
@@ -98,9 +100,11 @@ public class FindAllBrokenImagesInPageAndItsImmediateChildPages extends WebActio
     Boolean collectValidLinks(String url) {
         if(url==null || url.isEmpty()) return false;
         driver.get(url);
+
+        String url1 = url.substring(url.indexOf("://")+3);
+        url1 = url1.indexOf("/") != -1 ? url1.substring(0, url1.indexOf("/")) : url1;
         String href = "";
         List<WebElement> links = driver.findElements(By.tagName("a"));
-        System.out.println(links.size());
         Iterator<WebElement> it = links.iterator();
 
         while (it.hasNext()) {
@@ -108,7 +112,7 @@ public class FindAllBrokenImagesInPageAndItsImmediateChildPages extends WebActio
 
             if (href == null || href.isEmpty() || href.startsWith("tel:") || href.startsWith("mailto:") || href.startsWith("javascript:") ){
                 anchorTagsWithEmptyURLs++;
-                System.out.println("URL is either not configured for anchor tag or it is empty");
+                log("URL is either not configured for anchor tag or it is empty");
                 continue;
             }
 
@@ -117,9 +121,9 @@ public class FindAllBrokenImagesInPageAndItsImmediateChildPages extends WebActio
             }
             validatedLinks.add(href);
 
-            if (!href.startsWith(this.URL.getValue().toString())) {
+            if (!href.contains(url1)) {
                 skippedURLs.add(href);
-                System.out.println("URL belongs to another domain, skipping it.");
+                log("URL belongs to another domain, skipping it.");
                 continue;
             }
 
@@ -134,12 +138,12 @@ public class FindAllBrokenImagesInPageAndItsImmediateChildPages extends WebActio
 
                 if (respCode >= 400) {
                     brokenURLs.add(href);
-                    System.out.println(href + " is a broken link");
+                    log(href + " is a broken link");
                 } else {
                     if (!href.equals(this.URL.getValue().toString())) {
                         validLinks.add(href);
                     }
-                    System.out.println(href + " is a valid link");
+                    log(href + " is a valid link");
                 }
 
             } catch (MalformedURLException e) {

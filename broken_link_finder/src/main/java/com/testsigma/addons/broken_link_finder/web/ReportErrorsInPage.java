@@ -30,8 +30,8 @@ public class ReportErrorsInPage extends WebAction {
             LogEntries logEntries = driver.manage().logs().get("browser");
             List<LogEntry> logEntryList = logEntries.getAll().stream().filter(logEntry -> logEntry.getLevel().equals(Level.SEVERE)).collect(Collectors.toList());
             if (logEntryList.size() > 0) {
-                setErrorMessage(" Errors [" + logEntryList.size() + "] : " + logEntryList.toArray());
-                return Result.FAILED;
+                setSuccessMessage(" Errors [" + logEntryList.size() + "] : " + logEntryList.toArray());
+                return Result.SUCCESS;
             } else {
                 setSuccessMessage("There are no console errors in the page");
                 return Result.SUCCESS;

@@ -44,7 +44,7 @@ public class FindAllBrokenImagesInPage extends WebAction {
                                 HttpGet request = new HttpGet(src);
                                 HttpResponse response = client.execute(request);
                                 if (response.getStatusLine().getStatusCode() != 200) {
-                                    System.out.println(img.getAttribute("outerHTML") + " has broken image.");
+                                    logger.info(img.getAttribute("outerHTML") + " has broken image.");
                                     brokenImages.add(img.getAttribute("src"));
                                 }
                             }
@@ -60,11 +60,10 @@ public class FindAllBrokenImagesInPage extends WebAction {
             }
 
             log("Total images in the page : " + image_list.size() + ", broken images : " + brokenImages.size() + " .");
-            System.out.println("Total images in the page : " + image_list.size() + ", broken images : " + brokenImages.size() + " .");
 
             if (brokenImages.size() > 0) {
-                setErrorMessage(" brokenImages : " + brokenImages);
-                return Result.FAILED;
+                setSuccessMessage("Broken Images [" + brokenImages.size() + "] : " + brokenImages);
+                return Result.SUCCESS;
             } else {
                 setSuccessMessage("There are no Broken Images in the page");
                 return Result.SUCCESS;
