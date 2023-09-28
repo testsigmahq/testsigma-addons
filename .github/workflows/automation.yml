@@ -25,7 +25,7 @@ jobs:
           echo "PROD_ADDON_URL=https://kibbutz.testsigma.com" >> $GITHUB_ENV
           echo "GIT_BRANCH=dev" >> $GITHUB_ENV
 
-      - name : SSH repo access
+      - name: SSH repo access
         uses:  webfactory/ssh-agent@v0.5.4
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY}}
