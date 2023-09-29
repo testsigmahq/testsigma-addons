@@ -91,31 +91,7 @@ jobs:
               cd $version_dir
               ENVIRONMENT=${{ github.event.inputs.Environment }}
               echo "Updating the $dir addon in stack $ENVIRONMENT"
-              if [[ "$ENVIRONMENT" == "production"* ]]; then
-                curl --location --request PUT '${{ env.PROD_ADDON_URL }}/api/v1/plugins' \
-                --header 'Authorization: Bearer ${{ secrets.PROD_V1_TOKEN }}' \
-                --form "sourceCode=@\"$archival\""  \
-                --form 'buildTool="MAVEN"' \
-                --form 'isDefault="true"'
-              elif [[ "$ENVIRONMENT" == "staging"* ]]; then
-                curl --location --request PUT '${{ env.STAGING_ADDON_URL }}/api/v1/plugins' \
-                --header 'Authorization: Bearer ${{ secrets.STAGING_V1_TOKEN }}' \
-                --form "sourceCode=@\"$archival\""  \
-                --form 'buildTool="MAVEN"' \
-                --form 'isDefault="true"'
-              elif [[ "$ENVIRONMENT" == "prestaging"* ]]; then
-                curl --location --request PUT '${{ env.PRESTAGING_ADDON_URL }}/api/v1/plugins' \
-                --header 'Authorization: Bearer ${{ secrets.PRESTAGING_V1_TOKEN }}' \
-                --form "sourceCode=@\"$archival\""  \
-                --form 'buildTool="MAVEN"' \
-                --form 'isDefault="true"'
-              elif [[ "$ENVIRONMENT" == "devtesting"* ]]; then
-                curl --location --request PUT '${{ env.DEVTESTING_ADDON_URL }}/api/v1/plugins' \
-                --header 'Authorization: Bearer ${{ secrets.DEVTESTING_V1_TOKEN }}' \
-                --form "sourceCode=@\"$archival\""  \
-                --form 'buildTool="MAVEN"' \
-                --form 'isDefault="true"'
-              elif [[ "$ENVIRONMENT" == "blackpearl"* ]]; then
+              if [[ "$ENVIRONMENT" == "blackpearl"* ]]; then
                 curl --location --request PUT '${{ env.BLACKPEARL_ADDON_URL }}/api/v1/plugins' \
                 --header 'Authorization: Bearer ${{ secrets.BLACKPEARL_V1_TOKEN }}' \
                 --form "sourceCode=@\"$archival\""  \
@@ -133,12 +109,36 @@ jobs:
                 --form "sourceCode=@\"$archival\""  \
                 --form 'buildTool="MAVEN"' \
                 --form 'isDefault="true"'
-              elif [[ "$ENVIRONMENT" == "development"* ]]; then
-                curl --location --request PUT '${{ env.DEVELOPMENT_ADDON_URL }}/api/v1/plugins' \
-                --header 'Authorization: Bearer ${{ secrets.DEVELOPMENT_V1_TOKEN }}' \
+              elif [[ "$ENVIRONMENT" == "devtesting"* ]]; then
+                curl --location --request PUT '${{ env.DEVTESTING_ADDON_URL }}/api/v1/plugins' \
+                --header 'Authorization: Bearer ${{ secrets.DEVTESTING_V1_TOKEN }}' \
                 --form "sourceCode=@\"$archival\""  \
                 --form 'buildTool="MAVEN"' \
                 --form 'isDefault="true"'
+              elif [[ "$ENVIRONMENT" == "prestaging"* ]]; then
+                curl --location --request PUT '${{ env.PRESTAGING_ADDON_URL }}/api/v1/plugins' \
+                --header 'Authorization: Bearer ${{ secrets.PRESTAGING_V1_TOKEN }}' \
+                --form "sourceCode=@\"$archival\""  \
+                --form 'buildTool="MAVEN"' \
+                --form 'isDefault="true"'
+#              elif [[ "$ENVIRONMENT" == "development"* ]]; then
+#                curl --location --request PUT '${{ env.DEVELOPMENT_ADDON_URL }}/api/v1/plugins' \
+#                --header 'Authorization: Bearer ${{ secrets.DEVELOPMENT_V1_TOKEN }}' \
+#                --form "sourceCode=@\"$archival\""  \
+#                --form 'buildTool="MAVEN"' \
+#                --form 'isDefault="true"'
+#              elif [[ "$ENVIRONMENT" == "production"* ]]; then
+#                curl --location --request PUT '${{ env.PROD_ADDON_URL }}/api/v1/plugins' \
+#                --header 'Authorization: Bearer ${{ secrets.PROD_V1_TOKEN }}' \
+#                --form "sourceCode=@\"$archival\""  \
+#                --form 'buildTool="MAVEN"' \
+#                --form 'isDefault="true"'
+#              elif [[ "$ENVIRONMENT" == "staging"* ]]; then
+#                curl --location --request PUT '${{ env.STAGING_ADDON_URL }}/api/v1/plugins' \
+#                --header 'Authorization: Bearer ${{ secrets.STAGING_V1_TOKEN }}' \
+#                --form "sourceCode=@\"$archival\""  \
+#                --form 'buildTool="MAVEN"' \
+#                --form 'isDefault="true"'
               fi
               cd ../../../
             fi
