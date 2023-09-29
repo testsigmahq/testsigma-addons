@@ -124,19 +124,4 @@ jobs:
               --form "sourceCode=@\"$archival\""  \
               --form 'buildTool="MAVEN"' \
               --form 'isDefault="true"'
-#            curl --location --request PUT '${{ env.PRESTAGING_ADDON_URL }}/api/v1/plugins' \
-#              --header 'Authorization: Bearer ${{ secrets.PRESTAGING_V1_TOKEN }}' \
-#              --form "sourceCode=@\"$archival\""  \
-#              --form 'buildTool="MAVEN"' \
-#              --form 'isDefault="true"'
-#            curl --location --request PUT '${{ env.STAGING_ADDON_URL }}/api/v1/plugins' \
-#              --header 'Authorization: Bearer ${{ secrets.STAGING_V1_TOKEN }}' \
-#              --form "sourceCode=@\"$archival\""  \
-#              --form 'buildTool="MAVEN"' \
-#              --form 'isDefault="true"'
-#            curl --location --request PUT '${{ env.PROD_ADDON_URL }}/api/v1/plugins' \
-#              --header 'Authorization: Bearer ${{ secrets.PROD_V1_TOKEN }}' \
-#              --form "sourceCode=@\"$archival\""  \
-#              --form 'buildTool="MAVEN"' \
-#              --form 'isDefault="true"'
           done
