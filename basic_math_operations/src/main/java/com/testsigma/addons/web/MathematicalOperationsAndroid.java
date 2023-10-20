@@ -22,7 +22,7 @@ public class MathematicalOperationsAndroid extends MathematicalOperationsWeb {
     private com.testsigma.sdk.TestData operator;
     @TestData(reference = "testdata2")
     private com.testsigma.sdk.TestData testData2;
-    @TestData(reference = "runtimevariable")
+    @TestData(reference = "runtimevariable",isRuntimeVariable = true)
     private com.testsigma.sdk.TestData testData3;
     @TestData(reference = "number")
     private com.testsigma.sdk.TestData testData4;

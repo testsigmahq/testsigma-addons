@@ -21,7 +21,7 @@ import java.net.URL;
         applicationType = ApplicationType.WEB)
 public class ReadpdfContent extends WebAction {
 
-    @TestData(reference = "variable")
+    @TestData(reference = "variable",isRuntimeVariable = true)
     private com.testsigma.sdk.TestData testData;
 
     @RunTimeData

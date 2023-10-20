@@ -16,7 +16,7 @@ import org.openqa.selenium.NoSuchElementException;
 public class StoreTestDataParameterIntoRuntimeVariable extends com.testsigma.addons.string_utils.web.StoreTestDataParameterIntoRuntimeVariable {
     @TestData(reference = "test-data-1")
     private com.testsigma.sdk.TestData testData1;
-    @TestData(reference = "test-data-2")
+    @TestData(reference = "test-data-2",isRuntimeVariable = true)
     private com.testsigma.sdk.TestData testData2;
     @RunTimeData
     private com.testsigma.sdk.RunTimeData runTimeData;

@@ -24,7 +24,7 @@ public class StoreTotalNumberOfCellsOfTable extends WebAction {
     private static final String TABLE_ERROR_MESSAGE = "Expected Table Was Not Found";
     @Element(reference = "element")
     private com.testsigma.sdk.Element element;
-    @TestData(reference = "variable-name")
+    @TestData(reference = "variable-name",isRuntimeVariable = true)
     private com.testsigma.sdk.TestData variableName;
     @RunTimeData
     private com.testsigma.sdk.RunTimeData runTimeData;

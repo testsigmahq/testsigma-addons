@@ -31,7 +31,7 @@ public class NoofwordsAftertext extends WebAction {
     private com.testsigma.sdk.TestData testData1;
     @TestData(reference = "test_data")
     private com.testsigma.sdk.TestData testData2;
-    @TestData(reference = "Variable_Name")
+    @TestData(reference = "Variable_Name",isRuntimeVariable = true)
     private com.testsigma.sdk.TestData testData3;
     @RunTimeData
     private com.testsigma.sdk.RunTimeData runTimeData;

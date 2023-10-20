@@ -31,7 +31,7 @@ public class SplitStringAction extends WebAction {
     @TestData(reference = "position")
     private com.testsigma.sdk.TestData position;
 
-    @TestData(reference = "output-variable")
+    @TestData(reference = "output-variable",isRuntimeVariable = true)
     private com.testsigma.sdk.TestData extractedString;
 
     @com.testsigma.sdk.annotation.RunTimeData
