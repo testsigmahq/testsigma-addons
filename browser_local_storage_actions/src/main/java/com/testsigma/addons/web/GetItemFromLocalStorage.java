@@ -28,7 +28,7 @@ public class GetItemFromLocalStorage extends WebAction {
   @TestData(reference = "Key_Name")
   private com.testsigma.sdk.TestData keyNameTestData;
 
-  @TestData(reference = "Variable_Name")
+  @TestData(reference = "Variable_Name",isRuntimeVariable = true)
   private com.testsigma.sdk.TestData variableNameTestData;
 
   @RunTimeData

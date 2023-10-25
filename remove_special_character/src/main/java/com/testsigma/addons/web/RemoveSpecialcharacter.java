@@ -26,7 +26,7 @@ public class RemoveSpecialcharacter extends WebAction
     @TestData(reference = "testdata2")
     private com.testsigma.sdk.TestData testData2;
 
-    @TestData(reference = "Variable")
+    @TestData(reference = "Variable",isRuntimeVariable = true)
     private com.testsigma.sdk.TestData runtimeVar; 
 
     @RunTimeData

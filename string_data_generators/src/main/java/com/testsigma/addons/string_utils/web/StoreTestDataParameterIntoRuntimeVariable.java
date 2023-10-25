@@ -20,7 +20,7 @@ public class StoreTestDataParameterIntoRuntimeVariable extends WebAction {
     private static final String ERROR_MESSAGE = "Expected textarea Not Found";
     @TestData(reference = "test-data-1")
     private com.testsigma.sdk.TestData testData1;
-    @TestData(reference = "test-data-2")
+    @TestData(reference = "test-data-2",isRuntimeVariable = true)
     private com.testsigma.sdk.TestData testData2;
     @RunTimeData
     private com.testsigma.sdk.RunTimeData runTimeData;

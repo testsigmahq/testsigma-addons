@@ -20,9 +20,9 @@ public class SplitUsingSeparator extends IOSAction {
   @TestData(reference = "RUN_TIME_TESTDATA")
   private com.testsigma.sdk.TestData inputData;
 
-  @TestData(reference = "RUN_TIME_TESTDATA_VAR_NAME")
+  @TestData(reference = "RUN_TIME_TESTDATA_VAR_NAME",isRuntimeVariable = true)
   private com.testsigma.sdk.TestData runTimeVariableName;
-  @TestData(reference = "VARIABLE_NAME")
+  @TestData(reference = "VARIABLE_NAME",isRuntimeVariable = true)
   private com.testsigma.sdk.TestData currentIterationRuntimeVarName;
 
   @RunTimeData

@@ -17,12 +17,12 @@ public class SplitUsingSeparator extends WebAction {
   @TestData(reference = "SEPARATOR")
   private com.testsigma.sdk.TestData separator;
 
-  @TestData(reference = "RUN_TIME_TESTDATA")
+  @TestData(reference = "RUN_TIME_TESTDATA",)
   private com.testsigma.sdk.TestData inputData;
 
-  @TestData(reference = "RUN_TIME_TESTDATA_VAR_NAME")
+  @TestData(reference = "RUN_TIME_TESTDATA_VAR_NAME",isRuntimeVariable = true)
   private com.testsigma.sdk.TestData runTimeVariableName;
-  @TestData(reference = "VARIABLE_NAME")
+  @TestData(reference = "VARIABLE_NAME",isRuntimeVariable = true)
   private com.testsigma.sdk.TestData currentIterationRuntimeVarName;
 
   @RunTimeData
