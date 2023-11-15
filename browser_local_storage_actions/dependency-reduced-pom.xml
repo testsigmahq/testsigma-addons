@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.testsigma.addons</groupId>
   <artifactId>browser_local_storage_actions</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
   <build>
     <finalName>browser_local_storage_actions</finalName>
     <plugins>
