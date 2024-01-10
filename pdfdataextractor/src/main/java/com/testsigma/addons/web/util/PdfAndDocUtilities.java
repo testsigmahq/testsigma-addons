@@ -26,30 +26,36 @@ public class PdfAndDocUtilities {
     }
     public File copyFileFromDownloads(String fileFormat,String fileName) throws Exception{
         String currentWindowHandle = driver.getWindowHandle();
+        File downloadedFile = null;
+        try {
+            ((JavascriptExecutor) driver).executeScript("window.open()");
+            Set<String> allWindows = driver.getWindowHandles();
+            ArrayList<String> tabs = new ArrayList<>(allWindows);
+            driver.switchTo().window(tabs.get(tabs.size() - 1));
 
-        ((JavascriptExecutor) driver).executeScript("window.open()");
-        Set<String> allWindows = driver.getWindowHandles();
-        ArrayList<String> tabs = new ArrayList<>(allWindows);
-        driver.switchTo().window(tabs.get(tabs.size() - 1));
-
-        driver.navigate().to("chrome://downloads/");
-        WebDriverWait ww = new WebDriverWait(driver, Duration.ofSeconds(60));
-        ww.until(new ExpectedCondition<Boolean>() {
-            @Override
-            public Boolean apply(WebDriver driver) {
-                return isFileDownloaded();
+            driver.navigate().to("chrome://downloads/");
+            WebDriverWait ww = new WebDriverWait(driver, Duration.ofSeconds(60));
+            ww.until(new ExpectedCondition<Boolean>() {
+                @Override
+                public Boolean apply(WebDriver driver) {
+                    return isFileDownloaded();
+                }
+            });
+            String remoteFilePath = null;
+            if (fileName != null) {
+                remoteFilePath = getFilePathByFileNameInDownloads(fileName);
+            } else {
+                remoteFilePath = getDownloadedFileLocalPath();
             }
-        });
-        String remoteFilePath = null;
-        if(fileName != null){
-            remoteFilePath = getFilePathByFileNameInDownloads(fileName);
-        } else {
-            remoteFilePath = getDownloadedFileLocalPath();
+            logger.info("Downloaded file path=" + remoteFilePath);
+            downloadedFile = createLocalFileFromDownloadsCopy(remoteFilePath, fileFormat);
+            //switch to parent window tab
+            driver.switchTo().window(currentWindowHandle);
+        } catch (RuntimeException e){
+            throw new RuntimeException(e.getMessage());
+        } finally {
+            driver.switchTo().window(currentWindowHandle);
         }
-        logger.info("Downloaded file path="+remoteFilePath);
-        File downloadedFile = createLocalFileFromDownloadsCopy(remoteFilePath,fileFormat);
-        //switch to parent window tab
-        driver.switchTo().window(currentWindowHandle);
         return downloadedFile;
     }
     private boolean isFileDownloaded() {
