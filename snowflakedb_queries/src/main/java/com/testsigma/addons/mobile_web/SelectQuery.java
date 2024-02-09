@@ -14,7 +14,7 @@ import org.openqa.selenium.NoSuchElementException;
 
 @Data
 @Action(actionText = "SnowflakeDB: Execute Select Query query-value on the Connection DB_Connection_URL and store the result into a runtime variable variable-name",
-        description = "This action executes given create query against the connection provided and prints the response",
+        description = "This action executes given create query against the connection provided and stores the response in a runtime varibale",
         applicationType = ApplicationType.MOBILE_WEB)
 public class SelectQuery extends WebAction {
 
