@@ -13,12 +13,12 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.openqa.selenium.NoSuchElementException;
 
 @Data
-@Action(actionText = "SnowflakeDB: Execute Select Query query-value on the Connection db-connection-url and store the result into a runtime variable variable-name",
-        description = "This action executes given create query against the connection provided and stores the response in a runtime varibale",
+@Action(actionText = "SnowflakeDB: Execute Select Query query-string on the Connection db-connection-url and store the result into a runtime variable variable-name",
+        description = "This action executes given Select query against the connection provided and stores the response in a runtime variable",
         applicationType = ApplicationType.ANDROID)
 public class SelectQuery extends WebAction {
 
-    @TestData(reference = "query-value")
+    @TestData(reference = "query-string")
     private com.testsigma.sdk.TestData query;
     @TestData(reference = "db-connection-url")
     private com.testsigma.sdk.TestData dbConnectionUrl;

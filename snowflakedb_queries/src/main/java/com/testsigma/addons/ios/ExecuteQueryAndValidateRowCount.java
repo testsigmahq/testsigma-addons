@@ -14,12 +14,12 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 
 @Data
-@Action(actionText = "SnowflakeDB: Execute Query query-value on the Connection db-connection-url and verify affected rows count is row-count",
+@Action(actionText = "SnowflakeDB: Execute Query query-string on the Connection db-connection-url and verify affected rows count is row-count",
 		description = "This Action executes given SQL query and validates the affected rows.",
 		applicationType = ApplicationType.IOS)
 public class ExecuteQueryAndValidateRowCount extends WebAction {
 
-	@TestData(reference = "query-value")
+	@TestData(reference = "query-string")
 	private com.testsigma.sdk.TestData testData1;
 	@TestData(reference = "db-connection-url")
 	private com.testsigma.sdk.TestData databaseUrl;
