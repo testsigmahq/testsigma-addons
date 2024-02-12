@@ -14,16 +14,16 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 
 @Data
-@Action(actionText = "SnowflakeDB: Execute Select Query Select_Query on the connection DB_Connection_URL and verify output is Expected_Value",
+@Action(actionText = "SnowflakeDB: Execute Select Query Select_Query on the connection db-connection-url and verify output is expected-value",
 	description = "This Action executes a given Select Query and validates the result(First cell data) against the expected value.",
 	applicationType = ApplicationType.MOBILE_WEB)
 public class ExecuteSelectQueryAndValidate extends WebAction {
 
 	@TestData(reference = "Select_Query")
 	private com.testsigma.sdk.TestData testData1;
-	@TestData(reference = "DB_Connection_URL")
+	@TestData(reference = "db-connection-url")
 	private com.testsigma.sdk.TestData databaseUrl;
-	@TestData(reference = "Expected_Value")
+	@TestData(reference = "expected-value")
 	private com.testsigma.sdk.TestData testData3;
 	
 	StringBuffer sb = new StringBuffer();

@@ -18,14 +18,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Data
-@Action(actionText = "SnowflakeDB: Execute Query query-value on the Connection DB_Connection_URL and store the result into a runtime variable variable-name",
+@Action(actionText = "SnowflakeDB: Execute Query query-value on the Connection db-connection-url and store the result into a runtime variable variable-name",
         description = "This action executes given create query against the connection provided and stores the response in a runtime varibale",
         applicationType = ApplicationType.WEB)
 public class ExecuteQueryAndStore extends WebAction {
 
     @TestData(reference = "query-value")
     private com.testsigma.sdk.TestData query;
-    @TestData(reference = "DB_Connection_URL")
+    @TestData(reference = "db-connection-url")
     private com.testsigma.sdk.TestData dbConnectionUrl;
     @TestData(reference = "variable-name", isRuntimeVariable = true)
     private com.testsigma.sdk.TestData variableName;

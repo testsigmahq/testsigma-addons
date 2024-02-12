@@ -13,14 +13,14 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.openqa.selenium.NoSuchElementException;
 
 @Data
-@Action(actionText = "SnowflakeDB: Execute Query query-value on the Connection DB_Connection_URL",
+@Action(actionText = "SnowflakeDB: Execute Query query-value on the Connection db-connection-url",
         description = "This action executes given create query against the connection provided and prints the response",
         applicationType = ApplicationType.ANDROID)
 public class ExecuteQuery extends WebAction {
 
     @TestData(reference = "query-value")
     private com.testsigma.sdk.TestData query;
-    @TestData(reference = "DB_Connection_URL")
+    @TestData(reference = "db-connection-url")
     private com.testsigma.sdk.TestData dbConnectionUrl;
 
     @Override

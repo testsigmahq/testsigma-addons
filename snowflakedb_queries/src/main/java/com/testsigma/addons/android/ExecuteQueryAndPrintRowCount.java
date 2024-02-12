@@ -16,14 +16,14 @@ import java.sql.ResultSetMetaData;
 import java.sql.Statement;
 
 @Data
-@Action(actionText = "SnowflakeDB: Execute Query query-value on the Connection DB_Connection_URL",
+@Action(actionText = "SnowflakeDB: Execute Query query-value on the Connection db-connection-url",
 description = "This action executes given query against the connection provided and prints the no. of affected/fetched rows.",
 applicationType = ApplicationType.ANDROID)
 public class ExecuteQueryAndPrintRowCount extends WebAction {
 
 	@TestData(reference = "query-value")
 	private com.testsigma.sdk.TestData testData1;
-	@TestData(reference = "DB_Connection_URL")
+	@TestData(reference = "db-connection-url")
 	private com.testsigma.sdk.TestData databaseUrl;
 	
 	StringBuffer sb = new StringBuffer();

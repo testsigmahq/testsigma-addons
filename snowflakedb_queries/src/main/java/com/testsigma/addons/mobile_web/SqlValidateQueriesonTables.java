@@ -19,16 +19,16 @@ import java.sql.Statement;
 import java.util.Objects;
 
 @Data
-@Action(actionText = "SnowflakeDB: Validate Query Query1 and compare with the Query Query2 from the Connection DB_Connection_URL",
+@Action(actionText = "SnowflakeDB: Validate Query query1 and compare with the Query query2 from the Connection db-connection-url",
 description = "This action validate queries on the database connections",
 applicationType = ApplicationType.MOBILE_WEB)
 public class SqlValidateQueriesonTables extends WebAction {
 
-	@TestData(reference = "Query1")
+	@TestData(reference = "query1")
 	private com.testsigma.sdk.TestData testData1;
-	@TestData(reference = "Query2")
+	@TestData(reference = "query2")
 	private com.testsigma.sdk.TestData testData2;
-	@TestData(reference = "DB_Connection_URL")
+	@TestData(reference = "db-connection-url")
 	private com.testsigma.sdk.TestData databaseUrl;
 	
 	StringBuffer sb = new StringBuffer();
