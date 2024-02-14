@@ -15,7 +15,7 @@ import java.sql.Statement;
 
 @Data
 @Action(actionText = "SnowflakeDB: Execute Query query-string on the Connection db-connection-url and verify affected rows count is row-count",
-		description = "This Action executes given SQL query and validates the affected rows.",
+		description = "This Action executes given SQL query and validates the affected rows count.",
 		applicationType = ApplicationType.IOS)
 public class ExecuteQueryAndValidateRowCount extends WebAction {
 
@@ -45,11 +45,10 @@ public class ExecuteQueryAndValidateRowCount extends WebAction {
 					resultSet.getObject(1).toString();
 					rowsUpdatedOrFetched ++;
 				}
-				sb.append("Successfully Executed Database Query and Rows fetched from DB : " +rowsUpdatedOrFetched + "<br>");
+				sb.append("Successfully Executed Database Query and Rows fetched from DB : ").append(rowsUpdatedOrFetched).append("<br>");
 			}else {
 				rowsUpdatedOrFetched = stmt.executeUpdate(query);
-				sb.append("Successfully Executed Database Query, No. of rows affected in DB : " +rowsUpdatedOrFetched + "<br>");
-
+				sb.append("Successfully Executed Database Query, No. of rows affected in DB : ").append(rowsUpdatedOrFetched).append("<br>");
 			}
 			if(rowsUpdatedOrFetched == Integer.parseInt(testData3.getValue().toString())) {
 				sb.append("Affected row count is matching with expected value." + "<br>");
@@ -59,15 +58,15 @@ public class ExecuteQueryAndValidateRowCount extends WebAction {
 			else {
 				result = Result.FAILED;
 				sb.append("The affected rows does not match with expected rows:" + "<br>");
-				sb.append("Expected no. of affected rows:"+testData3.getValue().toString() + "<br>");
-				sb.append("Actual affected rows from query execution:"+rowsUpdatedOrFetched + "<br>");
+				sb.append("Expected no. of affected rows:").append(testData3.getValue().toString()).append("<br>");
+				sb.append("Actual affected rows from query execution:").append(rowsUpdatedOrFetched).append("<br>");
 				setErrorMessage(sb.toString());
 				logger.warn(sb.toString());
 			}
 		}
 		catch (Exception e){
 			String errorMessage = ExceptionUtils.getStackTrace(e);
-			sb.append("<br>"+errorMessage);
+			sb.append("<br>").append(errorMessage);
 			result = Result.FAILED;
 			setErrorMessage(sb.toString());
 			logger.warn(sb.toString());

@@ -42,8 +42,8 @@ public class ExecuteSelectQueryAndValidate extends WebAction {
 
 			if(testData3.getValue().toString().equals(resultData)) {
 				sb.append("<br>The output from the Select Query is matching with expected value.");
-				sb.append("<br>Expected value:"+testData3.getValue().toString());
-				sb.append("<br>Actual output from query:"+resultData);
+				sb.append("<br>Expected value:").append(testData3.getValue().toString());
+				sb.append("<br>Actual output from query:").append(resultData);
 				setSuccessMessage(sb.toString());
 				logger.info(sb.toString());
 			}

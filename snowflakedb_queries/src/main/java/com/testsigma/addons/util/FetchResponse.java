@@ -35,6 +35,8 @@ public class FetchResponse {
                 logger.info("Response data is empty, response length: " + resultStringBuilder.length());
                 throw new Exception("Response data is empty...");
             }
+            statement.close();
+            resultSet.close();
             return new ResponseData(resultStringBuilder.toString(), value);
         } catch (Exception e) {
             String errorMessage = ExceptionUtils.getStackTrace(e);

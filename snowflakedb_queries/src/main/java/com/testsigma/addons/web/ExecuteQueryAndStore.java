@@ -51,8 +51,6 @@ public class ExecuteQueryAndStore extends WebAction {
                     runTimeData.setValue("Not Found");
                     logger.info("Table name not found in the query.");
                 }
-            } else if (query1.toLowerCase().startsWith("insert") || query1.toLowerCase().startsWith("update") || query1.toLowerCase().startsWith("delete")) {
-                runTimeData.setValue(result.getValue());
             } else if (query1.toLowerCase().startsWith("alter") && result.getValue().contains("successfully")) {
                 String[] arr = query1.split(" ");
                 runTimeData.setValue(arr[2].toUpperCase());

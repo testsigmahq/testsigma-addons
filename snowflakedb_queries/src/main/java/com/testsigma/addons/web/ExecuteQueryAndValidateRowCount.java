@@ -15,7 +15,7 @@ import java.sql.Statement;
 
 @Data
 @Action(actionText = "SnowflakeDB: Execute Query query-string on the Connection db-connection-url and verify affected rows count is row-count",
-		description = "This Action executes given SQL query and validates the affected rows.",
+		description = "This Action executes given SQL query and validates the affected rows count.",
 		applicationType = ApplicationType.WEB)
 public class ExecuteQueryAndValidateRowCount extends WebAction {
 

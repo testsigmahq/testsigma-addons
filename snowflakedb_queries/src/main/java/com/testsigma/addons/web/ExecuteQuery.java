@@ -35,6 +35,8 @@ public class ExecuteQuery extends WebAction {
             return Result.FAILED;
         }
         if (result == null){
+            logger.info("Result is null");
+            setErrorMessage("Error occurred while executing the given query: Fetched Result is null");
             return Result.FAILED;
         }
         setSuccessMessage("Successfully executed given query: "+ result.getResponseString());

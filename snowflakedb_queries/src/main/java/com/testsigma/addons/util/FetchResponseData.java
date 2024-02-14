@@ -37,6 +37,8 @@ public class FetchResponseData {
                 }
                 resultStringBuilder.append("\n");
             }
+            statement.close();
+            resultSet.close();
             return resultStringBuilder.toString();
         }
         catch (Exception e){
