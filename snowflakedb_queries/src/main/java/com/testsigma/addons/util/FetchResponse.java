@@ -13,12 +13,12 @@ public class FetchResponse {
     public static ResponseData execute(String url, String query, Logger logger) throws Exception {
         StringBuilder resultStringBuilder = new StringBuilder();
         String value = "";
+        Statement statement = null;
+        ResultSet resultSet = null;
         try {
-
-            Statement statement = SnowflakeDBConnection.getConnection(url);
+            statement = SnowflakeDBConnection.getConnection(url);
             logger.info("Successfully set JDBC_QUERY_RESULT_FORMAT='JSON'");
             logger.info("Executing query: " + query);
-            ResultSet resultSet;
             resultSet = statement.executeQuery(query);
             resultStringBuilder = new StringBuilder();
             if (resultSet.next()) {
@@ -39,6 +39,8 @@ public class FetchResponse {
             resultSet.close();
             return new ResponseData(resultStringBuilder.toString(), value);
         } catch (Exception e) {
+            Objects.requireNonNull(statement).close();
+            Objects.requireNonNull(resultSet).close();
             String errorMessage = ExceptionUtils.getStackTrace(e);
             logger.info(errorMessage);
             throw new Exception("Error occurred while executing the given query: " + errorMessage);

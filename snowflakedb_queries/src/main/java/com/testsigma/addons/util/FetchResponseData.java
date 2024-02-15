@@ -5,15 +5,18 @@ import com.testsigma.sdk.Logger;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Statement;
+import java.util.Objects;
 
 public class FetchResponseData {
     public static String execute(String url, String query, Logger logger) throws Exception {
+        Statement statement = null;
+        ResultSet resultSet = null;
         try{
             StringBuilder resultStringBuilder = null;
-            Statement statement = SnowflakeDBConnection.getConnection(url);
+            statement = SnowflakeDBConnection.getConnection(url);
             logger.info("Successfully set JDBC_QUERY_RESULT_FORMAT='JSON'");
             logger.info("Executing query: " + query);
-            ResultSet resultSet = statement.executeQuery(query);
+            resultSet = statement.executeQuery(query);
             resultStringBuilder = new StringBuilder();
             ResultSetMetaData metaData = resultSet.getMetaData();
             int columnCount = metaData.getColumnCount();
@@ -42,6 +45,8 @@ public class FetchResponseData {
             return resultStringBuilder.toString();
         }
         catch (Exception e){
+            Objects.requireNonNull(statement).close();
+            Objects.requireNonNull(resultSet).close();
             throw new Exception(e);
         }
     }
