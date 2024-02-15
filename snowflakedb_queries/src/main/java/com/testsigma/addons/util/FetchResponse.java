@@ -35,15 +35,17 @@ public class FetchResponse {
                 logger.info("Response data is empty, response length: " + resultStringBuilder.length());
                 throw new Exception("Response data is empty...");
             }
-            statement.close();
-            resultSet.close();
             return new ResponseData(resultStringBuilder.toString(), value);
         } catch (Exception e) {
-            Objects.requireNonNull(statement).close();
-            Objects.requireNonNull(resultSet).close();
             String errorMessage = ExceptionUtils.getStackTrace(e);
             logger.info(errorMessage);
             throw new Exception("Error occurred while executing the given query: " + errorMessage);
+        }
+        finally {
+            if(statement != null)
+                statement.close();
+            if(resultSet != null)
+                resultSet.close();
         }
     }
 }

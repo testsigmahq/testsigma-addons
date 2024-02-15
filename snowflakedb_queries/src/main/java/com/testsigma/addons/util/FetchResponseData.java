@@ -40,14 +40,16 @@ public class FetchResponseData {
                 }
                 resultStringBuilder.append("\n");
             }
-            statement.close();
-            resultSet.close();
             return resultStringBuilder.toString();
         }
         catch (Exception e){
-            Objects.requireNonNull(statement).close();
-            Objects.requireNonNull(resultSet).close();
             throw new Exception(e);
+        }
+        finally {
+            if(statement != null)
+                statement.close();
+            if(resultSet != null)
+                resultSet.close();
         }
     }
 }
