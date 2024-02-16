@@ -15,7 +15,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 
 @Data
-@Action(actionText = "Execute SQL Select_Query on the connection DB_Connection_URL for Database Database-Name using Username user-name and Password password and verify output is Expected_Value",
+@Action(actionText = "SQLServer: Execute SQL Select_Query on the connection DB_Connection_URL for Database Database-Name using Username user-name and Password password and verify output is Expected_Value",
 description = "This Action executes a given Select Query and validates the result(First cell data) against the expected value.",
 applicationType = ApplicationType.ANDROID)
 public class Sqlselectvalidate extends WebAction {

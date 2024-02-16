@@ -16,7 +16,7 @@ import java.sql.*;
 import java.util.Objects;
 
 @Data
-@Action(actionText = "Validate SQL Query Query1 and compare with the Query Query2 from the Connection DB_Connection_URL",
+@Action(actionText = "SQLServer: Validate SQL Query Query1 and compare with the Query Query2 from the Connection DB_Connection_URL",
 description = "This action validate queries on the database connections",
 applicationType = ApplicationType.ANDROID)
 public class SqlValidateQueriesonTablesWithUrl extends WebAction {

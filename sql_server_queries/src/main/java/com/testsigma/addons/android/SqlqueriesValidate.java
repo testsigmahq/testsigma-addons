@@ -15,7 +15,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 
 @Data
-@Action(actionText = "Execute SQL Query on the Connection DB_Connection_URL for Database Database-Name using Username user-name and Password password and verify affected rows count is Row-Count",
+@Action(actionText = "SQLServer: Execute SQL Query on the Connection DB_Connection_URL for Database Database-Name using Username user-name and Password password and verify affected rows count is Row-Count",
 description = "This Action executes given SQL query and validates the affected rows.",
 applicationType = ApplicationType.ANDROID)
 public class SqlqueriesValidate extends WebAction {

@@ -17,7 +17,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.Statement;
 
 @Data
-@Action(actionText = "Execute SQL Select-Query on the connection DB_Connection_URL and store output into a variable-name",
+@Action(actionText = "SQLServer: Execute SQL Select-Query on the connection DB_Connection_URL and store output into a variable-name",
 description = "This Action executes a given Select Query and stores the result(First cell data) into a provided runtime variable.",
 applicationType = ApplicationType.WEB)
 public class SqlselectWithUrl extends WebAction {
@@ -37,38 +37,48 @@ public class SqlselectWithUrl extends WebAction {
 		Result result = Result.SUCCESS;
 		logger.info("Initiating execution");
 		String url = databaseUrl.getValue().toString();
+		logger.info("url: "+url);
 		DatabaseUtil databaseUtil = new DatabaseUtil();
 		try{
+			logger.info("Connection start");
 			Connection connection = databaseUtil.getConnection(url);
+			logger.info("Connection done");
 			Statement stmt = connection.createStatement();
 			String query = testData1.getValue().toString();
 			ResultSet resultSet = stmt.executeQuery(query);
 			StringBuilder resultStringBuilder = new StringBuilder();
 
-			while (resultSet.next()) {
-				ResultSetMetaData metaData = resultSet.getMetaData();
-				int columnCount = metaData.getColumnCount();
+			ResultSetMetaData metaData = resultSet.getMetaData();
+			int columnCount = metaData.getColumnCount();
 
-				if (columnCount > 0) {
-					// Assuming you want the first column's value
-					String resultData = resultSet.getObject(1).toString();
-
-					// Append the resultData to the StringBuilder
-					resultStringBuilder.append(resultData).append(", ");
-
-					setSuccessMessage("Successfully Executed Select Query and Resultset is : " + resultData);
-					logger.info("Successfully Executed Select Query and Resultset is : " + resultData);
+			for (int i = 1; i <= columnCount; i++) {
+				resultStringBuilder.append(metaData.getColumnName(i));
+				if (i < columnCount) {
+					resultStringBuilder.append(", ");
 				}
 			}
+			resultStringBuilder.append("\n");
 
+			while (resultSet.next()) {
+				for (int i = 1; i <= columnCount; i++) {
+					Object resultData = resultSet.getObject(i);
+					if (resultData != null) {
+						resultStringBuilder.append(resultData.toString());
+					}
+					else{
+						resultStringBuilder.append("null");
+					}
+					resultStringBuilder.append(", ");
+				}
+				resultStringBuilder.append("\n");
+			}
 			if (resultStringBuilder.length() > 0) {
 				resultStringBuilder.setLength(resultStringBuilder.length() - 2);
 				String concatenatedResult = resultStringBuilder.toString();
 				runTimeData = new com.testsigma.sdk.RunTimeData();
 				runTimeData.setValue(concatenatedResult);
 				runTimeData.setKey(testData3.getValue().toString());
-
-				logger.info("Successfully retrieved result of the given query: " + concatenatedResult);
+				logger.info("Successfully Executed Select Query and Resultset is : " + concatenatedResult);
 			}
 			setSuccessMessage("Successfully Executed Select Query and stored in runtime variable: "+ testData3.getValue().toString());
 		}

@@ -14,7 +14,7 @@ import java.sql.Connection;
 import java.sql.Statement;
 
 @Data
-@Action(actionText = "Execute SQL Update Query on the Connection DB_Connection_URL",
+@Action(actionText = "SQLServer: Execute SQL Update Query on the Connection DB_Connection_URL",
 description = "This action executes given update query against the connection provided and prints the no. of affected/fetched rows.",
 applicationType = ApplicationType.WEB)
 public class SqlupdatequeriesWithUrl extends WebAction {

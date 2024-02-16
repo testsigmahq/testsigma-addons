@@ -15,7 +15,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 
 @Data
-@Action(actionText = "Execute SQL Query on the Connection DB_Connection_URL for Database Database-Name using Username user-name and Password password",
+@Action(actionText = "SQLServer: Execute SQL Query on the Connection DB_Connection_URL for Database Database-Name using Username user-name and Password password",
 description = "This action executes given query against the connection provided and prints the no. of affected/fetched rows.",
 applicationType = ApplicationType.IOS)
 public class Sqlqueries extends WebAction {
