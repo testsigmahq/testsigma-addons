@@ -1,13 +1,14 @@
-package com.testsigma.addons.web;
+package com.testsigma.addons.android;
 
+import com.testsigma.sdk.AndroidAction;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.FindImageResponse;
 import com.testsigma.sdk.Result;
-import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.OCR;
 import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.TestStepResult;
+import io.appium.java_client.android.AndroidDriver;
 import lombok.Data;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.OutputType;
@@ -18,8 +19,8 @@ import java.io.File;
 @Data
 @Action(actionText = "Verify if image image-url is present in current-page with search threshold threshold-value (Ex: 0.9 , means 90% match)",
         description = "Verify if the give image with threshold is present in current page",
-        applicationType = ApplicationType.WEB)
-public class SearchImageWithThreshold extends WebAction {
+        applicationType = ApplicationType.ANDROID)
+public class SearchImageWithThreshold extends AndroidAction {
     @TestData(reference = "image-url")
     private com.testsigma.sdk.TestData testData1;
     @TestData(reference = "threshold-value")
@@ -34,9 +35,9 @@ public class SearchImageWithThreshold extends WebAction {
 
     @Override
     protected Result execute() throws NoSuchElementException {
+        AndroidDriver androidDriver = (AndroidDriver) this.driver;
         Result result = Result.SUCCESS;
-        TakesScreenshot scrShot =((TakesScreenshot)this.driver);
-        File baseImageFile=scrShot.getScreenshotAs(OutputType.FILE);
+        File baseImageFile= ((TakesScreenshot)androidDriver).getScreenshotAs(OutputType.FILE);
         String url = testStepResult.getScreenshotUrl();
         logger.info("Amazon s3 url in which we are storing base image"+url);
         ocr.uploadFile(url, baseImageFile);

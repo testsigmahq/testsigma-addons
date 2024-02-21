@@ -62,8 +62,8 @@ public class ClickOnImageWithThresholdOccurrenceBased extends WebAction {
             ocr.uploadFile(url, baseImageFile);
             FindImageResponse response = ocr.findImage(
                                             testData1.getValue().toString(),
-                                            Integer.parseInt(testData2.getValue().toString()),
-                                            Float.valueOf(testData3.getValue().toString())
+                                            Integer.parseInt(testData3.getValue().toString()),
+                                            Float.valueOf(testData2.getValue().toString())
                                         );
             if(response.getIsFound()) {
                 int clickLocationX = (response.getX1() + response.getX2()) / 2;
