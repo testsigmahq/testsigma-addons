@@ -23,7 +23,7 @@ public class LongPressKeyOnRemote extends AndroidAction {
             reference = "key-value",
             allowedValues =
                     {
-                            "ok"
+                            "Ok"
                     }
     )
     private com.testsigma.sdk.TestData key;
@@ -34,7 +34,7 @@ public class LongPressKeyOnRemote extends AndroidAction {
         try {
             logger.info("Initiating execution");
             AndroidDriver androidDriver = (AndroidDriver)this.driver;
-            AndroidKey androidKey = this.getKey(key.getValue().toString());
+            AndroidKey androidKey = KeyUtil.getKey(key.getValue().toString());
             androidDriver.longPressKey(new KeyEvent(androidKey));
             setSuccessMessage("Pressed the key successfully");
         } catch (IllegalArgumentException e) {
@@ -50,18 +50,4 @@ public class LongPressKeyOnRemote extends AndroidAction {
         }
         return result;
     }
-
-    private AndroidKey getKey(String value) {
-        AndroidKey androidKey;
-        switch (value) {
-            case "Ok":
-                androidKey = AndroidKey.DPAD_CENTER;
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid key value");
-        }
-        return androidKey;
-    }
-
-
 }
