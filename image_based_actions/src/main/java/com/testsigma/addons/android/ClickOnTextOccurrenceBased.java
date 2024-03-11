@@ -79,7 +79,7 @@ public class ClickOnTextOccurrenceBased extends AndroidAction {
                 logger.info("Error ratios: x relative: "+xRelative+" y relative: "+yRelative);
                 int clickLocationX;
                 int clickLocationY;
-                if(Math.abs(imageWidth-screenWidth) > 5){
+                if(Math.abs(imageWidth-screenWidth) > 20){
                     clickLocationX = (int) (xRelative * screenWidth);
                     clickLocationY = (int) (yRelative * screenHeight);
                 } else {
