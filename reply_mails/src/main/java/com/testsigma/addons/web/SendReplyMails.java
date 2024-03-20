@@ -62,7 +62,7 @@ public class SendReplyMails extends WebAction {
             email.setTo(to);
             email.setSubject("Re:" + subject.toString());
             email.setBody(body.toString());
-            email.addHeader(headersList);
+            email.setHeader(headersList);
             email.send();
             setSuccessMessage(SUCCESS_MESSAGE);
             return Result.SUCCESS;
