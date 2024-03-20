@@ -9,7 +9,10 @@ import com.testsigma.sdk.annotation.*;
 import lombok.Data;
 import org.openqa.selenium.NoSuchElementException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 
 @Data
 @Action(actionText = "Reply to the mail with body that contains the subject in mail-name mail-box ",
@@ -49,13 +52,17 @@ public class SendReplyMails extends WebAction {
                 setErrorMessage(MAIL_ERROR_MESSAGE);
                 return Result.FAILED;
             }
+            String messageId = email.getMessageId(requiredMessage.getHeaders());
+            Map<String, String> headersList = new HashMap<>();
+            headersList.put("In-Reply-To", messageId);
+            headersList.put("References", messageId);
+
             List<String> to = new ArrayList<>();
             to.add(requiredMessage.getReceivedFrom());
             email.setTo(to);
             email.setSubject("Re:" + subject.toString());
             email.setBody(body.toString());
-            email.addHeader("In-Reply-To", requiredMessage.getReceivedEmailMessageId());
-            email.addHeader("References", requiredMessage.getReceivedEmailMessageId());
+            email.addHeader(headersList);
             email.send();
             setSuccessMessage(SUCCESS_MESSAGE);
             return Result.SUCCESS;
