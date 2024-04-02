@@ -53,15 +53,19 @@ public class RowUtil {
             if(dataList.size() != oldRow.getTableCells().size()){
                 throw new InputMismatchException("Given data items size is incompatible with specified table row");
             }
-            for (XWPFTableCell cell : newRow.getTableCells()) {
-                    cell.removeParagraph(0);
-                    cell.setText("");
+           for (XWPFTableCell cell : newRow.getTableCells()){
+                cell.removeParagraph(0);
+                cell.setText("");
+                for(XWPFParagraph paragraph : cell.getParagraphs()){
+                    for(XWPFRun run : paragraph.getRuns()){
+                        run.setText(" ",0);// Remove the existing paragraph
+                    }
+                }
             }
 
             for (int index = 0; index < newRow.getTableCells().size(); index++) {
-                XWPFParagraph paragraph = newRow.getCell(index).addParagraph();
-                XWPFRun run = paragraph.createRun();
-                run.setText(dataList.get(index));
+                XWPFTableCell cell = newRow.getCell(index);
+                cell.setText(dataList.get(index));
             }
             table.addRow(newRow, position);
             FileOutputStream fos = new FileOutputStream(documentPath);
