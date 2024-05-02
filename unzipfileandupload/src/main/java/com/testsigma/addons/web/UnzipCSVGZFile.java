@@ -18,8 +18,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 @Data
-@Action(actionText = "Unzip the CSV.GZ file absolutefilepath to destination destfilepath and store the filepath into a variable testdata",
-        description = "Unzip the CSV.GZ file and store the extracted file path",
+@Action(actionText = "Unzip the .CSV.GZ file absolutefilepath to destination destfilepath and store the filepath into a variable testdata",
+        description = "Unzip the .CSV.GZ file and store the extracted file path",
         applicationType = ApplicationType.WEB,
         useCustomScreenshot = false)
 public class UnzipCSVGZFile extends WebAction {
