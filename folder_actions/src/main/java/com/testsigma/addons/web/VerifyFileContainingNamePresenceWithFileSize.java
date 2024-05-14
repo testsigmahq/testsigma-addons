@@ -3,14 +3,11 @@ package com.testsigma.addons.web;
 import com.testsigma.addons.web.folderutil.FolderUtilities;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
-import com.testsigma.sdk.StepActionType;
 import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
-import com.testsigma.sdk.annotation.Element;
 import lombok.Data;
 import org.openqa.selenium.NoSuchElementException;
-
 
 import java.io.File;
 
@@ -47,21 +44,27 @@ public class VerifyFileContainingNamePresenceWithFileSize extends WebAction {
         logger.info("Given size value : " + size);
 
         FolderUtilities util = new FolderUtilities();
-        File file = util.fileContainsName(folderPath, fileName);
-        if (file != null) {
-            long fileSize = file.length() / 1024;
-            if (file.length() > (size * 1024)) {
-                setSuccessMessage(String.format("Successfully verified that file exists with containing name %s in" +
-                        " the folder path %s and it's size %s KB is greater than %s KB", fileName, folderPath,
-                        fileSize, size));
+
+        if (util.folderCheck(folderPath)) {
+            File file = util.searchFile(new File(folderPath), fileName, false);
+            if (file != null) {
+                long fileSize = file.length() / 1024;
+                if (file.length() > (size * 1024)) {
+                    setSuccessMessage(String.format("Successfully verified that file exists with containing name %s in" +
+                                    " the folder path %s and it's size %s KB is greater than %s KB", fileName, folderPath,
+                            fileSize, size));
+                } else {
+                    result = Result.FAILED;
+                    setErrorMessage(String.format("The files exists with containing name %s in the folder path %s and its" +
+                            " size %s KB is not greater than %s KB", fileName, folderPath, fileSize, size));
+                }
             } else {
                 result = Result.FAILED;
-                setErrorMessage(String.format("The files exists with containing name %s in the folder path %s and its" +
-                        " size %s KB is not greater than %s KB",fileName, folderPath, fileSize, size));
+                setErrorMessage(String.format(util.NO_FILE_CONTAINS_ERROR_MSG, fileName, folderPath));
             }
         } else {
             result = Result.FAILED;
-            setErrorMessage(util.errorInfo);
+            setErrorMessage(String.format(util.FOLDER_NOT_FOUND, folderPath));
         }
         logger.info("Execution completed");
         return result;

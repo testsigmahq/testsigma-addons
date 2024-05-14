@@ -1,58 +1,39 @@
 package com.testsigma.addons.web.folderutil;
 
-import com.testsigma.sdk.Logger;
-import com.testsigma.sdk.Result;
-import com.testsigma.sdk.WebAction;
-import org.openqa.selenium.NoSuchElementException;
-
 import java.io.File;
 
 public class FolderUtilities {
 
-    public String errorInfo;
+    public String FOLDER_NOT_FOUND = "There is no folder exists in the given path %s";
+    public String NO_FILE_EXISTS_ERROR_MSG = "There is no file exists with name %s in the folder path %s";
 
-    public String successInfo;
+    public String NO_FILE_CONTAINS_ERROR_MSG = "There is no file exists with containing the name %s in the folder path %s";
 
-    public File fileExists(String folderPath, String fileName) {
-        File folder = new File(folderPath);
-        if (folder.exists() && folder.isDirectory()) {
-            File file = new File(folder, fileName);
-            if (file.exists() && file.isFile()) {
-                successInfo = String.format("Successfully verified that file exists with name %s in the folder " +
-                        "path %s", fileName, folderPath);
-                return file;
-            } else {
-                errorInfo = String.format("There is no file exists with name %s in the folder path %s", fileName,
-                        folderPath);
+    public File searchFile(File directory, String fileName, boolean isEqualOperation) {
+        if (directory.exists() && directory.isDirectory()) {
+            File[] files = directory.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isDirectory()) {
+                        File foundFile = searchFile(file, fileName, isEqualOperation);
+                        if (foundFile != null) {
+                            return foundFile;
+                        }
+                    } else {
+                        if (isEqualOperation && file.getName().equals(fileName)) {
+                            return file;
+                        } else if (!isEqualOperation && file.getName().contains(fileName)) {
+                            return file;
+                        }
+                    }
+                }
             }
-        } else {
-            errorInfo = String.format("There is no folder exists in the given path %s",folderPath);
         }
         return null;
     }
 
-    public File fileContainsName(String folderPath, String fileName) {
+    public boolean folderCheck(String folderPath) {
         File folder = new File(folderPath);
-        if (folder.exists() && folder.isDirectory()) {
-            File[] files = folder.listFiles();
-            if (files != null) {
-                for (File file : files) {
-                    if (file.getName().contains(fileName)) {
-                        successInfo = String.format("Successfully verified that file exists with containing the name %s in " +
-                                "the folder path %s", fileName, folderPath);
-                        return file;
-                    }
-                }
-            } else {
-                errorInfo = String.format("There are no files present in the folder path %s", folderPath);
-                return null;
-            }
-        } else {
-            errorInfo = String.format("There is no folder exists in the given path %s",folderPath);
-            return null;
-        }
-        errorInfo = String.format("There is no file exists with containing the name %s in the folder path %s",
-                    fileName, folderPath);
-        return null;
+        return folder.exists() && folder.isDirectory();
     }
 }
