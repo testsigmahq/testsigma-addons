@@ -47,8 +47,8 @@ public class VerifyFileWithNamePresenceWithFileSize extends WebAction {
         if (util.folderCheck(folderPath)) {
             File file = util.searchFile(new File(folderPath), fileName, true);
             if (file != null) {
-                long fileSize = file.length() / 1024;
-                if (file.length() > (size * 1024)) {
+                long fileSize = file.length() / 1000;
+                if (file.length() > (size * 1000)) {
                     setSuccessMessage(String.format("Successfully verified that file exists with name %s in the folder " +
                             "path %s and it's size %s KB is greater than %s KB", fileName, folderPath, fileSize, size));
                 } else {
