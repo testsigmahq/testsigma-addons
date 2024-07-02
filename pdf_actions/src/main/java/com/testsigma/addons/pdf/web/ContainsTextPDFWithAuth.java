@@ -58,14 +58,14 @@ public class ContainsTextPDFWithAuth extends WebAction {
                 doc = PDDocument.load(fileParse); //loads the file as pdf
                 sb.append(new PDFTextStripper().getText(doc));
                 Assert.assertTrue(sb.toString().contains((CharSequence) testData.getValue()));
-                setSuccessMessage(String.format(SUCCESS_MESSAGE + " " + testData.getValue()));
+                setSuccessMessage(SUCCESS_MESSAGE + " " + testData.getValue());
                 return Result.SUCCESS;
             } catch (Exception e) {
 
                 String errorMessage = ExceptionUtils.getStackTrace(e);
-                logger.info(errorMessage);
-                setErrorMessage(String.format(ERROR_MESSAGE + " " + testData.getValue() + "   " + "Cause of Exception:"
-                        +errorMessage));
+                logger.warn("Error message:" +errorMessage +":" +sb.toString());
+                setErrorMessage(ERROR_MESSAGE + " " + testData.getValue() + "   " + "Cause of Exception:"
+                        +errorMessage);
                 return Result.FAILED;
             }
         }
