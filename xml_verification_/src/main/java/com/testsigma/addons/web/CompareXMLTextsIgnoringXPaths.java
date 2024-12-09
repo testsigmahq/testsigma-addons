@@ -1,0 +1,73 @@
+package com.testsigma.addons.web;
+
+import com.testsigma.addons.utilities.XMLUtility;
+import com.testsigma.sdk.ApplicationType;
+import com.testsigma.sdk.Result;
+import com.testsigma.sdk.WebAction;
+import com.testsigma.sdk.annotation.Action;
+import com.testsigma.sdk.annotation.TestData;
+import lombok.Data;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.w3c.dom.Document;
+
+import java.util.NoSuchElementException;
+
+@Data
+@Action(actionText = "Xml: Verify if xmlText text1 is equal to xmlText text2 while ignoring specific XPaths X-paths",
+        description = "Verifies if texts with given xml content are equal while ignoring given xPaths" +
+                " (separate xPaths by comma) e.g: xpath1, xpath2",
+        applicationType = ApplicationType.WEB)
+public class CompareXMLTextsIgnoringXPaths extends WebAction {
+
+    @TestData(reference = "text1")
+    private com.testsigma.sdk.TestData testData1;
+
+    @TestData(reference = "text2")
+    private com.testsigma.sdk.TestData testData2;
+
+    @TestData(reference = "X-paths")
+    private com.testsigma.sdk.TestData testData3;
+
+    @Override
+    protected Result execute() throws NoSuchElementException {
+        Result result = Result.SUCCESS;
+        try {
+            String filePath1 = testData1.getValue().toString();
+            String filePath2 = testData2.getValue().toString();
+            String xPathsToIgnore = testData3.getValue().toString();
+            logger.info("xPathsToIgnore: " + xPathsToIgnore);
+            XMLUtility xmlUtility = new XMLUtility(driver, logger);
+
+            Document doc1 = xmlUtility.parseXML(filePath1);
+            Document doc2 = xmlUtility.parseXML(filePath2);
+            logger.info("Text1 after parsing into xml " + doc1);
+
+            // Remove nodes based on XPath expressions
+            String[] xpathArray = xPathsToIgnore.split(",");
+            for (String xpathExpression : xpathArray) {
+                xmlUtility.removeNodesByXPath(doc1, xpathExpression.trim());
+                xmlUtility.removeNodesByXPath(doc2, xpathExpression.trim());
+            }
+
+            logger.info("Text1 after ignoring xPaths " + doc1);
+            logger.info("Text2 after parsing xPaths " + doc2);
+            // Compare the modified documents
+            boolean isEqual = doc1.isEqualNode(doc2);
+            if (isEqual) {
+                setSuccessMessage("the given texts are equal");
+                result = Result.SUCCESS;
+            } else {
+                setErrorMessage("the given texts are not equal");
+                result = Result.FAILED;
+            }
+            return result;
+
+        } catch (Exception e) {
+            setErrorMessage("Error occurred while comparing: " + ExceptionUtils.getStackTrace(e));
+            logger.info(ExceptionUtils.getStackTrace(e));
+            return Result.FAILED;
+        }
+    }
+
+
+}
