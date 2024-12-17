@@ -20,7 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @Data
-@Action(actionText = "Convert ZPL file-path(ex: \C:\Users\\sam.isaac\\Downloads\\zplpng.png) into PNG file with name (Ex:output.png) file-name and output file path output-file-path and store " +
+@Action(actionText = "Convert ZPL file-path into PNG file with name (Ex:output.png) file-name and output file path output-file-path and store " +
         "filepath in runtime variable variable-name",
         description = "Converts ZPL code into a PNG file and stores the file path in runtime variable",
         applicationType = ApplicationType.WEB)
