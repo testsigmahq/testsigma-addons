@@ -49,7 +49,7 @@ public class SDFSSHCommandExecution extends WebAction {
     int port = Integer.parseInt(portNumber.getValue().toString());
     String commandSeparatorStr = commandSeparator != null && !commandSeparator.getValue().toString().isEmpty()
             ? commandSeparator.getValue().toString()
-            : "&&"; // Default separator is ';' to execute commands sequentially in one session
+            : "&&";
     String allCommands = commands.getValue().toString().replace(commandSeparatorStr, "&&");
 
     JSch jsch = new JSch();
