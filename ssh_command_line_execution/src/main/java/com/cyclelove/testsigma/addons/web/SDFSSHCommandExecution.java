@@ -1,7 +1,8 @@
-package com.cyclelove.testsigma.addons.web;
+package com.testsigma.addons.web;
 
 import com.jcraft.jsch.*;
 import com.testsigma.sdk.ApplicationType;
+import com.testsigma.sdk.Result;
 import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.RunTimeData;
@@ -14,7 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 @Data
-@Action(actionText = "SSH-SDF: Connect to SSH server and execute commands, SSH server details: Host: Host-Name, Port: Port-Number, UserName: User-Name, Password: User-Password, Commands: Terminal-Commands , Command Separator: Command-Separator , Store Output Variable: Variable-Name",
+@Action(actionText = "SSH: Connect to SSH server and execute commands, SSH server details: Host: Host-Name, Port: Port-Number, UserName: User-Name, Password: User-Password, Commands: Terminal-Commands , Command Separator: Command-Separator , Store Output Variable: Variable-Name",
         description = "Executes commands on an SSH server in a single session",
         applicationType = ApplicationType.WEB,
         useCustomScreenshot = false)
@@ -40,7 +41,6 @@ public class SDFSSHCommandExecution extends WebAction {
 
   @Override
   public com.testsigma.sdk.Result execute() throws NoSuchElementException {
-    com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
     logger.info("Initiating execution");
 
     String user = userName.getValue().toString();
@@ -100,22 +100,22 @@ public class SDFSSHCommandExecution extends WebAction {
 
       runTimeData.setKey(storeVariable.getValue().toString());
       runTimeData.setValue(output.toString());
-
+      setSuccessMessage("Output is: " + output.toString());
+      return Result.SUCCESS;
     } catch (Exception e) {
       String errorStack = ExceptionUtils.getStackTrace(e);
       logger.info("Error occurred while executing the command: " + errorStack);
-      result = com.testsigma.sdk.Result.FAILED;
       setErrorMessage("Error occurred while executing the command: " + e.getMessage());
+      return Result.FAILED;
     } finally {
       try {
         if (in != null) in.close();
         if (channel != null && channel.isConnected()) channel.disconnect();
         if (session != null && session.isConnected()) session.disconnect();
       } catch (IOException e) {
-        logger.info("Error closing resources: " + e.getMessage());
+        setErrorMessage("Error closing resources: " + e.getMessage());
+        return Result.FAILED;
       }
     }
-
-    return result;
   }
 }
