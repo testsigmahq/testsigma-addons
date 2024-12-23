@@ -11,14 +11,13 @@ import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.openqa.selenium.NoSuchElementException;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.net.URL;
+import java.nio.file.Paths;
 
 @Data
-@Action(actionText = "FTP: Connect to FTP server and upload a file. FTP server details: Host: Host-Name, Port: Port-No UserName: User-Name, Password: User-Password, Upload from Local-File-Path to Remote-Directory(ex: /Users/username/Downloads) with file name Remote-File-Name. Uploaded file path will be stored in runtime variable: variable-name",
-        description = "Uploads a file from local system to remote server using FTP, and stores the uploaded file path in a runtime variable.",
+@Action(actionText = "FTP: Connect to FTP server and upload a file. FTP server details: Host: Host-Name, Port: Port-No, UserName: User-Name, Password: User-Password, Upload from Local-File-Path to Remote-Directory(ex: /Users/username/Downloads) with file name Remote-File-Name. Uploaded file path will be stored in runtime variable: variable-name",
+        description = "Uploads a file from a local file or URL to a remote server using FTP, and stores the uploaded file path in a runtime variable.",
         applicationType = ApplicationType.WEB,
         useCustomScreenshot = false)
 public class FTPUploadFile extends WindowsAction {
@@ -36,7 +35,7 @@ public class FTPUploadFile extends WindowsAction {
   private com.testsigma.sdk.TestData userPassword;
 
   @TestData(reference = "Local-File-Path")
-  private com.testsigma.sdk.TestData localFilePath; // Local file to upload
+  private com.testsigma.sdk.TestData localFilePath; // Local file path or URL
 
   @TestData(reference = "Remote-Directory")
   private com.testsigma.sdk.TestData remoteDirectory; // Remote directory to upload to
@@ -63,21 +62,29 @@ public class FTPUploadFile extends WindowsAction {
     String remoteFile = remoteFileName.getValue().toString();
 
     FTPClient ftpClient = new FTPClient();
+    File localFileToUpload = null;
     try {
+      // Determine if the localFile is a URL or a local path
+      if (localFile.startsWith("http://") || localFile.startsWith("https://")) {
+        localFileToUpload = downloadFile(localFile);
+      } else {
+        localFileToUpload = new File(localFile);
+      }
+
+
       // Verify the local file exists
-      File firstLocalFile = new File(localFile);
-      if (!firstLocalFile.exists()) {
+      if (!localFileToUpload.exists()) {
         setErrorMessage("Local file not found: " + localFile);
         return Result.FAILED;
       }
 
       // Append extension if remote file name has no extension
       if (!remoteFile.contains(".")) {
-        String localFileName = firstLocalFile.getName();
+        String localFileName = localFileToUpload.getName();
         int dotIndex = localFileName.lastIndexOf('.');
-        if (dotIndex > 0) { // Local file has an extension
-          String extension = localFileName.substring(dotIndex); // Extract the extension
-          remoteFile += extension; // Append the extension to remote file name
+        if (dotIndex > 0) {
+          String extension = localFileName.substring(dotIndex);
+          remoteFile += extension;
           logger.info("Remote file name updated to include extension: " + remoteFile);
         } else {
           setErrorMessage("Local file does not have an extension: " + localFileName);
@@ -85,7 +92,6 @@ public class FTPUploadFile extends WindowsAction {
         }
       }
 
-      // Connect and login to the server
       ftpClient.connect(host, Integer.parseInt(port));
       boolean loginSuccess = ftpClient.login(user, password);
 
@@ -97,7 +103,6 @@ public class FTPUploadFile extends WindowsAction {
       ftpClient.enterLocalPassiveMode();
       ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
 
-      // Set the target directory on the FTP server
       boolean changedDir = ftpClient.changeWorkingDirectory(remoteDir);
       if (changedDir) {
         logger.info("Changed to directory: " + remoteDir);
@@ -106,8 +111,7 @@ public class FTPUploadFile extends WindowsAction {
         return Result.FAILED;
       }
 
-      // Upload the file
-      try (InputStream inputStream = new FileInputStream(firstLocalFile)) {
+      try (InputStream inputStream = new FileInputStream(localFileToUpload)) {
         logger.info("Start uploading file to " + remoteDir + "/" + remoteFile);
         boolean done = ftpClient.storeFile(remoteFile, inputStream);
 
@@ -137,6 +141,24 @@ public class FTPUploadFile extends WindowsAction {
       } catch (IOException ex) {
         logger.warn("Error while closing FTP connection: " + ex);
       }
+      if (localFileToUpload != null && localFile.startsWith("http")) {
+        localFileToUpload.delete(); // delete temp file if it was a download
+      }
     }
+  }
+
+  private File downloadFile(String fileUrl) throws IOException {
+    URL url = new URL(fileUrl);
+    String fileName = Paths.get(url.getPath()).getFileName().toString();
+    File tempFile = File.createTempFile("downloaded-", fileName);
+    try (InputStream in = url.openStream();
+         OutputStream out = new FileOutputStream(tempFile)) {
+      byte[] buffer = new byte[1024];
+      int bytesRead;
+      while ((bytesRead = in.read(buffer)) != -1) {
+        out.write(buffer, 0, bytesRead);
+      }
+    }
+    return tempFile;
   }
 }
