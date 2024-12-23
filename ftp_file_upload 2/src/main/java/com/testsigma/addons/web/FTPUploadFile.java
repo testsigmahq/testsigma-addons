@@ -65,7 +65,7 @@ public class FTPUploadFile extends WindowsAction {
     File localFileToUpload = null;
     try {
       // Determine if the localFile is a URL or a local path
-      if (localFile.startsWith("http://") || localFile.startsWith("https://")) {
+      if (localFile.startsWith("http://") || localFile.startsWith("https://") || localFile.startsWith("file://")) {
         localFileToUpload = downloadFile(localFile);
       } else {
         localFileToUpload = new File(localFile);
