@@ -12,6 +12,7 @@ import org.openqa.selenium.NoSuchElementException;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 @Data
@@ -36,13 +37,16 @@ public class SqlqueriesValidateWithUrl extends WebAction {
 		logger.info("Initiating execution");
 		String url = databaseUrl.getValue().toString();
 		DatabaseUtil databaseUtil = new DatabaseUtil();
+		Connection connection = null;
+		Statement stmt = null;
+		ResultSet resultSet = null;
 		int rowsUpdatedOrFetched = 0;
 		try{
-			Connection connection = databaseUtil.getConnection(url);
-			Statement stmt = connection.createStatement();
+			connection = databaseUtil.getConnection(url);
+			stmt = connection.createStatement();
 			String query = testData1.getValue().toString();
 			if(query.trim().toUpperCase().startsWith("SELECT")) {
-				ResultSet resultSet = stmt.executeQuery(query);
+				resultSet = stmt.executeQuery(query);
 				while (resultSet.next()){
 					resultSet.getObject(1).toString();
 					rowsUpdatedOrFetched ++;
@@ -73,6 +77,22 @@ public class SqlqueriesValidateWithUrl extends WebAction {
 			result = Result.FAILED;
 			setErrorMessage(sb.toString());
 			logger.warn(sb.toString());
+		}
+		finally {
+		    // Close resources in finally block
+		    try {
+		        if (resultSet != null) {
+		            resultSet.close();
+		        }
+		        if (stmt != null) {
+		            stmt.close();
+		        }
+		        if (connection != null) {
+		            connection.close();
+		        }
+		    } catch (SQLException se) {
+		        logger.warn("Error closing resources: " + se.getMessage());
+		    }
 		}
 		return result;
 	}

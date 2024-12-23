@@ -14,6 +14,7 @@ import org.openqa.selenium.NoSuchElementException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 @Data
@@ -43,11 +44,14 @@ public class Sqlselect extends WebAction {
 		logger.info("Initiating execution");
 		String url =  String.format("jdbc:sqlserver://%s;databaseName=%s;user=%s;password=%s;encrypt=false;",testData2.getValue().toString(), databaseName.getValue().toString(), userName.getValue().toString(), password.getValue().toString());
 		DatabaseUtil databaseUtil = new DatabaseUtil();
+		Connection connection = null;
+        Statement stmt = null;
+        ResultSet resultSet = null;
 		try{
-			Connection connection = databaseUtil.getConnection(url);
-			Statement stmt = connection.createStatement();
+			connection = databaseUtil.getConnection(url);
+			stmt = connection.createStatement();
 			String query = testData1.getValue().toString();
-			ResultSet resultSet = stmt.executeQuery(query);
+			resultSet = stmt.executeQuery(query);
 			StringBuilder resultStringBuilder = new StringBuilder();
 			ResultSetMetaData metaData = resultSet.getMetaData();
 			int columnCount = metaData.getColumnCount();
@@ -89,6 +93,22 @@ public class Sqlselect extends WebAction {
 			result = Result.FAILED;
 			setErrorMessage(errorMessage);
 			logger.warn(errorMessage);
+		}
+		finally {
+		    // Close resources in finally block
+		    try {
+		        if (resultSet != null) {
+		            resultSet.close();
+		        }
+		        if (stmt != null) {
+		            stmt.close();
+		        }
+		        if (connection != null) {
+		            connection.close();
+		        }
+		    } catch (SQLException se) {
+		        logger.warn("Error closing resources: " + se.getMessage());
+		    }
 		}
 		return result;
 	}
