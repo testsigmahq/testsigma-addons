@@ -13,6 +13,7 @@ import org.openqa.selenium.NoSuchElementException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 @Data
@@ -34,11 +35,14 @@ public class SqlqueriesWithUrl extends WebAction {
 		logger.info("Initiating execution");
 		String url = databaseUrl.getValue().toString();
 		DatabaseUtil databaseUtil = new DatabaseUtil();
+		Connection connection = null;
+		Statement stmt = null;
+		ResultSet resultSet = null;
 		try{
-			Connection connection = databaseUtil.getConnection(url);
-			Statement stmt = connection.createStatement();
+			connection = databaseUtil.getConnection(url);
+			stmt = connection.createStatement();
 			String query = testData1.getValue().toString();
-			ResultSet resultSet = stmt.executeQuery(query);
+			resultSet = stmt.executeQuery(query);
 			ResultSetMetaData rsmd = resultSet.getMetaData();
 			int columnNo = resultSet.getMetaData().getColumnCount();
 			sb.append("Successfully Executed Query and Resultset is : " + "<br>");
@@ -66,6 +70,22 @@ public class SqlqueriesWithUrl extends WebAction {
 			result = Result.FAILED;
 			setErrorMessage(errorMessage);
 			logger.warn(errorMessage);
+		}
+		finally {
+		    // Close resources in finally block
+		    try {
+		        if (resultSet != null) {
+		            resultSet.close();
+		        }
+		        if (stmt != null) {
+		            stmt.close();
+		        }
+		        if (connection != null) {
+		            connection.close();
+		        }
+		    } catch (SQLException se) {
+		        logger.warn("Error closing resources: " + se.getMessage());
+		    }
 		}
 		return result;
 	}

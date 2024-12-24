@@ -41,19 +41,25 @@ public class SqlValidateQueriesonTables extends WebAction {
 		logger.info("Initiating execution");
 		String url =  String.format("jdbc:sqlserver://%s;databaseName=%s;user=%s;password=%s;encrypt=false;",testData3.getValue().toString(), databaseName.getValue().toString(), userName.getValue().toString(), password.getValue().toString());
 		DatabaseUtil databaseUtil = new DatabaseUtil();
+		Connection connection1 = null;
+		Connection connection2 = null;
+		Statement stmt1 = null;
+		Statement stmt2 = null;
+		ResultSet resultSet1 = null;
+		ResultSet resultSet2 = null;
 		try{
 			
-			Connection connection1 = databaseUtil.getConnection(url);
-			Connection connection2 = databaseUtil.getConnection(url);
+			connection1 = databaseUtil.getConnection(url);
+			connection2 = databaseUtil.getConnection(url);
 
-			Statement stmt1 = connection1.createStatement();
-			Statement stmt2 = connection2.createStatement();
+			stmt1 = connection1.createStatement();
+			stmt2 = connection2.createStatement();
 
 			String query1 = testData1.getValue().toString();
 			String query2 = testData2.getValue().toString();
 			
-			ResultSet resultSet1 = stmt1.executeQuery(query1);
-			ResultSet resultSet2 = stmt2.executeQuery(query2);
+			resultSet1 = stmt1.executeQuery(query1);
+			resultSet2 = stmt2.executeQuery(query2);
 
 			boolean metadataComparisonSuccess = compareMetadata(resultSet1,resultSet2);
 			if(!metadataComparisonSuccess) {
@@ -69,6 +75,31 @@ public class SqlValidateQueriesonTables extends WebAction {
 			result = Result.FAILED;
 			setErrorMessage(errorMessage);
 			logger.warn(errorMessage);
+		}
+		finally {
+		    // Close resources in finally block
+		    try {
+		        if (resultSet1 != null) {
+		            resultSet1.close();
+		        }
+		        if (stmt1 != null) {
+		            stmt1.close();
+		        }
+		        if (connection1 != null) {
+		            connection1.close();
+		        }
+		        if (resultSet2 != null) {
+		            resultSet2.close();
+		        }
+		        if (stmt2 != null) {
+		            stmt2.close();
+		        }
+		        if (connection2 != null) {
+		            connection2.close();
+		        }
+		    } catch (SQLException se) {
+		        logger.warn("Error closing resources: " + se.getMessage());
+		    }
 		}
 		setSuccessMessage("The two queries are have similar data");
 		logger.info("The two queries are have similar data");

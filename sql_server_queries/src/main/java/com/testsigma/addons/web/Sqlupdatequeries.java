@@ -11,6 +11,8 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.openqa.selenium.NoSuchElementException;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 @Data
@@ -37,9 +39,11 @@ public class Sqlupdatequeries extends WebAction {
 		logger.info("Initiating execution");
 		String url =  String.format("jdbc:sqlserver://%s;databaseName=%s;user=%s;password=%s;encrypt=false;",testData2.getValue().toString(), databaseName.getValue().toString(), userName.getValue().toString(), password.getValue().toString());
 		DatabaseUtil databaseUtil = new DatabaseUtil();
+		Connection connection = null;
+		Statement stmt = null;
 		try{
-			Connection connection = databaseUtil.getConnection(url);
-			Statement stmt = connection.createStatement();
+			connection = databaseUtil.getConnection(url);
+			stmt = connection.createStatement();
 			String query = testData1.getValue().toString();
 			int resultdata = stmt.executeUpdate(query);
 
@@ -53,6 +57,19 @@ public class Sqlupdatequeries extends WebAction {
 			result = Result.FAILED;
 			setErrorMessage(errorMessage);
 			logger.warn(errorMessage);
+		}
+		finally {
+		    // Close resources in finally block
+		    try {
+		        if (stmt != null) {
+		            stmt.close();
+		        }
+		        if (connection != null) {
+		            connection.close();
+		        }
+		    } catch (SQLException se) {
+		        logger.warn("Error closing resources: " + se.getMessage());
+		    }
 		}
 		return result;
 	}
