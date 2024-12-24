@@ -17,7 +17,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.openqa.selenium.NoSuchElementException;
 
 @Data
-@Action(actionText = "Execute MySQL Select-Query on the connection DB_Connection_URL and store output into a variable-name",
+@Action(actionText = "Execute MySQL Select-Query on the connection DB_Connection_URL and store first column output into a variable-name",
 description = "This Action executes a given Select Query and stores the result(First cell data) into a provided runtime variable.",
 applicationType = ApplicationType.MOBILE_WEB)
 public class Mysqlselect extends WebAction {
