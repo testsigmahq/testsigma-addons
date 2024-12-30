@@ -20,7 +20,7 @@ import java.sql.Statement;
 @Data
 @Action(actionText = "Execute MySQL Select-Query on the connection DB_Connection_URL and store the query result into a variable-name",
         description = "This Action executes a given Select Query and stores the result(First cell data) into a provided runtime variable.",
-        applicationType = ApplicationType.WEB)
+        applicationType = ApplicationType.MOBILE_WEB)
 public class Mysqlselectandstore extends WebAction {
 
     @TestData(reference = "Select-Query")
