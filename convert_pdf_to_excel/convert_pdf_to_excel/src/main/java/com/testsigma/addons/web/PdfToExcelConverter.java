@@ -22,7 +22,7 @@ import java.util.List;
 
 @Data
 @Action(actionText = "PDF: Convert PDF file at pdf-file-path to Excel and save as output-file-name, storing path in runtime-variable variable-name",
-        description = "Extracts content from PDF and converts to Excel, storing path in a runtime variable",
+        description = "Extracts content from PDF and converts to Excel, storing path in a runtime variable and it will work in local execution",
         applicationType = ApplicationType.WEB)
 public class PdfToExcelConverter extends WebAction {
 
