@@ -21,7 +21,7 @@ import java.io.File;
 import java.io.FileInputStream;
 
 @Data
-@Action(actionText = "Read 112 the Latest Excelfile with Cell value rowNo,columnNo and store into a varaible testdata",
+@Action(actionText = "Read the Latest Excelfile with Cell value rowNo,columnNo and store into a varaible testdata",
 		description = "Read the data from latest excel file",
 		applicationType = ApplicationType.WEB,
 		useCustomScreenshot = false)
