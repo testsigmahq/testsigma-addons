@@ -134,6 +134,7 @@ public class SFTPUploadFile extends WindowsAction {
       // Avoid host key checking (for simplicity)
       java.util.Properties config = new java.util.Properties();
       config.put("StrictHostKeyChecking", "no");
+      config.put("server_host_key", "ssh-dss,ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,rsa-sha2-512,rsa-sha2-256");
       session.setConfig(config);
       session.connect();
       logger.info("Session connected.");
