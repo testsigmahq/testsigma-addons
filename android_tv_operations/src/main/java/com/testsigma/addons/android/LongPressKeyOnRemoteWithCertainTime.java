@@ -58,7 +58,7 @@ public class LongPressKeyOnRemoteWithCertainTime extends AndroidAction {
             ));
 
             // Wait for the specified duration
-            Thread.sleep(timeInSeconds * 1000);
+            driver.wait(timeInSeconds * 1000);
 
             // Release the key
             androidDriver.executeScript("mobile: keyevent", ImmutableMap.of(
