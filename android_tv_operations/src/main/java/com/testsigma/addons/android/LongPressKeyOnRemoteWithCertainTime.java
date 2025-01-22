@@ -1,6 +1,5 @@
 package com.testsigma.addons.android;
 
-import com.google.common.collect.ImmutableMap;
 import com.testsigma.sdk.AndroidAction;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
@@ -12,6 +11,8 @@ import io.appium.java_client.android.nativekey.KeyEvent;
 import lombok.Data;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.openqa.selenium.NoSuchElementException;
+import java.time.Duration;
+
 
 @Data
 @Action(actionText = "Long press Key key-value for testdata seconds on TV Remote",
@@ -21,62 +22,59 @@ public class LongPressKeyOnRemoteWithCertainTime extends AndroidAction {
 
     @TestData(
             reference = "key-value",
-            allowedValues = {
-                    "Ok", "Up", "Down", "Left", "Right",
-                    "Rewind", "Forward", "Ch+", "Ch-",
-                    "Volume-Up", "Volume-Down"
-            }
+            allowedValues =
+                    {
+                            "Ok","Up","Down","Left","Right",
+                            "Rewind","Forward","Ch+","Ch-",
+                            "Volume-Up","Volume-Down"
+                    }
     )
     private com.testsigma.sdk.TestData key;
 
     @TestData(reference = "testdata")
-    private com.testsigma.sdk.TestData time;
+    private com.testsigma.sdk.TestData durationInSeconds;
+
 
     @Override
     protected Result execute() throws NoSuchElementException {
         Result result = Result.SUCCESS;
-
         try {
-            // Validate input
-            Integer timeInSeconds = Integer.parseInt(time.getValue().toString());
-            if (timeInSeconds <= 0) {
-                setErrorMessage("Invalid duration. Please specify a positive number of seconds.");
-                return Result.FAILED;
-            }
-
-            logger.info("Initiating long press execution");
-            AndroidDriver androidDriver = (AndroidDriver) this.driver;
-
-            // Map the key name to the corresponding AndroidKey
+            logger.info("Initiating execution");
+            AndroidDriver androidDriver = (AndroidDriver)this.driver;
             AndroidKey androidKey = KeyUtil.getKey(key.getValue().toString());
-            logger.info("Long pressing key: " + key.getValue().toString() + " for " + timeInSeconds + " seconds.");
 
-            // Press and hold the key
-            androidDriver.executeScript("mobile: keyevent", ImmutableMap.of(
-                    "keycode", androidKey.getCode(),
-                    "eventType", "down" // Simulates pressing the key down
-            ));
+            int duration = Integer.parseInt(durationInSeconds.getValue().toString());
+            Duration pressDuration = Duration.ofSeconds(duration);
+            KeyEvent keyEvent = new KeyEvent(androidKey);
 
-            // Wait for the specified duration
-            driver.wait(timeInSeconds * 1000);
+            // Press the key down
+            androidDriver.pressKey(keyEvent);
+            // wait for a while
+            Thread.sleep(pressDuration.toMillis());
+            //Release the Key, create a new keyEvent for the release
+            KeyEvent releaseKeyEvent = new KeyEvent(androidKey);
+            androidDriver.pressKey(releaseKeyEvent);
 
-            // Release the key
-            androidDriver.executeScript("mobile: keyevent", ImmutableMap.of(
-                    "keycode", androidKey.getCode(),
-                    "eventType", "up" // Simulates releasing the key
-            ));
+            setSuccessMessage("Long pressed the key successfully for "+duration+" seconds");
 
-            setSuccessMessage("Successfully long pressed the key '" + key.getValue().toString() + "' for " + timeInSeconds + " seconds.");
         } catch (IllegalArgumentException e) {
-            logger.warn("Invalid key value: " + key.getValue());
-            logger.warn("Error occurred: " + ExceptionUtils.getStackTrace(e));
+            logger.info("Invalid key value or duration");
+            logger.info("Error occurred: "+ExceptionUtils.getStackTrace(e));
             result = Result.FAILED;
-            setErrorMessage("Invalid key value provided: " + key.getValue());
-        } catch (Exception e) {
-            logger.warn("Something went wrong during the long press action");
-            logger.warn("Error occurred: " + ExceptionUtils.getStackTrace(e));
+            setErrorMessage("Invalid key value or duration");
+        }
+        catch (InterruptedException e) {
+            logger.info("Thread was interrupted during the long press");
+            logger.info("Error occurred: "+ExceptionUtils.getStackTrace(e));
             result = Result.FAILED;
-            setErrorMessage("Failed to long press the key due to an error.");
+            setErrorMessage("Thread Interrupted while pressing the key");
+
+        }
+        catch (Exception e) {
+            logger.info("Something went wrong while pressing the given key");
+            logger.info("Error occurred: "+ExceptionUtils.getStackTrace(e));
+            result = Result.FAILED;
+            setErrorMessage("Unable to press the given key");
         }
         return result;
     }
