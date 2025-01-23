@@ -95,16 +95,15 @@ public class FindAllBrokenLinksInPage extends WebAction {
                         }
 
                     } catch (MalformedURLException e) {
+                        e.printStackTrace();
                         logger.warn("Malformed URL Exception for URL: " + currentUrl + e);
-                        setErrorMessage("Malformed URL: " + currentUrl + e);
-                        return Result.FAILED;
                     } catch (IOException e) {
+                        e.printStackTrace();
                         logger.warn("IO Exception for URL: " + currentUrl + e);
-                        setErrorMessage("IO Exception for URL: " + currentUrl + e);
-                        return Result.FAILED;
                     }
                 }
                 catch(StaleElementReferenceException e){
+                    e.printStackTrace();
                     logger.warn("StaleElementReferenceException caught for URL, refreshing and retrying"+ e);
                     i--;
                 }
