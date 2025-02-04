@@ -3,7 +3,7 @@ package com.testsigma.addons.web;
 import com.jcraft.jsch.*;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
-import com.testsigma.sdk.WindowsAction;
+import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.RunTimeData;
 import com.testsigma.sdk.annotation.TestData;
@@ -14,16 +14,20 @@ import org.openqa.selenium.NoSuchElementException;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Paths;
+import java.util.Properties;
 
 @Data
-@Action(actionText = "SFTP: Connect to SFTP server and upload a file. SFTP server details: Host: Host-Name, UserName: User-Name, Password: User-Password, Upload from Local-File-Path to Remote-Directory(ex: /C:/Users/username/Downloads) with file name Remote-File-Name. Uploaded file path will be stored in runtime variable: variable-name",
+@Action(actionText = "SFTP: Connect to SFTP server and upload a file. SFTP server details: Host: Host-Name,Port: Port-No UserName: User-Name, Password: User-Password, Upload from Local-File-Path to Remote-Directory(ex: /C:/Users/username/Downloads) with file name Remote-File-Name. Uploaded file path will be stored in runtime variable: variable-name",
         description = "Uploads a file from local system or URL to remote server using SFTP, and stores the uploaded file path in a runtime variable, ensuring matching extensions.",
         applicationType = ApplicationType.WEB,
         useCustomScreenshot = false)
-public class SFTPUploadFile extends WindowsAction {
+public class SFTPUploadFile extends WebAction {
 
   @TestData(reference = "Host-Name")
   private com.testsigma.sdk.TestData hostName;
+
+  @TestData(reference = "Port-No")
+  private com.testsigma.sdk.TestData port;
 
   @TestData(reference = "User-Name")
   private com.testsigma.sdk.TestData userName;
@@ -68,6 +72,7 @@ public class SFTPUploadFile extends WindowsAction {
 
     String user = userName.getValue().toString();
     String host = hostName.getValue().toString();
+    int portNumber = Integer.parseInt(port.getValue().toString());
     String password = userPassword.getValue().toString();
     String localFile = localFilePath.getValue().toString();
     String remoteDir = remoteDirectory.getValue().toString();
@@ -78,6 +83,7 @@ public class SFTPUploadFile extends WindowsAction {
 
     // Convert paths to SFTP format (handles both local and remote paths)
     remoteDir = convertToSFTPPath(remoteDir);
+    localFile = convertToSFTPPath(localFile);
     logger.info("Remote-Directory: " + remoteDir);
 
     JSch jsch = new JSch();
@@ -86,9 +92,11 @@ public class SFTPUploadFile extends WindowsAction {
 
     try {
       // Determine if the localFile is a URL or a local path
-      if (localFile.startsWith("http://") || localFile.startsWith("https://") || localFile.startsWith("file://")) {
+      if (localFile.startsWith("http://") || localFile.startsWith("https://")) {
+        logger.info("Url starts with http:// or https://");
         localFileToUpload = downloadFile(localFile);
       } else {
+        logger.info("Url not starts with https:// or http://");
         localFile = convertToSFTPPath(localFile);
         localFileToUpload = new File(localFile);
       }
@@ -128,11 +136,11 @@ public class SFTPUploadFile extends WindowsAction {
 
 
       // Setting up the session for SFTP connection
-      session = jsch.getSession(user, host);
+      session = jsch.getSession(user, host, portNumber);
       session.setPassword(password);
 
       // Avoid host key checking (for simplicity)
-      java.util.Properties config = new java.util.Properties();
+      Properties config = new Properties();
       config.put("StrictHostKeyChecking", "no");
       config.put("server_host_key", "ssh-dss,ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,rsa-sha2-512,rsa-sha2-256");
       session.setConfig(config);
@@ -159,6 +167,7 @@ public class SFTPUploadFile extends WindowsAction {
       String FilePath = null;
       // Correct concatenation of remote directory and file name
       FilePath = remoteDir.endsWith("/") ? remoteDir + remoteFile : remoteDir + "/" + remoteFile;
+      logger.info("File path: " + FilePath);
       channelSftp.put(localFileToUpload.getAbsolutePath(), FilePath);
       logger.info("File uploaded successfully to: " + FilePath);
 
@@ -191,8 +200,11 @@ public class SFTPUploadFile extends WindowsAction {
 
   private File downloadFile(String fileUrl) throws IOException {
     URL url = new URL(fileUrl);
+    logger.info("Downloading url: " + url);
     String fileName = Paths.get(url.getPath()).getFileName().toString();
+    logger.info("File name: " + fileName);
     File tempFile = File.createTempFile("downloaded-", fileName);
+    logger.info("Temp file created: " + tempFile.getAbsolutePath());
     try (InputStream in = url.openStream();
          OutputStream out = new FileOutputStream(tempFile)) {
       byte[] buffer = new byte[1024];
@@ -201,6 +213,8 @@ public class SFTPUploadFile extends WindowsAction {
         out.write(buffer, 0, bytesRead);
       }
     }
+
+    logger.info("Downloaded file: " + tempFile.getAbsolutePath());
     return tempFile;
   }
 }
