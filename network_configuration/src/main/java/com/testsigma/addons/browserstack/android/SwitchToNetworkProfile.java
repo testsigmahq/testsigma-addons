@@ -49,7 +49,7 @@ public class SwitchToNetworkProfile extends AndroidAction {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(apiUrl))
                     .header("Content-Type", "application/json")
-                    .header("Authorization", "Basic cnVrbWFuZ2FkYTE6UHpwelNGRUdOUVVhV1hwek5vazU=")
+                    .header("Authorization", "Basic <UserName:Password>")
                     .PUT(HttpRequest.BodyPublishers.ofString(requestBody.toString()))
                     .build();
 
