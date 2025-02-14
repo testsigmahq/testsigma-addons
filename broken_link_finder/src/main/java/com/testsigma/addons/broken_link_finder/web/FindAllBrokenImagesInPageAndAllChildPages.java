@@ -41,7 +41,7 @@ public class FindAllBrokenImagesInPageAndAllChildPages extends WebAction {
     private com.testsigma.sdk.TestData URL;
 
     @Override
-    public com.testsigma.sdk.Result execute() throws NoSuchElementException {
+    public Result execute() throws NoSuchElementException {
         try {
             collectValidLinks(URL.getValue().toString(), 5);
             collectBrokenImages(URL.getValue().toString());
@@ -54,7 +54,7 @@ public class FindAllBrokenImagesInPageAndAllChildPages extends WebAction {
                 return Result.SUCCESS;
             }
         } catch (Exception exception) {
-            log("Exception while finding broken images "+ exception);
+            logger.warn("Exception while finding broken images "+ exception);
             setErrorMessage("error while finding Broken Images ");
             return Result.FAILED;
         }
@@ -71,14 +71,14 @@ public class FindAllBrokenImagesInPageAndAllChildPages extends WebAction {
                     String src = img.getAttribute("src");
                     if (validatedImages.contains(src)) {
                         if (brokenImages.contains(src)) {
-                            log(img.getAttribute("outerHTML") + " has broken image.");
+                            logger.info(img.getAttribute("outerHTML") + " has broken image.");
                         }
                     } else {
                         HttpClient client = HttpClientBuilder.create().build();
                         HttpGet request = new HttpGet(src);
                         HttpResponse response = client.execute(request);
                         if (response.getStatusLine().getStatusCode() != 200) {
-                            log(img.getAttribute("outerHTML") + " has broken image.");
+                            logger.info(img.getAttribute("outerHTML") + " has broken image.");
                             brokenImages.add(src);
                         } else{
                             validatedImages.add(src);
@@ -88,7 +88,7 @@ public class FindAllBrokenImagesInPageAndAllChildPages extends WebAction {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            log(e.getMessage());
+            logger.warn(e.getMessage());
         }
     }
 
@@ -107,7 +107,7 @@ public class FindAllBrokenImagesInPageAndAllChildPages extends WebAction {
 
             if (href == null || href.isEmpty() || href.startsWith("tel:")) {
                 anchorTagsWithEmptyURLs++;
-                log("URL is either not configured for anchor tag or it is empty");
+                logger.info("URL is either not configured for anchor tag or it is empty");
                 continue;
             }
 
@@ -117,7 +117,7 @@ public class FindAllBrokenImagesInPageAndAllChildPages extends WebAction {
             validatedLinks.add(href);
             if (!href.contains(url)) {
                 skippedURLs.add(href);
-                log("URL belongs to another domain, skipping it.");
+                logger.info("URL belongs to another domain, skipping it.");
                 continue;
             }
 
@@ -132,12 +132,12 @@ public class FindAllBrokenImagesInPageAndAllChildPages extends WebAction {
 
                 if (respCode >= 400) {
                     brokenURLs.add(href);
-                    log(href + " is a broken link");
+                    logger.info(href + " is a broken link");
                 } else {
                     if (!href.equals(this.URL.getValue().toString())) {
                         validLinks.add(href);
                     }
-                    log(href + " is a valid link");
+                    logger.info(href + " is a valid link");
                 }
 
             } catch (MalformedURLException e) {
@@ -153,7 +153,7 @@ public class FindAllBrokenImagesInPageAndAllChildPages extends WebAction {
             for(int i= 0; i< links.size();i++){
                 Boolean collected = collectValidLinks(links.get(i).getAttribute("href"), nextNestedIterationsLevel);
                 if(collected ==  false){
-                    log("Skipping Element as its URL is Null, Element - " + links.get(i));
+                    logger.info("Skipping Element as its URL is Null, Element - " + links.get(i));
                 }
                 return collected;
             }

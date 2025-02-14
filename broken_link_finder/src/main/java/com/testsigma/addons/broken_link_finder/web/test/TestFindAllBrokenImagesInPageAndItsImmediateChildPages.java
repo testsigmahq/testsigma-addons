@@ -2,7 +2,6 @@ package com.testsigma.addons.broken_link_finder.web.test;
 
 import com.testsigma.sdk.TestData;
 import com.testsigma.sdk.runners.ActionRunner;
-import com.testsigma.addons.broken_link_finder.web.FindAllBrokenImagesInPageAndItsImmediateChildPages;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
