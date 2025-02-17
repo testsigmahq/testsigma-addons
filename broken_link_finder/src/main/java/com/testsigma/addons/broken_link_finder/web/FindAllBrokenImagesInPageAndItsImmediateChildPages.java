@@ -42,7 +42,7 @@ public class FindAllBrokenImagesInPageAndItsImmediateChildPages extends WebActio
     private com.testsigma.sdk.TestData URL;
 
     @Override
-    public com.testsigma.sdk.Result execute() throws NoSuchElementException {
+    public Result execute() throws NoSuchElementException {
         try{
             collectValidLinks(URL.getValue().toString());
             collectBrokenImages(URL.getValue().toString());
@@ -75,14 +75,14 @@ public class FindAllBrokenImagesInPageAndItsImmediateChildPages extends WebActio
 
                         if (validatedImages.contains(src)) {
                             if (brokenImages.contains(src)) {
-                                log(img.getAttribute("outerHTML") + " has broken image.");
+                                logger.info(img.getAttribute("outerHTML") + " has broken image.");
                             }
                         } else {
                             HttpClient client = HttpClientBuilder.create().build();
                             HttpGet request = new HttpGet(src);
                             HttpResponse response = client.execute(request);
                             if (response.getStatusLine().getStatusCode() != 200) {
-                                log(img.getAttribute("outerHTML") + " has broken image.");
+                                logger.info(img.getAttribute("outerHTML") + " has broken image.");
                                 brokenImages.add(src);
                             } else{
                                 validatedImages.add(src);
@@ -93,7 +93,7 @@ public class FindAllBrokenImagesInPageAndItsImmediateChildPages extends WebActio
             }
         } catch (Exception e) {
             e.printStackTrace();
-            log(e.getMessage());
+            logger.warn(e.getMessage());
         }
     }
 
@@ -112,7 +112,7 @@ public class FindAllBrokenImagesInPageAndItsImmediateChildPages extends WebActio
 
             if (href == null || href.isEmpty() || href.startsWith("tel:") || href.startsWith("mailto:") || href.startsWith("javascript:") ){
                 anchorTagsWithEmptyURLs++;
-                log("URL is either not configured for anchor tag or it is empty");
+                logger.info("URL is either not configured for anchor tag or it is empty");
                 continue;
             }
 
@@ -123,7 +123,7 @@ public class FindAllBrokenImagesInPageAndItsImmediateChildPages extends WebActio
 
             if (!href.contains(url1)) {
                 skippedURLs.add(href);
-                log("URL belongs to another domain, skipping it.");
+                logger.info("URL belongs to another domain, skipping it.");
                 continue;
             }
 
@@ -138,12 +138,12 @@ public class FindAllBrokenImagesInPageAndItsImmediateChildPages extends WebActio
 
                 if (respCode >= 400) {
                     brokenURLs.add(href);
-                    log(href + " is a broken link");
+                    logger.info(href + " is a broken link");
                 } else {
                     if (!href.equals(this.URL.getValue().toString())) {
                         validLinks.add(href);
                     }
-                    log(href + " is a valid link");
+                    logger.info(href + " is a valid link");
                 }
 
             } catch (MalformedURLException e) {

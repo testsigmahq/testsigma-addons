@@ -34,11 +34,11 @@ public class FindAllBrokenLinksInPageAndItsImmediateChildPages extends WebAction
     private com.testsigma.sdk.TestData URL;
 
     @Override
-    public com.testsigma.sdk.Result execute() throws NoSuchElementException {
+    public Result execute() throws NoSuchElementException {
         try{
             collectBrokenUrls(URL.getValue().toString(), false);
             validatedLinks.forEach(link -> collectBrokenUrls(link, true));
-            log(validatedLinks.toString());
+            logger.info(validatedLinks.toString());
             if (brokenURLs.size() > 0) {
                 setSuccessMessage("Broken URLs : " + brokenURLs);
                 return Result.SUCCESS;
@@ -47,7 +47,7 @@ public class FindAllBrokenLinksInPageAndItsImmediateChildPages extends WebAction
                 return Result.SUCCESS;
             }
         }catch (Exception exception){
-            log("Exception while fetching broken links " + exception);
+            logger.warn("Exception while fetching broken links " + exception);
             setErrorMessage("Error while finding Broken Links ");
             return Result.FAILED;
         }
@@ -69,7 +69,7 @@ public class FindAllBrokenLinksInPageAndItsImmediateChildPages extends WebAction
 
                 if (href == null || href.isEmpty() || href.startsWith("tel:") || href.startsWith("mailto:") || href.startsWith("javascript:")) {
                     anchorTagsWithEmptyURLs++;
-                    log("URL is either not configured for anchor tag or it is empty");
+                    logger.warn("URL is either not configured for anchor tag or it is empty");
                     continue;
                 }
 
@@ -81,7 +81,7 @@ public class FindAllBrokenLinksInPageAndItsImmediateChildPages extends WebAction
                 }
                 if (!href.contains(url)) {
                     skippedURLs.add(href);
-                    log("URL belongs to another domain, skipping it.");
+                    logger.info("URL belongs to another domain, skipping it.");
                     continue;
                 }
 
@@ -96,9 +96,9 @@ public class FindAllBrokenLinksInPageAndItsImmediateChildPages extends WebAction
 
                     if (respCode >= 400) {
                         brokenURLs.add(href);
-                        log(href + " is a broken link");
+                        logger.info(href + " is a broken link");
                     } else {
-                        log(href + " is a valid link");
+                        logger.info(href + " is a valid link");
                     }
 
                 } catch (MalformedURLException e) {

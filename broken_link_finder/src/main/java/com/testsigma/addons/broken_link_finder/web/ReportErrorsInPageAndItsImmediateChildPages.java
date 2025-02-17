@@ -6,21 +6,23 @@ import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import lombok.Data;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.logging.LogEntries;
 import org.openqa.selenium.logging.LogEntry;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+
+import static com.testsigma.addons.broken_link_finder.web.ReportErrorsInPageAndAllChildPages.waitForElementToBeNonStale;
 
 @Data
 @Action(actionText = "Check & report all console errors in url and immediate child pages",
@@ -39,47 +41,58 @@ public class ReportErrorsInPageAndItsImmediateChildPages extends WebAction {
     private com.testsigma.sdk.TestData URL;
 
     @Override
-    public com.testsigma.sdk.Result execute() throws NoSuchElementException {
-       try{
-           driver.get(URL.getValue().toString());
-           LogEntries logEntries = driver.manage().logs().get("browser");
-           List<LogEntry> logEntryList = new ArrayList<>();
-           logEntryList.addAll(logEntries.getAll().stream().filter(logEntry -> logEntry.getLevel().equals(Level.SEVERE)).collect(Collectors.toList()));
-           this.collectValidLinks(URL.getValue().toString());
-           validLinks.forEach(links -> {
-               driver.navigate().to(URL.getValue().toString());
-               logEntryList.addAll(logEntries.getAll().stream().filter(logEntry -> logEntry.getLevel().equals(Level.SEVERE)).collect(Collectors.toList()));
-           });
-           if (logEntryList.size() > 0) {
-               setSuccessMessage(" Errors [" + logEntryList.size() + "] : " + logEntryList.toArray());
-               return Result.SUCCESS;
-           } else {
-               setSuccessMessage("There are no console errors in the page");
-               return Result.SUCCESS;
-           }
-       }catch (Exception exception){
-           setErrorMessage("error while finding Broken Images ");
-           return Result.FAILED;
-       }
+    public Result execute() throws NoSuchElementException {
+        try{
+            driver.get(URL.getValue().toString());
+            LogEntries logEntries = driver.manage().logs().get("browser");
+            List<LogEntry> logEntryList = new ArrayList<>(logEntries.getAll().stream().filter(logEntry -> logEntry.getLevel().equals(Level.SEVERE)).collect(Collectors.toList()));
+            this.collectValidLinks(URL.getValue().toString());
+            validLinks.forEach(links -> {
+                driver.navigate().to(URL.getValue().toString());
+                logEntryList.addAll(logEntries.getAll().stream().filter(logEntry -> logEntry.getLevel().equals(Level.SEVERE)).collect(Collectors.toList()));
+            });
+            if (!logEntryList.isEmpty()) {
+                setSuccessMessage(" Errors [" + logEntryList.size() + "] : " + Arrays.toString(logEntryList.toArray()));
+                return Result.SUCCESS;
+            } else {
+                setSuccessMessage("There are no console errors in the page");
+                return Result.SUCCESS;
+            }
+        }catch (Exception exception){
+            logger.info("Exception: " + ExceptionUtils.getStackTrace(exception));
+            setErrorMessage("error while finding Broken Images ");
+            return Result.FAILED;
+        }
     }
 
-    void collectValidLinks(String url) {
+    void collectValidLinks(String url) throws Exception {
         driver.get(url);
         String href = "";
 
         String url1 = url.substring(url.indexOf("://") + 3);
-        url1 = url1.indexOf("/") != -1 ? url1.substring(0, url1.indexOf("/")) : url1;
+        url1 = url1.contains("/") ? url1.substring(0, url1.indexOf("/")) : url1;
 
         List<WebElement> links = driver.findElements(By.tagName("a"));
 
-        Iterator<WebElement> it = links.iterator();
-
-        while (it.hasNext()) {
-            href = it.next().getAttribute("href");
+        for (WebElement link : links) {
+            try{
+                href = link.getAttribute("href");
+            } catch (StaleElementReferenceException exception){
+                link = waitForElementToBeNonStale(driver, link);
+                if (link == null) {
+                    logger.info("Skipping element as it is a stale element");
+                    continue;
+                }
+                href = link.getAttribute("href");
+                if (href == null) {
+                    logger.info("Skipping Element as its 'href' is " + href + ", Element - " + link);
+                    continue;
+                }
+            }
 
             if (href == null || href.isEmpty() || href.startsWith("tel:") || href.startsWith("mailto:") || href.startsWith("javascript:")) {
                 anchorTagsWithEmptyURLs++;
-                System.out.println("URL is either not configured for anchor tag or it is empty");
+                logger.warn("URL is either not configured for anchor tag or it is empty");
                 continue;
             }
 
@@ -87,11 +100,11 @@ public class ReportErrorsInPageAndItsImmediateChildPages extends WebAction {
                 continue;
             }
             validatedLinks.add(href);
-            System.out.println(href);
+            logger.info(href);
 
             if (!href.startsWith(url1)) {
                 skippedURLs.add(href);
-                System.out.println("URL belongs to another domain, skipping it.");
+                logger.info("URL belongs to another domain, skipping it.");
                 continue;
             }
 
@@ -106,18 +119,16 @@ public class ReportErrorsInPageAndItsImmediateChildPages extends WebAction {
 
                 if (respCode >= 400) {
                     brokenURLs.add(href);
-                    System.out.println(href + " is a broken link");
+                    logger.info(href + " is a broken link");
                 } else {
                     if (!href.equals(this.URL.getValue().toString())) {
                         validLinks.add(href);
                     }
-                    System.out.println(href + " is a valid link");
+                    logger.info(href + " is a valid link");
                 }
 
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (Exception e) {
+                throw new Exception(e);
             }
         }
     }

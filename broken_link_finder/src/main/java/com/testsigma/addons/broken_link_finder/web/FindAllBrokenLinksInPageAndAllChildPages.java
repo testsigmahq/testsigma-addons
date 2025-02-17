@@ -38,7 +38,7 @@ public class FindAllBrokenLinksInPageAndAllChildPages extends WebAction {
         try{
             collectBrokenUrls(URL.getValue().toString(), 0);
             validatedLinks.forEach(link -> collectBrokenUrls(link, 4));
-            log(validatedLinks.toString());
+            logger.info(validatedLinks.toString());
             if (brokenURLs.size() > 0) {
                 setSuccessMessage("Broken URLs : " + brokenURLs);
                 return Result.SUCCESS;
@@ -47,7 +47,7 @@ public class FindAllBrokenLinksInPageAndAllChildPages extends WebAction {
                 return Result.SUCCESS;
             }
         }catch (Exception exception){
-            log("Exception while finding broken links in child page " + exception);
+            logger.warn("Exception while finding broken links in child page " + exception);
             setErrorMessage("error while finding Broken Images ");
             return Result.FAILED;
         }
@@ -69,7 +69,7 @@ public class FindAllBrokenLinksInPageAndAllChildPages extends WebAction {
 
                 if (href == null || href.isEmpty() || href.startsWith("tel:") || href.startsWith("mailto:") || href.startsWith("javascript:")) {
                     anchorTagsWithEmptyURLs++;
-                    log("URL is either not configured for anchor tag or it is empty");
+                    logger.warn("URL is either not configured for anchor tag or it is empty");
                     continue;
                 }
 
@@ -82,7 +82,7 @@ public class FindAllBrokenLinksInPageAndAllChildPages extends WebAction {
 
                 if (!href.contains(url)) {
                     skippedURLs.add(href);
-                    log("URL belongs to another domain, skipping it.");
+                    logger.info("URL belongs to another domain, skipping it.");
                     continue;
                 }
 
@@ -97,9 +97,9 @@ public class FindAllBrokenLinksInPageAndAllChildPages extends WebAction {
 
                     if (respCode >= 400) {
                         brokenURLs.add(href);
-                        log(href + " is a broken link");
+                        logger.info(href + " is a broken link");
                     } else {
-                        log(href + " is a valid link");
+                        logger.info(href + " is a valid link");
                     }
 
                 } catch (MalformedURLException e) {

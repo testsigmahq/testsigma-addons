@@ -1,6 +1,5 @@
 package com.testsigma.addons.broken_link_finder.web.test;
 
-import com.testsigma.addons.broken_link_finder.web.ReportErrorsInPageAndItsImmediateChildPages;
 import com.testsigma.sdk.TestData;
 import com.testsigma.sdk.runners.ActionRunner;
 import org.openqa.selenium.chrome.ChromeDriver;

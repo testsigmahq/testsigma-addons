@@ -27,7 +27,7 @@ public class FindAllBrokenImagesInPage extends WebAction {
     private com.testsigma.sdk.TestData URL;
 
     @Override
-    public com.testsigma.sdk.Result execute() throws NoSuchElementException {
+    public Result execute() throws NoSuchElementException {
         try {
             driver.get(URL.getValue().toString());
             driver.manage().window().maximize();
@@ -50,16 +50,16 @@ public class FindAllBrokenImagesInPage extends WebAction {
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
-                            log(e.getMessage());
+                            logger.warn(e.getMessage());
                         }
                     }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                log(e.getMessage());
+                logger.warn(e.getMessage());
             }
 
-            log("Total images in the page : " + image_list.size() + ", broken images : " + brokenImages.size() + " .");
+            logger.info("Total images in the page : " + image_list.size() + ", broken images : " + brokenImages.size() + " .");
 
             if (brokenImages.size() > 0) {
                 setSuccessMessage("Broken Images [" + brokenImages.size() + "] : " + brokenImages);

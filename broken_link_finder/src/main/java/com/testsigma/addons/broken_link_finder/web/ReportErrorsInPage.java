@@ -10,6 +10,7 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.logging.LogEntries;
 import org.openqa.selenium.logging.LogEntry;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -24,19 +25,22 @@ public class ReportErrorsInPage extends WebAction {
     private com.testsigma.sdk.TestData URL;
 
     @Override
-    public com.testsigma.sdk.Result execute() throws NoSuchElementException {
+    public Result execute() throws NoSuchElementException {
         try{
             driver.get(URL.getValue().toString());
             LogEntries logEntries = driver.manage().logs().get("browser");
             List<LogEntry> logEntryList = logEntries.getAll().stream().filter(logEntry -> logEntry.getLevel().equals(Level.SEVERE)).collect(Collectors.toList());
-            if (logEntryList.size() > 0) {
-                setSuccessMessage(" Errors [" + logEntryList.size() + "] : " + logEntryList.toArray());
+            if (!logEntryList.isEmpty()) {
+                logger.info(" Errors [" + logEntryList.size() + "] : " + Arrays.toString(logEntryList.toArray()));
+                setSuccessMessage(" Errors [" + logEntryList.size() + "] : " + Arrays.toString(logEntryList.toArray()));
                 return Result.SUCCESS;
             } else {
+                logger.info("There are no console errors in the page");
                 setSuccessMessage("There are no console errors in the page");
                 return Result.SUCCESS;
             }
         }catch (Exception exception){
+            logger.warn("error while finding Broken Images");
             setErrorMessage("error while finding Broken Images ");
             return Result.FAILED;
         }
