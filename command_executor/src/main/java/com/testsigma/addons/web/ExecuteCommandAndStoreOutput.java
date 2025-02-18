@@ -13,9 +13,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.StringTokenizer;
 
 @Data
 @Action(actionText = "Execute command and store output in a variable. Command to execute: Executable-Command , variable name: Output-Variable",
@@ -32,7 +31,6 @@ public class ExecuteCommandAndStoreOutput extends WebAction {
     @RunTimeData
     private com.testsigma.sdk.RunTimeData runTimeData;
 
-    private static final long EXECUTION_TIMEOUT_SECONDS = 10; // Define a timeout value (e.g., 10 seconds)
 
     @Override
     public com.testsigma.sdk.Result execute() throws NoSuchElementException {
@@ -42,113 +40,114 @@ public class ExecuteCommandAndStoreOutput extends WebAction {
         String output = null; // Initialize output to null
         try {
             String command = commandToExecute.getValue().toString();
-            output = executeCommand(command); // Assign output from executeCommand
+            CommandResult commandResult = executeCommand(command); // Assign output from executeCommand
+            output = commandResult.getOutput(); // Get combined output (std + err)
+
             runTimeData = new com.testsigma.sdk.RunTimeData();
             runTimeData.setKey(variableName.getValue().toString());
-            runTimeData.setValue(output);  // Store potentially null output
+            runTimeData.setValue(output);  // Store output in runtime variable
 
             logger.info("Output: " + output);
 
             // Construct the success message based on the actual output
             String message = "Command executed successfully and output is stored in variable: " + variableName.getValue().toString();
             if (output != null && !output.isEmpty()) {
-                message += "='" + output.trim() + "'"; //Add ' ' to the value
+                message += "='" + output.trim() + "'"; // Add ' ' to the value
             } else {
                 message += " ";
             }
-            setSuccessMessage(message);
+            setSuccessMessage(message); //Always Set Success Message even the output is empty
 
 
         } catch (Exception e) {
             String errorMessage = ExceptionUtils.getStackTrace(e);
-            result = com.testsigma.sdk.Result.FAILED;
+            result = com.testsigma.sdk.Result.FAILED; // Keep failure as fallback
             setErrorMessage("Unable to execute command, please check Additional logs for more info: " + e.getMessage());
             logger.warn(errorMessage); // Use logger.error for full stack traces
         } finally {
             if (runTimeData == null) {
                 runTimeData = new com.testsigma.sdk.RunTimeData();
                 runTimeData.setKey(variableName.getValue().toString());
-                runTimeData.setValue("");
+                runTimeData.setValue(""); // If an exception occurs and the runTimeData object is null, initialize the value of the runtime variable with a blank string
             }
 
         }
         return result;
     }
 
-    private String executeCommand(String command) throws Exception {
+    private CommandResult executeCommand(String command) throws Exception {
         StringBuilder output = new StringBuilder();
+        StringBuilder errorOutput = new StringBuilder();
+        int exitCode = -1; // Initialize with a default value
         String os = System.getProperty("os.name").toLowerCase();
         logger.info("OS Name: " + os);
 
-        List<String> commandList = new ArrayList<>();
+        // Adjust the command for different operating systems
+        String shell = "/bin/bash"; // Default shell
+        String shellArg = "-c"; // Default shell argument
+
         if (os.contains("win")) {
-            commandList.addAll(Arrays.asList("cmd", "/c"));
-            commandList.add(command);
-        } else {
-            commandList.addAll(Arrays.asList("/bin/bash", "-c"));
-            commandList.add(command);
+            shell = "cmd";
+            shellArg = "/c";
         }
+
 
         Process process = null;
         try {
-            logger.info("Executing command: " + commandList);
-            ProcessBuilder processBuilder = new ProcessBuilder(commandList);
+            // Log current working directory
+            logger.info("Current working directory: " + new java.io.File(".").getAbsolutePath());
 
-            // Redirect error stream to the input stream - helpful for debugging.
-            processBuilder.redirectErrorStream(true);
+            // Use ProcessBuilder to execute the command with shell
+            List<String> fullCommand = new ArrayList<>();
+            fullCommand.add(shell);
+            fullCommand.add(shellArg);
+            fullCommand.add(command);  // Pass the entire original command string.
+            logger.info("Executing command: " + fullCommand);
+            ProcessBuilder processBuilder = new ProcessBuilder(fullCommand);
 
             process = processBuilder.start();
 
-            // Use a BufferedReader to read the output
+            // Capture the output using BufferedReader
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
-            // Start a thread to read the output from the process
-            Thread readerThread = new Thread(() -> {
-                try {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        output.append(line).append(System.lineSeparator()); // Use platform-specific line separator
-                    }
-                } catch (IOException e) {
-                    logger.warn("Error reading process output: " + e.getMessage());
-                }
-            });
-            readerThread.start();
-
-            // Wait for the process to complete or timeout
-            boolean completed = process.waitFor(EXECUTION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            readerThread.join(100); // Try to join the reader thread for a short duration.
-            if (!completed) {
-                logger.warn("Command execution timed out after " + EXECUTION_TIMEOUT_SECONDS + " seconds. Killing the process.");
-                process.destroy();
-                return ""; // Return empty string instead of null
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append("\n");
             }
 
-            int exitCode = process.exitValue();
-            logger.info("Command exited with code: " + exitCode);
-
-            if (exitCode != 0) {
-                logger.warn("Command execution may have failed. Check output for errors.");
+            // Capture the error stream
+            BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+            String errorLine;
+            while ((errorLine = errorReader.readLine()) != null) {
+                errorOutput.append(errorLine).append("\n");
             }
 
-            // If the process completed, wait for the reader thread to finish processing all output
-            readerThread.join(); // Ensures all output is read if the process completes within the timeout
+            // Wait for the process to complete and log the exit code
+            exitCode = process.waitFor();
+            logger.info("Process exit code: " + exitCode);
 
+            logger.warn("Error stream: " + errorOutput.toString());
 
         } catch (IOException | InterruptedException e) {
-            logger.warn("Error executing command: " + e.getMessage() + e); // Log the exception with stack trace
-            if (process != null)
-                process.destroy();
-            throw e;
+            logger.info("Error executing command: " + e.getMessage());
+            output.append("\nException during command execution: ").append(e.getMessage());
+            errorOutput.append("\nException during command execution: ").append(e.getMessage());
         } finally {
             if (process != null) {
                 process.destroy();
             }
         }
 
-        if (output.length() == 0) {
-            return ""; // Return empty string instead of null
-        }
-        return output.toString();
+        // Combine standard output and error output
+        String combinedOutput = output.toString() + "\n" + errorOutput.toString();
+
+        return new CommandResult(combinedOutput, exitCode);
+    }
+
+    // Helper class to store both the output and the exit code
+    @Data
+    private static class CommandResult {
+        private final String output;
+        private final int exitCode;
     }
 }
