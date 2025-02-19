@@ -1,15 +1,15 @@
 package com.testsigma.addons.web;
 
-import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.ApplicationType;
+import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import lombok.Data;
-import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.interactions.Actions;
 
 @Data
-@Action(actionText = "Click on coordinates testdata (x, y)",
+@Action(actionText = "Click on testdata using x,y coordinates",
         description = "Click on the web page at the specified X and Y coordinates, provided as a comma-separated string.",
         applicationType = ApplicationType.WEB,
         useCustomScreenshot = false)

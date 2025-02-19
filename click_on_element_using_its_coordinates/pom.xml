@@ -5,7 +5,7 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.testsigma.addons</groupId>
-    <artifactId>click_on_element_using_its_coordinates_web_application</artifactId>
+    <artifactId>clicking_on_element_using_its_coordinates</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
@@ -13,7 +13,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <testsigma.sdk.version>1.2.13_cloud</testsigma.sdk.version>
+        <testsigma.sdk.version>1.2.18_cloud</testsigma.sdk.version>
         <junit.jupiter.version>5.8.0-M1</junit.jupiter.version>
         <testsigma.addon.maven.plugin>1.0.0</testsigma.addon.maven.plugin>
         <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
@@ -64,7 +64,7 @@
 
     </dependencies>
     <build>
-        <finalName>click_on_element_using_its_coordinates_web_application</finalName>
+        <finalName>clicking_on_element_using_its_coordinates</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
