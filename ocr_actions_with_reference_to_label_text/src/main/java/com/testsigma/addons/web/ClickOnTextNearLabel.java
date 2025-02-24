@@ -1,0 +1,161 @@
+package com.testsigma.addons.web;
+
+import com.testsigma.sdk.*;
+import com.testsigma.sdk.annotation.Action;
+import com.testsigma.sdk.annotation.OCR;
+import com.testsigma.sdk.annotation.TestData;
+import com.testsigma.sdk.annotation.TestStepResult;
+import lombok.Data;
+
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.event.InputEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+
+@Data
+@Action(actionText = "Click on element with label text label-text where the element position is positions",
+        description = "Click on the text using the text coordinates relative to another text's position",
+        applicationType = ApplicationType.WINDOWS,
+        useCustomScreenshot = true)
+
+public class ClickOnTextNearLabel extends WindowsAction {
+
+    private static final int X_OFFSET = 10;
+    private static final int Y_OFFSET = 10;
+
+    @OCR
+    private com.testsigma.sdk.OCR ocr;
+
+    @TestData(reference = "label-text")
+    private com.testsigma.sdk.TestData labeltext;
+
+    @TestData(reference = "positions",allowedValues = {"Below Given Text","Above Given Text","Before Given Text","After Given Text"})
+    private com.testsigma.sdk.TestData positions;
+
+    @TestStepResult
+    private com.testsigma.sdk.TestStepResult testStepResult;
+
+    @Override
+    protected Result execute() {
+        Result result = Result.SUCCESS;
+        try {
+            Robot robot = new Robot();
+
+            // Fetch the Details of the Screen Size
+            Rectangle screenSize = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
+
+            // Take the Snapshot of the Screen
+            BufferedImage tmp = robot.createScreenCapture(screenSize);
+
+            // Provide the destination details to copy the screenshot
+            String tempDir = System.getProperty("java.io.tmpdir");
+            String filename = "screenshot" + System.currentTimeMillis() + ".jpg";
+            String path = tempDir + filename;
+
+            // To copy source image in to destination path
+            ImageIO.write(tmp, "jpg", new File(path));
+            int width = tmp.getWidth();
+            int height = tmp.getHeight();
+            logger.info("Width of image: " + width);
+            logger.info("Height of image: " + height);
+
+            File baseImageFile = new File(path);
+            OCRImage ocrImage = new OCRImage();
+            ocrImage.setOcrImageFile(baseImageFile);
+
+            List<OCRTextPoint> textPoints = ocr.extractTextFromImage(ocrImage);
+            printAllCoordinates(textPoints);
+            OCRTextPoint textPoint = getTextPointFromText(textPoints);
+            if (textPoint == null) {
+                result = Result.FAILED;
+                setErrorMessage("Given text is not found");
+
+            } else {
+                logger.info("Found Textpoint with text = " + textPoint.getText() + ", x1 = " + textPoint.getX1() +
+                        ", y1 = " + textPoint.getY1() + ", x2 = " + textPoint.getX2() + ", y2 = " + textPoint.getY2());
+                logger.info("position: " + positions.getValue().toString());
+                clickOnCoordinates(textPoint, positions.getValue().toString()); // Pass the position here
+                tmp = robot.createScreenCapture(screenSize);
+                filename = "screenshot" + System.currentTimeMillis() + ".jpg";
+                path = tempDir + filename;
+                ImageIO.write(tmp, "jpg", new File(path));
+                baseImageFile = new File(path);
+                String url = testStepResult.getScreenshotUrl();
+                ocr.uploadFile(url, baseImageFile);
+                setSuccessMessage("Click operation performed on the text " +
+                        "    Text coordinates :" + "x-" + x + ", y-" + y +
+                        " Position: " + positions.getValue().toString());
+            }
+        } catch (Exception e) {
+            logger.info("Exception: " + Arrays.toString(e.getStackTrace()));
+            setErrorMessage("Exception occurred while searching for the given text");
+            result = Result.FAILED;
+        }
+
+
+        return result;
+    }
+
+    private OCRTextPoint getTextPointFromText(List<OCRTextPoint> textPoints) {
+        if (textPoints == null) {
+            return null;
+        }
+        for (OCRTextPoint textPoint : textPoints) {
+            if (textPoint.getText().contains(labeltext.getValue().toString())) {
+                return textPoint;
+
+            }
+        }
+        return null;
+    }
+
+    private void printAllCoordinates(List<OCRTextPoint> textPoints) {
+        for (OCRTextPoint textPoint : textPoints) {
+            logger.info("text =" + textPoint.getText() + "x1 = " + textPoint.getX1() + ", y1 =" + textPoint.getY1() + ", x2 = " + textPoint.getX2() + ", y2 =" + textPoint.getY2() + "\n\n\n\n");
+        }
+    }
+
+    int x, y;
+    public void clickOnCoordinates(OCRTextPoint textPoint, String position) throws AWTException {
+        Robot robot = new Robot();
+
+        int x1 = textPoint.getX1();
+        int y1 = textPoint.getY1();
+        int x2 = textPoint.getX2();
+        int y2 = textPoint.getY2();
+
+        switch (position.toLowerCase()) {
+            case "below given text":
+                logger.info("below given text position");
+                x = (x1 + x2) / 2;
+                y = y2 + Y_OFFSET;
+                break;
+            case "above given text":
+                logger.info("above given text position");
+                x = (x1 + x2) / 2;
+                y = y1 - Y_OFFSET;
+                break;
+            case "before given text":
+                logger.info("before given text position");
+                x = x1 - X_OFFSET;
+                y = (y1 + y2) / 2;
+                break;
+            case "after given text":
+                logger.info("after given text position");
+                x = x2 + X_OFFSET;
+                y = (y1 + y2) / 2;
+                break;
+            default:
+                logger.info("Invalid position specified.  Clicking on the center of the text.");
+                break;
+        }
+        logger.info("Final Coordinates "+ "x = " + x + ", y = " + y);
+
+        robot.mouseMove(x, y);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+    }
+}
