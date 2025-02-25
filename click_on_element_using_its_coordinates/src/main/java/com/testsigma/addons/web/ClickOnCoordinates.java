@@ -9,13 +9,13 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.interactions.Actions;
 
 @Data
-@Action(actionText = "Click on testdata using x,y coordinates",
+@Action(actionText = "Click on co-ordinates testData (format: x,y Ex: 100,200)",
         description = "Click on the web page at the specified X and Y coordinates, provided as a comma-separated string.",
         applicationType = ApplicationType.WEB,
         useCustomScreenshot = false)
 public class ClickOnCoordinates extends WebAction {
 
-    @TestData(reference = "testdata")
+    @TestData(reference = "testData")
     private com.testsigma.sdk.TestData coordinates;
 
     @Override

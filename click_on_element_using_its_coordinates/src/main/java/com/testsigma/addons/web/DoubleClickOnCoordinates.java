@@ -9,13 +9,21 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.interactions.Actions;
 
 @Data
+<<<<<<< Updated upstream
 @Action(actionText = "Double click on testdata using x,y coordinates",
+=======
+@Action(actionText = "Double click on co-ordinates testData (format: x,y Ex: 100,200)",
+>>>>>>> Stashed changes
         description = "Double click on the web page at the specified X and Y coordinates, provided as a comma-separated string.",
         applicationType = ApplicationType.WEB,
         useCustomScreenshot = false)
 public class DoubleClickOnCoordinates extends WebAction {
 
+<<<<<<< Updated upstream
     @TestData(reference = "testdata")
+=======
+    @TestData(reference = "testData")
+>>>>>>> Stashed changes
     private com.testsigma.sdk.TestData coordinates;
 
     @Override
