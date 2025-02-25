@@ -9,13 +9,21 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.interactions.Actions;
 
 @Data
-@Action(actionText = "Click on co-ordinates testData (format: x,y Ex: 100,200)",
-        description = "Click on the web page at the specified X and Y coordinates, provided as a comma-separated string.",
+<<<<<<< Updated upstream
+@Action(actionText = "Double click on testdata using x,y coordinates",
+=======
+@Action(actionText = "Double click on co-ordinates testData (format: x,y Ex: 100,200)",
+>>>>>>> Stashed changes
+        description = "Double click on the web page at the specified X and Y coordinates, provided as a comma-separated string.",
         applicationType = ApplicationType.WEB,
         useCustomScreenshot = false)
-public class ClickOnCoordinates extends WebAction {
+public class DoubleClickOnCoordinates extends WebAction {
 
+<<<<<<< Updated upstream
+    @TestData(reference = "testdata")
+=======
     @TestData(reference = "testData")
+>>>>>>> Stashed changes
     private com.testsigma.sdk.TestData coordinates;
 
     @Override
@@ -40,9 +48,9 @@ public class ClickOnCoordinates extends WebAction {
             int yCoordinate = Integer.parseInt(parts[1].trim());
 
             Actions actions = new Actions(driver);
-            actions.moveByOffset(xCoordinate, yCoordinate).click().perform();
+            actions.moveByOffset(xCoordinate, yCoordinate).doubleClick().perform();
 
-            setSuccessMessage("Successfully clicked at coordinates X: " + xCoordinate + ", Y: " + yCoordinate);
+            setSuccessMessage("Successfully double clicked at coordinates X: " + xCoordinate + ", Y: " + yCoordinate);
 
         } catch (NumberFormatException e) {
             result = com.testsigma.sdk.Result.FAILED;
@@ -50,8 +58,8 @@ public class ClickOnCoordinates extends WebAction {
             setErrorMessage("Invalid number format in coordinates. X and Y must be integers. Error: " + e.getMessage());
         } catch (Exception e) {
             result = com.testsigma.sdk.Result.FAILED;
-            logger.warn("Error occurred while clicking at coordinates: " + e.getMessage());
-            setErrorMessage("Error occurred while clicking at coordinates: " + coordinates + ". Error: " + e.getMessage());
+            logger.warn("Error occurred while double clicking at coordinates: " + e.getMessage());
+            setErrorMessage("Error occurred while double clicking at coordinates: " + coordinates + ". Error: " + e.getMessage());
         }
 
         return result;
