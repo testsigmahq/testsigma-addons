@@ -1,6 +1,8 @@
 package com.testsigma.addons.web;
 
-import com.testsigma.addons.web.util.PdfAndDocUtilities;
+
+import com.testsigma.addons.web.util.PdfDocUtilities;
+import com.testsigma.addons.web.util.PdfDocUtilitiesFactory;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
 import com.testsigma.sdk.WebAction;
@@ -9,6 +11,7 @@ import com.testsigma.sdk.annotation.RunTimeData;
 import com.testsigma.sdk.annotation.TestData;
 import lombok.Data;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.openqa.selenium.NoSuchElementException;
@@ -28,11 +31,11 @@ public class ExtractLatestDownloadedPDFFileContent extends WebAction {
     @Override
     protected Result execute() throws NoSuchElementException {
         Result result = Result.SUCCESS;
-        PdfAndDocUtilities pdfAndDocUtilities = new PdfAndDocUtilities(driver,logger);
+        PdfDocUtilities pdfAndDocUtilities = PdfDocUtilitiesFactory.create(driver, logger);
         try {
             logger.info("Initiated execution");
             File downloadedExcelFile = pdfAndDocUtilities.copyFileFromDownloads("pdf",null);
-            PDDocument document = PDDocument.load(downloadedExcelFile);
+            PDDocument document = Loader.loadPDF(downloadedExcelFile);
             String fileContent = "";
             if (!document.isEncrypted()) {
                 PDFTextStripper pdfTextStripper = new PDFTextStripper();
@@ -44,7 +47,7 @@ public class ExtractLatestDownloadedPDFFileContent extends WebAction {
             runTimeData.setKey(runtimeVariable.getValue().toString());
             runTimeData.setValue(fileContent);
             logger.info("File content:"+fileContent);
-            setSuccessMessage("Successfully extracted the data in the file and stored in run time variable "+runTimeData.getKey());
+            setSuccessMessage("Successfully extracted the data in the file and stored in run time variable " + runTimeData.getKey().toString() + " value : " + runTimeData.getValue().toString());
         } catch (RuntimeException e){
             logger.info("Unable to find the latest file in the downloads"+ ExceptionUtils.getStackTrace(e));
             setErrorMessage("Unable to find the latest file in the downloads");
