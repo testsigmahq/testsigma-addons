@@ -30,25 +30,21 @@ public class ToCompare extends WebAction {
     @Override
     public Result execute() throws NoSuchElementException {
         String operatorString = operator.getValue().toString();
-        int testDataString1 = Integer.valueOf(testData1.getValue().toString());
-        int testDataString2 = Integer.valueOf(testData2.getValue().toString());
+        String testDataString1 = testData1.getValue().toString();
+        String testDataString2 = testData2.getValue().toString();
         Result returnResult = Result.FAILED;
-        switch (operatorString) {
-            case ">":
-                returnResult = testDataString1 > testDataString2 ? Result.SUCCESS : Result.FAILED;
-                break;
-            case "<":
-                returnResult = testDataString1 < testDataString2 ? Result.SUCCESS : Result.FAILED;
-                break;
-            case ">=":
-                returnResult = testDataString1 >= testDataString2 ? Result.SUCCESS : Result.FAILED;
-                break;
-            case "<=":
-                returnResult = testDataString1 <= testDataString2 ? Result.SUCCESS : Result.FAILED;
-                break;
-            case "==":
-                returnResult = testDataString1 == testDataString2 ? Result.SUCCESS : Result.FAILED;
-                break;
+        if(operatorString.equals(">")) {
+            returnResult = testDataString1.compareTo(testDataString2) > 0 ? Result.SUCCESS : Result.FAILED;
+        } else if(operatorString.equals("<")){
+            returnResult = testDataString1.compareTo(testDataString2) < 0 ? Result.SUCCESS : Result.FAILED;
+        } else if(operatorString.equals(">=")) {
+            returnResult = testDataString1.equals(testDataString2) || testDataString1.compareTo(testDataString2) > 0 ? Result.SUCCESS : Result.FAILED;
+        } else if(operatorString.equals("<=")){
+            returnResult = testDataString1.equals(testDataString2) || testDataString1.compareTo(testDataString2) < 0 ? Result.SUCCESS : Result.FAILED;
+        } else if(operatorString.equals("==")){
+            returnResult = testDataString1.equals(testDataString2) ? Result.SUCCESS : Result.FAILED;
+        } else {
+            returnResult = Result.FAILED;
         }
         if (returnResult.equals(Result.SUCCESS))
             setSuccessMessage("The TestData satisfies the expected condition");
@@ -57,4 +53,3 @@ public class ToCompare extends WebAction {
         return returnResult;
     }
 }
-
