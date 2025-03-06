@@ -62,7 +62,7 @@ public class ConditionalIFExampleWebAction extends WebAction {
             } else if (!condition2) {
                 setErrorMessage("The second condition failed");
             } else {
-                setErrorMessage("Both conditions failed")
+                setErrorMessage("Both conditions failed");
             }
             result = com.testsigma.sdk.Result.FAILED;
         }
