@@ -1,8 +1,8 @@
 package com.testsigma.addons.android;
 
+import com.testsigma.sdk.AndroidAction;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
-import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.RunTimeData;
 import com.testsigma.sdk.annotation.TestData;
@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
         description = "calculate difference between two times",
         applicationType = ApplicationType.ANDROID,
         useCustomScreenshot = false)
-public class GetTimeDifferenceInMinutes extends WebAction {
+public class GetTimeDifferenceInMinutes extends AndroidAction {
 
     @TestData(reference = "testdata1")
     private com.testsigma.sdk.TestData testData1;
