@@ -6,25 +6,28 @@ import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.Element;
 import com.testsigma.sdk.annotation.TestData;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.openqa.selenium.NoSuchElementException;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.MoveTargetOutOfBoundsException;
+import org.openqa.selenium.interactions.PointerInput;
+import org.openqa.selenium.interactions.Sequence;
+import org.openqa.selenium.remote.RemoteWebDriver;
 
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Map;
 
 
-@Action(actionText = "Drag element elementLocator to the relativePosition of the element referenceElement with " +
+@Action(actionText = "Drag element elementLocator to the position of the element referenceElement with " +
         "offset x: xOffset , y: yOffset (with pause)",
         applicationType = ApplicationType.WEB,
         useCustomScreenshot = false)
 public class MoveElementRelativeToReferenceWithPause extends WebAction {
 
     @Element(reference = "elementLocator")
-    private com.testsigma.sdk.Element targetElement;
+    private com.testsigma.sdk.Element dragElement;
 
     @Element(reference = "referenceElement")
-    private com.testsigma.sdk.Element referenceElement;
+    private com.testsigma.sdk.Element dropElement;
 
     @TestData(reference = "xOffset")
     private com.testsigma.sdk.TestData xOffsetData;
@@ -32,7 +35,7 @@ public class MoveElementRelativeToReferenceWithPause extends WebAction {
     @TestData(reference = "yOffset")
     private com.testsigma.sdk.TestData yOffsetData;
 
-    @TestData(reference = "relativePosition", allowedValues = {"right", "left", "top", "bottom", "center"})
+    @TestData(reference = "position", allowedValues = {"right", "left", "top", "bottom", "center"})
     private com.testsigma.sdk.TestData relativePositionData;
 
     @Override
@@ -40,89 +43,140 @@ public class MoveElementRelativeToReferenceWithPause extends WebAction {
         logger.info("Execution started");
         com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
 
-        int targetXOffset = -1;
-        int targetYOffset = -1;
+        Point targetPoint = null;
         try {
             int xOffset = Integer.parseInt(xOffsetData.getValue().toString());
             int yOffset = Integer.parseInt(yOffsetData.getValue().toString());
-            logger.info("xOffset: " + xOffset + " yOffset: " + yOffset);
             String relativePosition = relativePositionData.getValue().toString().toLowerCase();
-            logger.info("relativePosition: " + relativePosition);
-            logger.info("getting target element");
-            //  WebElement referenceWebElement = referenceElement.getElement();
-            WebElement referenceWebElement = driver.findElement(referenceElement.getBy());
-            logger.info("referenceWebElement: ");
-            //  WebElement targetWebElement = targetElement.getElement();
-            WebElement targetWebElement = driver.findElement(targetElement.getBy());
-            logger.info("got referenceWebElement ");
-            targetXOffset = calculateXOffset(referenceWebElement, relativePosition, xOffset);
-            targetYOffset = calculateYOffset(referenceWebElement, relativePosition, yOffset);
-            logger.info("Target X Offset: " + targetXOffset + " Target Y Offset: " + targetYOffset);
-            Actions actions = new Actions(driver);
-            logger.info("dummy click on target element");
-            targetWebElement.click();
-            actions.clickAndHold(targetWebElement).release().perform();
-            logger.info("Activated target element");
-            actions.moveToElement(targetWebElement)
-                    .clickAndHold()
-                    .pause(500) // adding pause to enable dragging
-                    .moveToLocation(targetXOffset, targetYOffset)
-                    .pause(Duration.ofMillis(200))
-                    .moveByOffset(5, 5) // adding temporary move by offset so that the element is dropped
-                    .pause(200)
-                    .moveByOffset(-5, -5)
-                    .release().build().perform();
-            logger.info("Moved element");
+
+            WebElement dragWebElement = driver.findElement(dragElement.getBy());
+            WebElement dropWebElement = driver.findElement(dropElement.getBy());
+
+
+            scrollToElement(dropWebElement);
+
+            try {
+                this.restStepWait(1);
+            } catch (Exception e) {
+                logger.info("Error occurred while waiting for element " + ExceptionUtils.getStackTrace(e));
+                setErrorMessage("Error occurred while waiting for element " + ExceptionUtils.getStackTrace(e));
+                result = com.testsigma.sdk.Result.FAILED;
+            }
+            logger.info("waited for 1 second before calculating drop location");
+
+            Point startPoint = getCenterPoint(driver.findElement(dragElement.getBy()));
+            targetPoint = calculateTargetPoint(driver.findElement(dropElement.getBy()),
+                    relativePosition, xOffset, yOffset);
+
+            logger.info("Start Point: " + startPoint + " Target Point: " + targetPoint);
+
+            performDragAndDrop(dragWebElement, startPoint, targetPoint);
+            logger.info("performed drag and drop");
             setSuccessMessage("Moved element to the " + relativePosition + " of the reference element");
-        } catch (NoSuchElementException e) {
-            setErrorMessage("Element not found: " + e.getMessage());
-            logger.info(ExceptionUtils.getStackTrace(e));
-            result = com.testsigma.sdk.Result.FAILED;
-        } catch (MoveTargetOutOfBoundsException e) {
-            setErrorMessage("Target location" + targetXOffset + "," + targetYOffset + "is out of bounds: " + e.getMessage());
-            logger.info(ExceptionUtils.getStackTrace(e));
+        } catch (MoveTargetOutOfBoundsException me) {
+            logger.debug("Move target out of bounds for values : " + targetPoint);
+            setErrorMessage("Move target out of bounds for : " + targetPoint);
             result = com.testsigma.sdk.Result.FAILED;
         } catch (Exception e) {
-            setErrorMessage(ExceptionUtils.getStackTrace(e));
-
+            setErrorMessage("Error during execution: " + ExceptionUtils.getStackTrace(e));
             logger.info(ExceptionUtils.getStackTrace(e));
             result = com.testsigma.sdk.Result.FAILED;
         }
         return result;
+
     }
 
-    private int calculateXOffset(WebElement referenceElement, String relativePosition, int xOffset) {
-        logger.info("calculating xOffset ");
-        int referenceX = referenceElement.getLocation().getX();
-        int referenceWidth = referenceElement.getSize().getWidth();
-        logger.info("referenceX: " + referenceX + " referenceWidth: " + referenceWidth);
+    private Point getCenterPoint(WebElement element) {
+        Map<String, Object> rect = getBoundingClientRect(element);
+        int x = ((Number) rect.get("x")).intValue() + ((Number) rect.get("width")).intValue() / 2;
+        int y = ((Number) rect.get("y")).intValue() + ((Number) rect.get("height")).intValue() / 2;
+        return new Point(x, y);
+    }
+
+    private Point calculateTargetPoint(WebElement reference, String relativePosition, int xOffset, int yOffset) {
+        Map<String, Object> rect = getBoundingClientRect(reference);
+        int x = ((Number) rect.get("x")).intValue();
+        int y = ((Number) rect.get("y")).intValue();
+        int width = ((Number) rect.get("width")).intValue();
+        int height = ((Number) rect.get("height")).intValue();
+
         switch (relativePosition) {
             case "center":
-                return referenceX + referenceWidth / 2 + xOffset;
+                x += width / 2;
+                y += height / 2;
+                break;
             case "right":
-                return referenceX + referenceWidth + xOffset;
+                x += width;
+                y += height / 2;
+                break;
             case "left":
-                return referenceX - xOffset;
+                y += height / 2;
+                break;
+            case "top":
+                x += width / 2;
+                break;
+            case "bottom":
+                x += width / 2;
+                y += height;
+                break;
             default:
-                return referenceX + xOffset; // Default for "top" and "bottom"
+                throw new IllegalArgumentException("Invalid relative direction: " + relativePosition);
+        }
+
+        return new Point(x + xOffset, y + yOffset);
+    }
+
+    private void performDragAndDrop(WebElement source, Point start, Point target) {
+        PointerInput mouse = new PointerInput(PointerInput.Kind.MOUSE, "mouse");
+        Sequence dragAndDrop = new Sequence(mouse, 1);
+
+        dragAndDrop.addAction(mouse.createPointerMove(Duration.ZERO,
+                PointerInput.Origin.viewport(), start.x, start.y));
+        dragAndDrop.addAction(mouse.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
+        dragAndDrop.addAction(mouse.createPointerMove(Duration.ofMillis(500),
+                PointerInput.Origin.viewport(), target.x, target.y));
+        dragAndDrop.addAction(mouse.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
+
+        ((RemoteWebDriver) driver).perform(Arrays.asList(dragAndDrop));
+    }
+
+    private Map<String, Object> getBoundingClientRect(WebElement element) {
+        return (Map<String, Object>) ((JavascriptExecutor) driver).executeScript(
+                "var rect = arguments[0].getBoundingClientRect(); return {x: rect.x, y: rect.y, width: rect.width, height: rect.height};",
+                element);
+    }
+
+    protected void scrollToElement(WebElement element) {
+        String scrollToElement = "try{ "
+                + "arguments[0].scrollIntoView({"
+                + " behavior: 'auto', block: 'center', inline: 'center'"
+                + "}); return false;"
+                + "}catch(e){"
+                + "return true;"
+                + "}";
+        Object result = ((JavascriptExecutor) driver).executeScript(scrollToElement, element);
+
+        if (result instanceof Boolean && (Boolean) result) {
+            String scrollElementIntoMiddle = "var viewPortHeight = Math.max(document.documentElement.clientHeight, "
+                    + "window.innerHeight || 0);"
+                    + "var elementTop = arguments[0].getBoundingClientRect().top;"
+                    + "window.scrollBy(0, elementTop-(viewPortHeight/2));";
+
+            ((JavascriptExecutor) driver).executeScript(scrollElementIntoMiddle, element);
         }
     }
 
-    private int calculateYOffset(WebElement referenceElement, String relativePosition, int yOffset) {
-        logger.info("calculating yOffset ");
-        int referenceY = referenceElement.getLocation().getY();
-        int referenceHeight = referenceElement.getSize().getHeight();
-        logger.info("referenceY: " + referenceY + " referenceHeight: " + referenceHeight);
-        switch (relativePosition) {
-            case "center":
-                return referenceY + referenceHeight / 2 + yOffset;
-            case "bottom":
-                return referenceY + referenceHeight + yOffset;
-            case "top":
-                return referenceY - yOffset;
-            default:
-                return referenceY + yOffset; // Default for "right" and "left"
+    private void restStepWait(Integer waitInSeconds) {
+        synchronized (this) {
+            try {
+                this.wait((waitInSeconds * 1000) - 10);
+            } catch (Exception e) {
+                logger.info(ExceptionUtils.getStackTrace(e));
+                setErrorMessage("Unable to minimize window. Error: " + ExceptionUtils.getStackTrace(e));
+            }
         }
     }
+
+
 }
 
