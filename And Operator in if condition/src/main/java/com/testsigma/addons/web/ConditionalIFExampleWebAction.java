@@ -57,7 +57,9 @@ public class ConditionalIFExampleWebAction extends WebAction {
         if (condition1 && condition2) {
             setSuccessMessage("Successfully verified both the conditions");
         } else {
-            if (!condition1) {
+                if (!condition1 && !condition2) {
++                setErrorMessage("Both conditions failed");
++            } else if (!condition1) {
                 setErrorMessage("The first condition failed");
             } else if (!condition2) {
                 setErrorMessage("The second condition failed");
