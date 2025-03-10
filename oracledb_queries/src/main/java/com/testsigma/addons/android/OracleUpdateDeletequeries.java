@@ -73,6 +73,22 @@ public class OracleUpdateDeletequeries extends AndroidAction {
             result = Result.FAILED;
             setErrorMessage(errorMessage);
             logger.warn(errorMessage + e);
+        } finally {
+            try {
+                if (stmt != null) {
+                    stmt.close();
+                }
+            } catch (SQLException e) {
+                logger.warn("Error closing statement: " + e.getMessage() + e);
+            }
+
+            try {
+                if (connection != null) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                logger.warn("Error closing connection: " + e.getMessage() + e);
+            }
         }
 
         return result;

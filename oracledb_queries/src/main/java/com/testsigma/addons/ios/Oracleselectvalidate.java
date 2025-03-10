@@ -10,6 +10,7 @@ import lombok.Data;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -34,9 +35,16 @@ public class Oracleselectvalidate extends IOSAction {
 		Result result = Result.SUCCESS;
 		logger.info("Initiating execution");
 		DatabaseUtil databaseUtil = new DatabaseUtil();
+		Connection connection = null;
+		Statement stmt = null;
 		try{
-			Connection connection = databaseUtil.getConnection(testData2.getValue().toString());
-			Statement stmt = connection.createStatement();
+			connection = databaseUtil.getConnection(testData2.getValue().toString());
+			if (connection == null) {
+				result = Result.FAILED;
+				setErrorMessage("Failed to establish a database connection. Check your DB_Connection_URL.");
+				return result;
+			}
+			stmt = connection.createStatement();
 			String query = testData1.getValue().toString();
 			ResultSet resultSet = stmt.executeQuery(query);
 			resultSet.next();
@@ -63,6 +71,22 @@ public class Oracleselectvalidate extends IOSAction {
 			result = com.testsigma.sdk.Result.FAILED;
 			setErrorMessage(sb.toString());
 			logger.warn(sb.toString());
+		} finally {
+			try {
+				if (stmt != null) {
+					stmt.close();
+				}
+			} catch (SQLException e) {
+				logger.warn("Error closing statement: " + e.getMessage() + e);
+			}
+
+			try {
+				if (connection != null) {
+					connection.close();
+				}
+			} catch (SQLException e) {
+				logger.warn("Error closing connection: " + e.getMessage() + e);
+			}
 		}
 		return result;
 	}

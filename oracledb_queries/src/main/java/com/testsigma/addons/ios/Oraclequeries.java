@@ -9,10 +9,7 @@ import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import lombok.Data;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.Statement;
+import java.sql.*;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.openqa.selenium.NoSuchElementException;
@@ -34,9 +31,16 @@ public class Oraclequeries extends IOSAction {
 		Result result = Result.SUCCESS;
 		logger.info("Initiating execution");
 		DatabaseUtil databaseUtil = new DatabaseUtil();
+		Connection connection = null;
+		Statement stmt = null;
 		try {
-			Connection connection = databaseUtil.getConnection(testData2.getValue().toString());
-			Statement stmt = connection.createStatement();
+			connection = databaseUtil.getConnection(testData2.getValue().toString());
+			if (connection == null) {
+				result = Result.FAILED;
+				setErrorMessage("Failed to establish a database connection. Check your DB_Connection_URL.");
+				return result;
+			}
+			stmt = connection.createStatement();
 			String query = testData1.getValue().toString();
 			ResultSet resultSet = stmt.executeQuery(query);
 			ResultSetMetaData rsmd = resultSet.getMetaData();
@@ -65,6 +69,22 @@ public class Oraclequeries extends IOSAction {
 			result = com.testsigma.sdk.Result.FAILED;
 			setErrorMessage(errorMessage);
 			logger.warn(errorMessage);
+		} finally {
+			try {
+				if (stmt != null) {
+					stmt.close();
+				}
+			} catch (SQLException e) {
+				logger.warn("Error closing statement: " + e.getMessage() + e);
+			}
+
+			try {
+				if (connection != null) {
+					connection.close();
+				}
+			} catch (SQLException e) {
+				logger.warn("Error closing connection: " + e.getMessage() + e);
+			}
 		}
 		return result;
 	}
