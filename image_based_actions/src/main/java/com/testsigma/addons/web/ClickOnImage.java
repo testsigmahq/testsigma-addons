@@ -22,7 +22,7 @@ import java.io.File;
 
 @Data
 @Action(actionText = "Click on image image-url",
-        description = "Click on give image",
+        description = "Click on given image",
         applicationType = ApplicationType.WEB,
         useCustomScreenshot = true)
 public class ClickOnImage extends WebAction {
