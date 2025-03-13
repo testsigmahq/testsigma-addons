@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.testsigma.addons</groupId>
   <artifactId>image_based_actions</artifactId>
-  <version>1.0.4</version>
+  <version>1.0.10</version>
   <build>
     <finalName>image_based_actions</finalName>
     <plugins>
