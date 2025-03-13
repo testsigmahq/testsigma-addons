@@ -77,7 +77,7 @@ public class PDFVisualTesting extends WebAction {
             File basePDF = urlToFileConverter("base.pdf", basePdfPath);
             File actualPDF = urlToFileConverter("actual.pdf", actualPdfPath);
 
-            if (!basePDF.getName().endsWith(".pdf") && !actualPDF.getName().endsWith(".pdf")) {
+            if (!basePDF.getName().endsWith(".pdf") || !actualPDF.getName().endsWith(".pdf")) {
                 setErrorMessage("Unsupported file types give only pdf files as input");
                 throw new RuntimeException("Unsupported file types");
             }
