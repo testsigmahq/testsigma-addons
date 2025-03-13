@@ -135,7 +135,7 @@ public class EnterTextNearLabelOccurenceBased extends WindowsAction {
         }
         int occurrences = 0;
         for (OCRTextPoint textPoint : textPoints) {
-            if (textPoint.getText().contains(labeltext.getValue().toString())) {
+            if (labeltext.getValue().equals(textPoint.getText())) {
                 occurrences += 1;
                 if (occurrences == targetOccurrence) {
                     return textPoint;
