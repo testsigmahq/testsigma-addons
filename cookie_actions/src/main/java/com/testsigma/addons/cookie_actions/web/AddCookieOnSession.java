@@ -42,8 +42,8 @@ public class AddCookieOnSession extends WebAction {
       long timeInLong = today.getTime() + 10 * 24 * 60 * 60 * 1000;
       Date tenDaysFromNow = new Date(timeInLong);
       JavascriptExecutor js = (JavascriptExecutor) driver;
-      //js.executeScript("document.cookie = \"" + cookieName.getValue().toString() + "=" + cookieValue.getValue().toString() + "; expires=" + tenDaysFromNow + "; domain=*; path=/\";");
-      js.executeScript("document.cookie = \"" + this.getCookieName().getValue() + "=" + this.getCookieValue().getValue() + "; expires=" + tenDaysFromNow + "; domain=*; path=/\";");
+      //js.executeScript("document.cookie = \"" + cookieName.getValue().toString() + "=" + cookieValue.getValue().toString() + "; expires=" + tenDaysFromNow + "; path=/\";");
+      js.executeScript("document.cookie = \"" + this.getCookieName().getValue() + "=" + this.getCookieValue().getValue() + "; expires=" + tenDaysFromNow + "; path=/\";");
 
     } catch (Exception e) {
       result = Result.FAILED;
