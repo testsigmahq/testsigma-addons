@@ -12,7 +12,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
 @Data
-@Action(actionText = "Testing Add minute minutes to the input-datetime with input-datetime-format, convert to output-datetime-format format, and store it in a runtime variable variable-name",
+@Action(actionText = "Add minute minutes to the input-datetime with input-datetime-format, convert to output-datetime-format format, and store it in a runtime variable variable-name",
         description = "Adds specified minutes to a given input datetime, converts the resulting datetime to a specified date-time format, and stores it in a runtime variable",
         applicationType = ApplicationType.WEB,
         useCustomScreenshot = false)
@@ -65,7 +65,7 @@ public class AddMinutesToDateTime extends WebAction {
                 minutes, dateTimeString, outputFormatString, variableNameString, newDateTime));
       } else {
         result = com.testsigma.sdk.Result.FAILED;
-        setErrorMessage("Failed to add minutes.  See logs for details.");
+        setErrorMessage("Failed to add minutes. Please check the input datetime, input datetime format, and output datetime format.");
       }
 
     } catch (NumberFormatException e) {
