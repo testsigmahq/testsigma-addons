@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.testsigma.addons</groupId>
     <artifactId>add_minutes_to_the_specific_date_time_and_store_the_output_in_specific_format</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <packaging>jar</packaging>
 
     <properties>

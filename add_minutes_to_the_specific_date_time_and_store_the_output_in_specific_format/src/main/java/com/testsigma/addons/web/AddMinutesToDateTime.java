@@ -12,7 +12,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
 @Data
-@Action(actionText = "Add minute minutes to the input-datetime datetime, convert to datetime-format format, and store it in a runtime variable variable-name",
+@Action(actionText = "Add minute minutes to the input-datetime with input-datetime-format, convert to output-datetime-format format, and store it in a runtime variable variable-name",
         description = "Adds specified minutes to a given input datetime, converts the resulting datetime to a specified date-time format, and stores it in a runtime variable",
         applicationType = ApplicationType.WEB,
         useCustomScreenshot = false)
@@ -20,8 +20,10 @@ public class AddMinutesToDateTime extends WebAction {
 
   @TestData(reference = "input-datetime")
   private com.testsigma.sdk.TestData dateTime;
-  @TestData(reference = "datetime-format")
-  private com.testsigma.sdk.TestData format;
+  @TestData(reference = "input-datetime-format")
+  private com.testsigma.sdk.TestData inputFormat;
+  @TestData(reference = "output-datetime-format")
+  private com.testsigma.sdk.TestData outputFormat;
   @TestData(reference = "minute")
   private com.testsigma.sdk.TestData minutesToAdd;
 
@@ -36,7 +38,8 @@ public class AddMinutesToDateTime extends WebAction {
     logger.info("Initiating execution");
     com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
     String dateTimeString = dateTime.getValue().toString();
-    String dateTimeFormat = format.getValue().toString();
+    String inputFormatString = inputFormat.getValue().toString();
+    String outputFormatString = outputFormat.getValue().toString();
     String minutesToAddString = minutesToAdd.getValue().toString();
     String variableNameString = variableName.getValue().toString();
 
@@ -50,7 +53,7 @@ public class AddMinutesToDateTime extends WebAction {
         return result;
       }
 
-      String newDateTime = addMinutesToDateTime(dateTimeString, dateTimeFormat, minutes);
+      String newDateTime = addMinutesToDateTime(dateTimeString, inputFormatString, outputFormatString, minutes);
 
       logger.info("New date-time value: " + newDateTime);
 
@@ -59,12 +62,11 @@ public class AddMinutesToDateTime extends WebAction {
         runTimeData.setKey(variableNameString);
         logger.info("Final value stored in variable '" + variableNameString + "' with value '" + newDateTime + "'");
         setSuccessMessage(String.format("Added %s minutes to %s and stored the output in '%s' format. %s : %s",
-                minutes, dateTimeString, dateTimeFormat, variableNameString, newDateTime));
+                minutes, dateTimeString, outputFormatString, variableNameString, newDateTime));
       } else {
         result = com.testsigma.sdk.Result.FAILED;
-        setErrorMessage("Failed to add minutes.  See logs for details.");
+        setErrorMessage("Failed to add minutes. Please check the input datetime, input datetime format, and output datetime format.");
       }
-
 
     } catch (NumberFormatException e) {
       result = com.testsigma.sdk.Result.FAILED;
@@ -79,18 +81,10 @@ public class AddMinutesToDateTime extends WebAction {
     return result;
   }
 
-  public String addMinutesToDateTime(String dateTimeString, String dateTimeFormat, int minutesToAdd) {
+  public String addMinutesToDateTime(String dateTimeString, String inputFormatString, String outputFormatString, int minutesToAdd) {
     try {
-      // Determine the input format based on the input datetime string's pattern.
-      DateTimeFormatter inputFormatter;
-      if (dateTimeString.contains("-")) {
-        inputFormatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy HH:mm");
-      } else {
-        inputFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm a"); // Default to MM/dd/yyyy if no hyphens found.
-      }
-
-
-      DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern(dateTimeFormat);
+      DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern(inputFormatString);
+      DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern(outputFormatString);
       LocalDateTime dateTime = LocalDateTime.parse(dateTimeString, inputFormatter);
 
       LocalDateTime newDateTime = dateTime.plusMinutes(minutesToAdd);
@@ -99,7 +93,7 @@ public class AddMinutesToDateTime extends WebAction {
       return newDateTime.format(outputFormatter);
 
     } catch (DateTimeParseException e) {
-      String errorMessage = "Invalid date/time format. Please use the format: " + dateTimeFormat + ". Error: " + e.getMessage();
+      String errorMessage = "Invalid date/time format. Please use the format: " + inputFormatString + ". Error: " + e.getMessage();
       logger.warn(errorMessage);
       setErrorMessage(errorMessage);
       return null;
