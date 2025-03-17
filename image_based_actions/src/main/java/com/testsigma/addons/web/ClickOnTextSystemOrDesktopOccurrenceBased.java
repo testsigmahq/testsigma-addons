@@ -6,7 +6,12 @@ import com.testsigma.sdk.annotation.OCR;
 import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.TestStepResult;
 import lombok.Data;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.chromium.ChromiumDriver;
+import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.safari.SafariDriver;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -39,6 +44,11 @@ public class ClickOnTextSystemOrDesktopOccurrenceBased extends WebAction {
     protected Result execute() {
         Result result = Result.SUCCESS;
         try{
+            if (isCloudExecution()) {
+                setErrorMessage("This action (Click on text testdata, occurrence position found-at-position on system/desktop window) is not supported in cloud execution environments.");
+                result = Result.FAILED;
+                return result;
+            }
             Robot robot = new Robot();
 
             // Fetch the Details of the Screen Size
@@ -153,5 +163,20 @@ public class ClickOnTextSystemOrDesktopOccurrenceBased extends WebAction {
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
     }
 
+    private boolean isCloudExecution() {
+        try {
+            // If the driver is an instance of any driver than it is local
+            if (driver instanceof ChromiumDriver || driver instanceof EdgeDriver || driver instanceof FirefoxDriver || driver instanceof SafariDriver) {
+                return false;
+            } else {
+                //It's a cloud environment
+                return true;
+            }
+        } catch (Exception e) {
+            logger.info("Exception: " + ExceptionUtils.getStackTrace(e));
+            setErrorMessage("Exception occurred while checking for cloud execution: " + e.getMessage());
+            return false;
+        }
+    }
 
 }
