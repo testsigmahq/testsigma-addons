@@ -8,6 +8,7 @@ import com.testsigma.sdk.annotation.RunTimeData;
 import lombok.Data;
 import org.openqa.selenium.NoSuchElementException;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
@@ -84,13 +85,28 @@ public class AddMinutesToDateTime extends WebAction {
   public String addMinutesToDateTime(String dateTimeString, String inputFormatString, String outputFormatString, int minutesToAdd) {
     try {
       DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern(inputFormatString);
-      DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern(outputFormatString);
-      LocalDateTime dateTime = LocalDateTime.parse(dateTimeString, inputFormatter);
 
-      LocalDateTime newDateTime = dateTime.plusMinutes(minutesToAdd);
-      logger.info("Successfully added minutes to the input datetime");
+      //Determine if the input date time is Date or Time
+      if (inputFormatString.contains("HH") || inputFormatString.contains("mm") || inputFormatString.contains("ss")) {
+        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern(outputFormatString);
+        LocalTime time = LocalTime.parse(dateTimeString, inputFormatter);
+        LocalTime newTime = time.plusMinutes(minutesToAdd);
+        logger.info("Successfully added minutes to the input time");
 
-      return newDateTime.format(outputFormatter);
+        return newTime.format(outputFormatter);
+
+      } else {
+
+        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern(outputFormatString);
+        LocalDateTime dateTime = LocalDateTime.parse(dateTimeString, inputFormatter);
+
+        LocalDateTime newDateTime = dateTime.plusMinutes(minutesToAdd);
+        logger.info("Successfully added minutes to the input datetime");
+
+        return newDateTime.format(outputFormatter);
+      }
+
+
 
     } catch (DateTimeParseException e) {
       String errorMessage = "Invalid date/time format. Please use the format: " + inputFormatString + ". Error: " + e.getMessage();
