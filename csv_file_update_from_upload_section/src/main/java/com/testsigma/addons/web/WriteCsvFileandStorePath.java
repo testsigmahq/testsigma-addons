@@ -2,6 +2,7 @@ package com.testsigma.addons.web;
 
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
+import com.opencsv.exceptions.CsvException;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
@@ -95,9 +96,14 @@ public class WriteCsvFileandStorePath extends WebAction {
                 }
                 targetRowData[columnIndex] = replace;
 
-                writer = new CSVWriter(new FileWriter(tempCsvFile));
+                writer = new CSVWriter(new FileWriter(csvFile), ',', CSVWriter.NO_QUOTE_CHARACTER, CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
                 writer.writeAll(data);
                 writer.flush();
+            } catch (IOException | CsvException e) { // Catch both exceptions
+                result = com.testsigma.sdk.Result.FAILED;
+                setErrorMessage("Error processing CSV file: " + e.getMessage());
+                logger.warn("Error processing CSV file: " + e);  // Use logger.error for exceptions
+                return result;
             } finally {
                 if (csvReader != null) {
                     try {

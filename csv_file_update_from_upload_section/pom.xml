@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.testsigma.addons</groupId>
     <artifactId>csv_file_update_from_upload_section</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -17,7 +17,7 @@
         <junit.jupiter.version>5.8.0-M1</junit.jupiter.version>
         <testsigma.addon.maven.plugin>1.0.0</testsigma.addon.maven.plugin>
         <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
-        <lombok.version>1.18.20</lombok.version>
+        <lombok.version>1.18.30</lombok.version>
 
     </properties>
 
