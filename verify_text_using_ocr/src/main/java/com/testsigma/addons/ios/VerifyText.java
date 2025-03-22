@@ -1,0 +1,76 @@
+package com.testsigma.addons.ios;
+
+import com.testsigma.sdk.*;
+import com.testsigma.sdk.annotation.Action;
+import com.testsigma.sdk.annotation.OCR;
+import com.testsigma.sdk.annotation.TestData;
+import io.appium.java_client.ios.IOSDriver;
+import lombok.Data;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
+
+import java.io.File;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * This class defines an IOSAction for verifying if a specific text is present on the screen
+ * by using Optical Character Recognition (OCR) to extract text from a screenshot.
+ */
+@Data
+@Action(
+    actionText = "Verify the text testdata present on the screen using OCR",
+    description = "Using OCR to verify that the specified text is present on the screen",
+    applicationType = ApplicationType.IOS
+)
+public class VerifyText extends IOSAction {
+
+    @OCR
+    private com.testsigma.sdk.OCR ocr;
+
+    @TestData(reference = "testdata")
+    private com.testsigma.sdk.TestData testdata;
+
+    @Override
+    protected Result execute() {
+        Result result = Result.SUCCESS;
+        try {
+            // Log the test data value
+            String textToVerify = testdata.getValue().toString();
+            logger.info("Text to verify: " + textToVerify);
+
+            // Capture a screenshot of the current view
+            IOSDriver iosDriver = (IOSDriver) this.driver;
+            File screenshotFile = ((TakesScreenshot) iosDriver).getScreenshotAs(OutputType.FILE);
+
+            // Create OCRImage object from the screenshot
+            com.testsigma.sdk.OCRImage imageObj = new com.testsigma.sdk.OCRImage();
+            imageObj.setOcrImageFile(screenshotFile);
+
+            // Extract text points from the image
+            List<OCRTextPoint> textPoints = ocr.extractTextFromImage(imageObj);
+            logger.info("Extracted text from image: " + textPoints);
+
+            // Check if the extracted text contains the text to verify
+            Optional<OCRTextPoint> matchedTextPoint = textPoints.stream()
+                .filter(textPoint -> textPoint.getText().contains(textToVerify))
+                .findFirst();
+
+            if (matchedTextPoint.isPresent()) {
+                // Text was found in the image
+                setSuccessMessage("Text \"" + textToVerify + "\" found on the screen.");
+            } else {
+                // Text was not found in the image
+                result = Result.FAILED;
+                setErrorMessage("Text \"" + textToVerify + "\" not found on the screen.");
+            }
+
+        } catch (Exception e) {
+            // Handle any exceptions that occur during execution
+            setErrorMessage("Error occurred: " + ExceptionUtils.getStackTrace(e));
+            result = Result.FAILED;
+        }
+        return result;
+    }
+}
