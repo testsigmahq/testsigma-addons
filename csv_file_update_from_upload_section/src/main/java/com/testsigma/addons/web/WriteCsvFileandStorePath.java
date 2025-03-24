@@ -96,7 +96,7 @@ public class WriteCsvFileandStorePath extends WebAction {
                 }
                 targetRowData[columnIndex] = replace;
 
-                writer = new CSVWriter(new FileWriter(csvFile), ',', CSVWriter.NO_QUOTE_CHARACTER, CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
+                writer = new CSVWriter(new FileWriter(tempCsvFile), ',', CSVWriter.NO_QUOTE_CHARACTER, CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
                 writer.writeAll(data);
                 writer.flush();
             } catch (IOException | CsvException e) { // Catch both exceptions
@@ -120,16 +120,35 @@ public class WriteCsvFileandStorePath extends WebAction {
                     }
                 }
             }
+            // Copy the temp file back to the original file
+            try {
+                Files.copy(tempCsvFile.toPath(), csvFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                logger.info("Successfully copied content to original file"+csvFile.getAbsolutePath());
+            } catch (IOException ex) {
+                logger.warn("Error copying data from temp file to original file" + ex);
+                setErrorMessage("Failed to copy data from temp file to original file: " + ex.getMessage());
+                return com.testsigma.sdk.Result.FAILED;
+            }
 
             // Store the path of the new updated file
             runTimeData.setKey(variableName.getValue().toString());
-            runTimeData.setValue(tempCsvFile.getAbsolutePath()); // Store absolute path of the new file
+            runTimeData.setValue(csvFile.getAbsolutePath()); // Store absolute path of the new file
 
-            setSuccessMessage("Data is updated successfully in the CSV file. Updated data is " + replace + ". File path stored in runtime variable: " + variableName.getValue().toString() + " = " + tempCsvFile.getAbsolutePath());
+            setSuccessMessage("Data is updated successfully in the CSV file. Updated data is " + replace + ". File path stored in runtime variable: " + variableName.getValue().toString() + " = " + csvFile.getAbsolutePath());
         } catch (Exception e) {
             result = com.testsigma.sdk.Result.FAILED;
             setErrorMessage("Operation Failed: " + e.getMessage());
             logger.warn("Error during CSV processing: " + e.getMessage() + e);
+        } finally {
+            //Clean up temp file
+            if (tempCsvFile != null && tempCsvFile.exists()) {
+                try {
+                    Files.delete(tempCsvFile.toPath());
+                    logger.info("Deleted temporary file: " + tempCsvFile.getAbsolutePath());
+                } catch (IOException e) {
+                    logger.warn("Failed to delete temporary file: " + tempCsvFile.getAbsolutePath() + e);
+                }
+            }
         }
 
         return result;
