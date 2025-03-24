@@ -41,7 +41,7 @@ public class OCRTestingdo extends WebAction{
 		Result result = Result.SUCCESS;
 		try {
 			logger.info("Taking screenshot");
-			File screenshot = ((TakesScreenshot)(IOSDriver)this.driver).getScreenshotAs(OutputType.FILE);
+			File screenshot = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
 			logger.info("Taking screenshot completed");
 			OCRImage imageObj = new OCRImage();
 			imageObj.setOcrImageFile(screenshot);
