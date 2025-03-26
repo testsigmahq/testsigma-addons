@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 
 @Data
 @Action(actionText = "Verify if the text test-data matches the pattern regex-pattern",
-        description = "validates options count in a select drop-down",
+        description = "Verifies if the text test-data matches the pattern regex-pattern",
         applicationType = ApplicationType.ANDROID,
         useCustomScreenshot = false)
 public class RegExPatternMatch extends AndroidAction {
