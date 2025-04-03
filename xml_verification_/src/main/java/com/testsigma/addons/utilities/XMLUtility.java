@@ -37,7 +37,7 @@ public class XMLUtility {
         if (url.startsWith("https://")) {
             logger.info("Given is s3 url ...File name:");
             URL urlObject = new URL(url);
-            File tempFile = File.createTempFile("tempXMLFile_", "." + "xlsx");
+            File tempFile = File.createTempFile("tempXMLFile_", "." + "xml");
             logger.info("created temporary file: " + tempFile.getAbsolutePath());
             FileUtils.copyURLToFile(urlObject, tempFile);
             logger.info("Temp file created with name for s3 file" + tempFile.getName()
