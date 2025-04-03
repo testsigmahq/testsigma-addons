@@ -10,11 +10,13 @@ import lombok.Data;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.openqa.selenium.NoSuchElementException;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXParseException;
 
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Data
 @Action(actionText = "Xml: Verify if local files with filepath filepath1 and filepath filepath2 are equal while ignoring specific XPaths X-Paths",
@@ -34,54 +36,124 @@ public class CompareLocalXMLFiles extends WebAction {
 
     @Override
     protected Result execute() throws NoSuchElementException {
-        Result result ;
+        logger.info("initiating execution");
+        Result result;
+        XMLUtility xmlUtility = new XMLUtility(driver, logger); // Assuming XMLUtility needs driver/logger
+        File baseFile = null;
+        File actualFile = null;
+
         try {
-            XMLUtility xmlUtility = new XMLUtility(driver, logger);
+            // 1. Get File Paths and Ignored XPaths
+            String filePath1 = testData1.getValue().toString();
+            String filePath2 = testData2.getValue().toString();
+            String xPathsToIgnoreRaw = testData3.getValue().toString();
 
-            // Get the file paths
-            String xPathsToIgnore = testData3.getValue().toString();
-            logger.info("xPaths to be ignored: " + xPathsToIgnore);
+            logger.info("Base file path/URL: " + filePath1);
+            logger.info("Actual file path/URL: " + filePath2);
+            logger.info("Raw XPaths to ignore: '" + xPathsToIgnoreRaw + "'");
 
-            File baseFile = File.createTempFile("tempFile1_", ".xml");
-            File actualFile = File.createTempFile("tempFile2_", ".xml");
+            // Prepare the set of ignored paths for efficient lookup
+            Set<String> ignoredPathsSet = new HashSet<>();
+            if (xPathsToIgnoreRaw != null && !xPathsToIgnoreRaw.trim().isEmpty()) {
+                String[] xpathArray = xPathsToIgnoreRaw.split(",");
+                for (String xpath : xpathArray) {
+                    String trimmedPath = xpath.trim();
+                    if (!trimmedPath.isEmpty()) {
+                        ignoredPathsSet.add(trimmedPath);
+                        logger.info("Adding ignored XPath prefix: " + trimmedPath);
+                    }
+                }
+            } else {
+                logger.info("No XPaths specified to ignore.");
+            }
 
-            logger.info("created temp files");
-            baseFile  = xmlUtility.urlToFileConverter(baseFile.getName(), testData1.getValue().toString());
-            actualFile = xmlUtility.urlToFileConverter(actualFile.getName(), testData2.getValue().toString());
 
-            logger.info("converted temp files");
-            // deleting files on completion of execution
+            // 2. Convert URLs/Paths to Temporary Files
+            baseFile = File.createTempFile("baseXml_", ".xml");
+            actualFile = File.createTempFile("actualXml_", ".xml");
+            logger.info("Created temporary base file: " + baseFile.getAbsolutePath());
+            logger.info("Created temporary actual file: " + actualFile.getAbsolutePath());
+
+            // Use the utility to handle potential URLs or local paths
+            baseFile = xmlUtility.urlToFileConverter(filePath1);
+            actualFile = xmlUtility.urlToFileConverter(filePath2);
+            logger.info("Prepared base & actual file content.");
+
+            // Ensure temp files are deleted on exit (redundant if urlToFileConverter does it, but safe)
             baseFile.deleteOnExit();
             actualFile.deleteOnExit();
 
-            // Parsing XML files
-            Document doc1 = xmlUtility.parseXML(baseFile);
-            Document doc2 = xmlUtility.parseXML(actualFile);
-            logger.info("Parsed the xml files");
-            // Removing nodes based on XPath expressions
-            String[] xpathArray = xPathsToIgnore.split(",");
-            for (String xpathExpression : xpathArray) {
-                xmlUtility.removeNodesByXPath(doc1, xpathExpression.trim());
-                xmlUtility.removeNodesByXPath(doc2, xpathExpression.trim());
-            }
+            // 3. Parse XML Files with Line Number Tracking
+            logger.info("Parsing base XML file...");
+            Document doc1 = xmlUtility.parseXMLWithLineNumbers(baseFile);
+            logger.info("Parsing actual XML file...");
+            Document doc2 = xmlUtility.parseXMLWithLineNumbers(actualFile);
+            logger.info("Successfully parsed both XML files with line number tracking.");
 
-            logger.info("successfully Ignored xPaths of the given xml files");
 
-            // Compare the modified documents
-            boolean isEqual = doc1.isEqualNode(doc2);
-            if (isEqual) {
-                setSuccessMessage("The XML files are equal.");
+            // 4. Find Differences, Respecting Ignored Paths
+            logger.info("Starting XML comparison...");
+            List<String> differences = xmlUtility.findDifferencesWithIgnore(
+                    doc1.getDocumentElement(),
+                    doc2.getDocumentElement(),
+                    baseFile.getName() + " (Base)",
+                    actualFile.getName() + " (Actual)",
+                    ignoredPathsSet
+            );
+            logger.info("Comparison finished.");
+
+
+            // 5. Report Results
+            if (differences.isEmpty()) {
+                setSuccessMessage(String.format("<b>The given XML files are equal</b> (considering ignored XPaths).",
+                        filePath1, filePath2));
                 result = Result.SUCCESS;
             } else {
-                setErrorMessage("The base XML file is not same as the actual XML file.");
+                // Define the character limit
+                final int MAX_DETAILS_LENGTH = 350;
+
+                // Build the difference message
+                StringBuilder diffDetails = new StringBuilder();
+                diffDetails.append(String.format("Found <b>%d difference(s)</b> between given xml files:\n",
+                        differences.size()));
+
+                for (int i = 0; i < differences.size(); i++) {
+                    // Append the current difference detail
+                    diffDetails.append(String.format("%d. %s\n", i + 1, differences.get(i)));
+
+                    // Check if the total length now exceeds the limit after adding the latest difference
+                    if (diffDetails.length() > MAX_DETAILS_LENGTH) {
+                        diffDetails.append("(see Addon NLP Logs for more differences)\n");
+                        break; // Stop adding more differences
+                    }
+                }
+
+                logger.debug("XML Comparison Failed. Differences:\n" + diffDetails.toString());
+                setErrorMessage(diffDetails.toString());
                 result = Result.FAILED;
             }
-            return result;
 
         } catch (Exception e) {
-            setErrorMessage("An error occurred, please check if the Xml file is not damaged " + ExceptionUtils.getMessage(e));
-            logger.info(ExceptionUtils.getStackTrace(e));
-            return Result.FAILED;
+            logger.debug("Error during XML comparison: " + e.getMessage() + e);
+            String errorMessage = "An error occurred during XML comparison: " + ExceptionUtils.getRootCauseMessage(e);
+            if (e instanceof SAXParseException) {
+                errorMessage = String.format("XML Parsing Error in file around Line %d: %s",
+                        ((SAXParseException) e).getLineNumber(), e.getMessage());
+            } else if (e instanceof IOException) {
+                errorMessage = "Error accessing or reading XML file: " + e.getMessage();
+            }
+            setErrorMessage(errorMessage);
+            logger.debug(ExceptionUtils.getStackTrace(e));
+            result = Result.FAILED;
+
+        } finally {
+            if (baseFile != null && baseFile.exists()) {
+                baseFile.delete();
+            }
+            if (actualFile != null && actualFile.exists()) {
+                actualFile.delete();
+            }
         }
+        return result;
     }
 }
