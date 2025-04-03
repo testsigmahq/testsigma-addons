@@ -38,12 +38,12 @@ public class CompareLocalXMLFiles extends WebAction {
     protected Result execute() throws NoSuchElementException {
         logger.info("initiating execution");
         Result result;
-        XMLUtility xmlUtility = new XMLUtility(driver, logger); // Assuming XMLUtility needs driver/logger
+        XMLUtility xmlUtility = new XMLUtility(driver, logger);
         File baseFile = null;
         File actualFile = null;
 
         try {
-            // 1. Get File Paths and Ignored XPaths
+            //  Get File Paths and Ignored XPaths
             String filePath1 = testData1.getValue().toString();
             String filePath2 = testData2.getValue().toString();
             String xPathsToIgnoreRaw = testData3.getValue().toString();
@@ -68,7 +68,7 @@ public class CompareLocalXMLFiles extends WebAction {
             }
 
 
-            // 2. Convert URLs/Paths to Temporary Files
+            //  Convert URLs/Paths to Temporary Files
             baseFile = File.createTempFile("baseXml_", ".xml");
             actualFile = File.createTempFile("actualXml_", ".xml");
             logger.info("Created temporary base file: " + baseFile.getAbsolutePath());
@@ -79,11 +79,11 @@ public class CompareLocalXMLFiles extends WebAction {
             actualFile = xmlUtility.urlToFileConverter(filePath2);
             logger.info("Prepared base & actual file content.");
 
-            // Ensure temp files are deleted on exit (redundant if urlToFileConverter does it, but safe)
+            // Ensure temp files are deleted on exit
             baseFile.deleteOnExit();
             actualFile.deleteOnExit();
 
-            // 3. Parse XML Files with Line Number Tracking
+            // Parse XML Files with Line Number Tracking
             logger.info("Parsing base XML file...");
             Document doc1 = xmlUtility.parseXMLWithLineNumbers(baseFile);
             logger.info("Parsing actual XML file...");
@@ -91,7 +91,7 @@ public class CompareLocalXMLFiles extends WebAction {
             logger.info("Successfully parsed both XML files with line number tracking.");
 
 
-            // 4. Find Differences, Respecting Ignored Paths
+            // Find Differences, Respecting Ignored Paths
             logger.info("Starting XML comparison...");
             List<String> differences = xmlUtility.findDifferencesWithIgnore(
                     doc1.getDocumentElement(),
@@ -103,13 +103,13 @@ public class CompareLocalXMLFiles extends WebAction {
             logger.info("Comparison finished.");
 
 
-            // 5. Report Results
+            // Report Results
             if (differences.isEmpty()) {
                 setSuccessMessage(String.format("<b>The given XML files are equal</b> (considering ignored XPaths).",
                         filePath1, filePath2));
                 result = Result.SUCCESS;
             } else {
-                // Define the character limit
+                // Define the character limit for displaying error messages properly
                 final int MAX_DETAILS_LENGTH = 350;
 
                 // Build the difference message
