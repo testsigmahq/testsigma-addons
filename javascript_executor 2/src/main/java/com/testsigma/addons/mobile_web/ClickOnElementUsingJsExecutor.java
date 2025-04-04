@@ -29,11 +29,13 @@ public class ClickOnElementUsingJsExecutor extends WebAction {
         try {
             JavascriptExecutor js = (JavascriptExecutor) appiumDriver;
             js.executeScript("arguments[0].click();", webElement);
+            logger.info("Successfully clicked on element using javascript executor");
+            setSuccessMessage("Successfully clicked on element using javascript executor");
         } catch (Exception e) {
             logger.debug("Exception occurred : " + ExceptionUtils.getStackTrace(e));
             setErrorMessage("Exception occurred : " + ExceptionUtils.getStackTrace(e));
+            result = com.testsigma.sdk.Result.FAILED;
         }
-        setSuccessMessage("Successfully clicked on element using javascript executor");
         return result;
     }
 }
