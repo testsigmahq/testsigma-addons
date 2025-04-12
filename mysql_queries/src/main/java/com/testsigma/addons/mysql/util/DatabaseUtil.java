@@ -5,7 +5,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 
 public class DatabaseUtil {
-	private String dbClass = "com.mysql.jdbc.Driver";
+	private String dbClass = "com.mysql.cj.jdbc.Driver";
 	public Connection getConnection(String dbURL) throws Exception {
 
 		Class.forName(dbClass).getDeclaredConstructor().newInstance();
