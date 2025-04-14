@@ -17,7 +17,7 @@ import org.openqa.selenium.NoSuchElementException;
 
 @Data
 @Action(actionText = "Execute MySQL Select_Query on the connection DB_Connection_URL and verify output is Expected_Value",
-description = "This Action executes a given Select Query and validates the result(First cell data) aginst the expected value.",
+description = "This Action executes a given Select Query and validates the result(First cell data) against the expected value.",
 applicationType = ApplicationType.WEB)
 public class Mysqlselectvalidate extends WebAction {
 
