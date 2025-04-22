@@ -17,7 +17,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.openqa.selenium.NoSuchElementException;
 
 @Data
-@Action(actionText = "Execute MySQL Select-Query on the connection DB_Connection_URL and store output into a variable-name",
+@Action(actionText = "Execute MySQL Select-Query on the connection DB_Connection_URL and stores the first cell output into a runtime variable variable-name",
 description = "This Action executes a given Select Query and stores the result(First cell data) into a provided runtime variable.",
 applicationType = ApplicationType.MOBILE_WEB)
 public class Mysqlselect extends WebAction {
@@ -36,13 +36,34 @@ public class Mysqlselect extends WebAction {
 		Result result = Result.SUCCESS;
 		logger.info("Initiating execution");
 		DatabaseUtil databaseUtil = new DatabaseUtil();
-		try{
+		String httpNonProxyHosts = System.getProperty("http.nonProxyHosts");
+		String httpsNonProxyHosts = System.getProperty("https.nonProxyHosts");
+		String socksNonProxyHosts = System.getProperty("socksNonProxyHosts");
+
+		try {
+			// Temporarily unset proxy properties to avoid issues
+			System.setProperty("http.nonProxyHosts", "");
+			System.setProperty("https.nonProxyHosts", "");
+			System.setProperty("socksNonProxyHosts", "");
+
 			Connection connection = databaseUtil.getConnection(testData2.getValue().toString());
 			Statement stmt = connection.createStatement();
 			String query = testData1.getValue().toString();
 			ResultSet resultSet = stmt.executeQuery(query);
 			resultSet.next();
 			String resultData = resultSet.getObject(1).toString();
+
+			// Restore original proxy system properties if they were not null
+			if (httpNonProxyHosts != null) {
+				System.setProperty("http.nonProxyHosts", httpNonProxyHosts);
+			}
+			if (httpsNonProxyHosts != null) {
+				System.setProperty("https.nonProxyHosts", httpsNonProxyHosts);
+			}
+			if (socksNonProxyHosts != null) {
+				System.setProperty("socksNonProxyHosts", socksNonProxyHosts);
+			}
+
 			runTimeData = new com.testsigma.sdk.RunTimeData();
 			runTimeData.setValue(resultData);
 			runTimeData.setKey(testData3.getValue().toString());

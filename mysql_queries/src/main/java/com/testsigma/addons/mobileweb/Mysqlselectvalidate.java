@@ -17,7 +17,7 @@ import org.openqa.selenium.NoSuchElementException;
 
 @Data
 @Action(actionText = "Execute MySQL Select_Query on the connection DB_Connection_URL and verify output is Expected_Value",
-description = "This Action executes a given Select Query and validates the result(First cell data) aginst the expected value.",
+description = "This Action executes a given Select Query and validates the result(First cell data) against the expected value.",
 applicationType = ApplicationType.MOBILE_WEB)
 public class Mysqlselectvalidate extends WebAction {
 
@@ -34,7 +34,16 @@ public class Mysqlselectvalidate extends WebAction {
 		Result result = Result.SUCCESS;
 		logger.info("Initiating execution");
 		DatabaseUtil databaseUtil = new DatabaseUtil();
-		try{
+		String httpNonProxyHosts = System.getProperty("http.nonProxyHosts");
+		String httpsNonProxyHosts = System.getProperty("https.nonProxyHosts");
+		String socksNonProxyHosts = System.getProperty("socksNonProxyHosts");
+
+		try {
+			// Temporarily unset proxy properties to avoid issues
+			System.setProperty("http.nonProxyHosts", "");
+			System.setProperty("https.nonProxyHosts", "");
+			System.setProperty("socksNonProxyHosts", "");
+
 			Connection connection = databaseUtil.getConnection(testData2.getValue().toString());
 			Statement stmt = connection.createStatement();
 			String query = testData1.getValue().toString();
@@ -57,6 +66,18 @@ public class Mysqlselectvalidate extends WebAction {
 				setErrorMessage(sb.toString());
 				logger.warn(sb.toString());
 			}
+
+			// Restore original proxy system properties if they were not null
+			if (httpNonProxyHosts != null) {
+				System.setProperty("http.nonProxyHosts", httpNonProxyHosts);
+			}
+			if (httpsNonProxyHosts != null) {
+				System.setProperty("https.nonProxyHosts", httpsNonProxyHosts);
+			}
+			if (socksNonProxyHosts != null) {
+				System.setProperty("socksNonProxyHosts", socksNonProxyHosts);
+			}
+
 		}
 		catch (Exception e){
 			String errorMessage = ExceptionUtils.getStackTrace(e);

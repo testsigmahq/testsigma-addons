@@ -6,14 +6,14 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.testsigma.addons</groupId>
     <artifactId>mysql_queries</artifactId>
-    <version>1.0.10</version>
+    <version>1.0.14</version>
     <packaging>jar</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <testsigma.sdk.version>1.2.5_cloud</testsigma.sdk.version>
+        <testsigma.sdk.version>1.2.18_cloud</testsigma.sdk.version>
         <junit.jupiter.version>5.8.0-M1</junit.jupiter.version>
         <testsigma.addon.maven.plugin>1.0.0</testsigma.addon.maven.plugin>
         <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
@@ -56,13 +56,12 @@
             <artifactId>java-client</artifactId>
             <version>7.0.0</version>
         </dependency>
-        
-                <!-- https://mvnrepository.com/artifact/org.mybatis/mybatis -->
-<dependency>
-    <groupId>org.mybatis</groupId>
-    <artifactId>mybatis</artifactId>
-    <version>3.5.11</version>
-</dependency>
+        <!-- https://mvnrepository.com/artifact/org.mybatis/mybatis -->
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis</artifactId>
+            <version>3.5.11</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
@@ -71,7 +70,7 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.29</version>
+            <version>8.0.29</version> <!-- Use the latest version available -->
         </dependency>
 
     </dependencies>

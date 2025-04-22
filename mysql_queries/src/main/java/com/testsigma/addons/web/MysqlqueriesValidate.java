@@ -34,8 +34,18 @@ public class MysqlqueriesValidate extends WebAction {
 		Result result = Result.SUCCESS;
 		logger.info("Initiating execution");
 		DatabaseUtil databaseUtil = new DatabaseUtil();
+
+		String httpNonProxyHosts = System.getProperty("http.nonProxyHosts");
+		String httpsNonProxyHosts = System.getProperty("https.nonProxyHosts");
+		String socksNonProxyHosts = System.getProperty("socksNonProxyHosts");
+
 		int rowsUpdatedOrFetched = 0;
 		try{
+			// Temporarily unset proxy properties to avoid issues
+			System.setProperty("http.nonProxyHosts", "");
+			System.setProperty("https.nonProxyHosts", "");
+			System.setProperty("socksNonProxyHosts", "");
+
 			Connection connection = databaseUtil.getConnection(testData2.getValue().toString());
 			Statement stmt = connection.createStatement();
 			String query = testData1.getValue().toString();
@@ -63,6 +73,17 @@ public class MysqlqueriesValidate extends WebAction {
 				sb.append("Actual affected rows from query execution:"+rowsUpdatedOrFetched + "<br>");
 				setErrorMessage(sb.toString());
 				logger.warn(sb.toString());
+			}
+
+			// Restore original proxy system properties if they were not null
+			if (httpNonProxyHosts != null) {
+				System.setProperty("http.nonProxyHosts", httpNonProxyHosts);
+			}
+			if (httpsNonProxyHosts != null) {
+				System.setProperty("https.nonProxyHosts", httpsNonProxyHosts);
+			}
+			if (socksNonProxyHosts != null) {
+				System.setProperty("socksNonProxyHosts", socksNonProxyHosts);
 			}
 		}
 		catch (Exception e){
