@@ -1,9 +1,6 @@
-package com.testsigma.addons.string_utils.android;
+package com.testsigma.addons.string_utils.windows;
 
-import com.testsigma.sdk.ApplicationType;
-import com.testsigma.sdk.Result;
-import com.testsigma.sdk.StepActionType;
-import com.testsigma.sdk.WebAction;
+import com.testsigma.sdk.*;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import lombok.Data;
@@ -13,8 +10,8 @@ import org.openqa.selenium.NoSuchElementException;
 @Action(actionText = "If test-data-1 operator test-data-2",
         description = "The string relational operators are used to test the relationship between two strings",
         actionType = StepActionType.IF_CONDITION,
-        applicationType = ApplicationType.ANDROID)
-public class ToCompare extends WebAction {
+        applicationType = ApplicationType.WINDOWS)
+public class ToCompare extends WindowsAction {
 
     private static final String SUCCESS_MESSAGE = "The Text was Entered in the Expected textarea";
     private static final String ELEMENT_DISABLED = "The Text was Not Entered in the textarea. Element with locator <b>\"%s:%s\"</b> is in disabled state";
