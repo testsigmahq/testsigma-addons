@@ -27,6 +27,9 @@ public class FindAllBrokenLinksInPage extends WebAction {
     @TestData(reference = "url")
     private com.testsigma.sdk.TestData url;
 
+    private static final int CONNECTION_TIMEOUT = 60000;
+    private static final int READ_TIMEOUT = 60000;
+
     @Override
     public Result execute() throws NoSuchElementException {
         try {
@@ -43,19 +46,13 @@ public class FindAllBrokenLinksInPage extends WebAction {
             List<String> skippedURLs = new ArrayList<>();
             List<String> brokenURLs = new ArrayList<>();
 
-            // Fetch links inside the loop to avoid stale element
+            // Get all anchor tags
+            List<WebElement> links = driver.findElements(By.tagName("a"));
 
-            List<WebElement> links;
-
-
-            List<WebElement> anchorTags = driver.findElements(By.tagName("a"));
-
-            for (int i = 0; i < anchorTags.size(); i++) {
+            for (int i = 0; i < links.size(); i++) {
                 try {
-
                     links = driver.findElements(By.tagName("a"));
                     WebElement link = links.get(i);
-
 
                     currentUrl = link.getAttribute("href");
 
@@ -78,49 +75,52 @@ public class FindAllBrokenLinksInPage extends WebAction {
                     }
 
                     try {
-                        huc = (HttpURLConnection) (new URL(currentUrl).openConnection());
-
+                        URL url = new URL(currentUrl);
+                        huc = (HttpURLConnection) url.openConnection();
                         huc.setRequestMethod("HEAD");
+                        huc.setRequestProperty("Accept", "*/*");
+                        huc.setConnectTimeout(CONNECTION_TIMEOUT);
+                        huc.setReadTimeout(READ_TIMEOUT);
 
+                        long startTime = System.currentTimeMillis();
                         huc.connect();
+                        long endTime = System.currentTimeMillis();
+                        long timeTaken = endTime - startTime;
 
                         respCode = huc.getResponseCode();
 
                         if (respCode >= 400) {
                             brokenURLs.add(currentUrl);
-                            logger.warn("URL: " + currentUrl + " is a broken link. Response Code: " + respCode);
+                            logger.warn("URL: " + currentUrl + " is a broken link. Response Code: " + respCode + " | Time taken: " + timeTaken + "ms");
                         } else {
-                            logger.info("URL: " + currentUrl + " is a valid link. Response Code: " + respCode);
+                            logger.info("URL: " + currentUrl + " is a valid link. Response Code: " + respCode + " | Time taken: " + timeTaken + "ms");
                         }
 
                     } catch (MalformedURLException e) {
-                        e.printStackTrace();
-                        logger.warn("Malformed URL Exception for URL: " + currentUrl + e);
+                        logger.warn("Malformed URL Exception for URL: " + currentUrl + " - " + e.getMessage());
                     } catch (IOException e) {
-                        e.printStackTrace();
-                        logger.warn("IO Exception for URL: " + currentUrl + e);
+                        logger.warn("IO Exception for URL: " + currentUrl + " - " + e.getMessage());
+                    } finally {
+                        if (huc != null) {
+                            huc.disconnect();
+                        }
                     }
-                }
-                catch(StaleElementReferenceException e){
-                    e.printStackTrace();
-                    logger.warn("StaleElementReferenceException caught for URL, refreshing and retrying"+ e);
+                } catch (StaleElementReferenceException e) {
+                    logger.warn("StaleElementReferenceException caught for URL, refreshing and retrying - " + e.getMessage());
                     i--;
                 }
-
-
             }
 
-
             if (brokenURLs.size() > 0) {
-                setSuccessMessage(" Broken URLs : " + brokenURLs);
+                setSuccessMessage("Broken URLs: " + brokenURLs);
                 return Result.SUCCESS;
             } else {
-                setSuccessMessage("There are no Broken links in the page");
+                setSuccessMessage("There are no broken links in the page");
                 return Result.SUCCESS;
             }
         } catch (Exception exception) {
-            logger.warn("Error while finding Broken Images " + exception);
-            setErrorMessage("Error while finding Broken Images ");
+            logger.warn("Error while finding broken links: " + exception.getMessage());
+            setErrorMessage("Error while finding broken links: " + exception.getMessage());
             return Result.FAILED;
         }
     }

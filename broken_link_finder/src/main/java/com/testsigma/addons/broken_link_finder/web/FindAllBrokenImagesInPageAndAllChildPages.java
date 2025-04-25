@@ -8,6 +8,7 @@ import com.testsigma.sdk.annotation.TestData;
 import lombok.Data;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.openqa.selenium.By;
@@ -41,7 +42,7 @@ public class FindAllBrokenImagesInPageAndAllChildPages extends WebAction {
     private com.testsigma.sdk.TestData URL;
 
     @Override
-    public Result execute() throws NoSuchElementException {
+    public com.testsigma.sdk.Result execute() throws NoSuchElementException {
         try {
             collectValidLinks(URL.getValue().toString(), 5);
             collectBrokenImages(URL.getValue().toString());
@@ -66,6 +67,16 @@ public class FindAllBrokenImagesInPageAndAllChildPages extends WebAction {
         driver.manage().window().maximize();
         try {
             List<WebElement> image_list = driver.findElements(By.tagName("img"));
+            logger.info("Total images found on the page: " + image_list.size());
+
+            // Timeout configuration
+            RequestConfig requestConfig = RequestConfig.custom()
+                    .setConnectTimeout(60000)
+                    .setConnectionRequestTimeout(60000)
+                    .setSocketTimeout(60000)
+                    .build();
+
+
             for (WebElement img : image_list) {
                 if (img != null) {
                     String src = img.getAttribute("src");
@@ -74,9 +85,22 @@ public class FindAllBrokenImagesInPageAndAllChildPages extends WebAction {
                             logger.info(img.getAttribute("outerHTML") + " has broken image.");
                         }
                     } else {
-                        HttpClient client = HttpClientBuilder.create().build();
+                        HttpClient client = HttpClientBuilder.create()
+                                .setDefaultRequestConfig(requestConfig)
+                                .build();
                         HttpGet request = new HttpGet(src);
+                        request.setHeader("User-Agent", "Mozilla/5.0");
+                        request.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+                        request.setHeader("Accept-Language", "en-US,en;q=0.5");
+                        request.setHeader("Connection", "keep-alive");
+
+                        long startTime = System.currentTimeMillis();
                         HttpResponse response = client.execute(request);
+                        long endTime = System.currentTimeMillis();
+
+                        logger.info("Checked image URL: " + src + " | Response code: " +
+                                response.getStatusLine().getStatusCode() + " | Time taken: " + (endTime - startTime) + " ms");
+
                         if (response.getStatusLine().getStatusCode() != 200) {
                             logger.info(img.getAttribute("outerHTML") + " has broken image.");
                             brokenImages.add(src);

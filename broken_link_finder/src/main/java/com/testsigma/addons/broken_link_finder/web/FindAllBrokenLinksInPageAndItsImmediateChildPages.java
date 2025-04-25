@@ -30,11 +30,14 @@ public class FindAllBrokenLinksInPageAndItsImmediateChildPages extends WebAction
     public static int anchorTagsWithEmptyURLs = 0;
     public static List<String> skippedURLs = new ArrayList<>();
     public static List<String> brokenURLs = new ArrayList<>();
+    private static final int CONNECTION_TIMEOUT = 60000;
+    private static final int READ_TIMEOUT = 60000;
+
     @TestData(reference = "url")
     private com.testsigma.sdk.TestData URL;
 
     @Override
-    public Result execute() throws NoSuchElementException {
+    public com.testsigma.sdk.Result execute() throws NoSuchElementException {
         try{
             collectBrokenUrls(URL.getValue().toString(), false);
             validatedLinks.forEach(link -> collectBrokenUrls(link, true));
@@ -89,7 +92,9 @@ public class FindAllBrokenLinksInPageAndItsImmediateChildPages extends WebAction
                     huc = (HttpURLConnection) (new URL(href).openConnection());
 
                     huc.setRequestMethod("HEAD");
-
+                    huc.setRequestProperty("Accept", "*/*");
+                    huc.setConnectTimeout(CONNECTION_TIMEOUT);
+                    huc.setReadTimeout(READ_TIMEOUT);
                     huc.connect();
 
                     respCode = huc.getResponseCode();

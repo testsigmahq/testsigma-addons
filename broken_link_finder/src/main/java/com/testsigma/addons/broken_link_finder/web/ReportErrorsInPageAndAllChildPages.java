@@ -33,6 +33,9 @@ public class ReportErrorsInPageAndAllChildPages extends WebAction {
     public static List<String> skippedURLs = new ArrayList<>();
     public static List<String> brokenURLs = new ArrayList<>();
     public static List<String> validLinks = new ArrayList<>();
+    private static final int CONNECTION_TIMEOUT = 60000;
+    private static final int READ_TIMEOUT = 60000;
+
     @TestData(reference = "url")
     private com.testsigma.sdk.TestData URL;
 
@@ -109,6 +112,9 @@ public class ReportErrorsInPageAndAllChildPages extends WebAction {
                 huc = (HttpURLConnection) (new URL(href).openConnection());
 
                 huc.setRequestMethod("HEAD");
+                huc.setRequestProperty("Accept", "*/*");
+                huc.setConnectTimeout(CONNECTION_TIMEOUT);
+                huc.setReadTimeout(READ_TIMEOUT);
 
                 huc.connect();
 
