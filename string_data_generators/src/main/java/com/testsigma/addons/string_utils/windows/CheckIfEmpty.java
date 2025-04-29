@@ -1,9 +1,6 @@
-package com.testsigma.addons.string_utils.web;
+package com.testsigma.addons.string_utils.windows;
 
-import com.testsigma.sdk.ApplicationType;
-import com.testsigma.sdk.Result;
-import com.testsigma.sdk.StepActionType;
-import com.testsigma.sdk.WebAction;
+import com.testsigma.sdk.*;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import lombok.Data;
@@ -13,8 +10,8 @@ import org.openqa.selenium.NoSuchElementException;
 @Action(actionText = "If test-data is operator",
         description = "This action checks if a given string contains or starts or ends with a provided string",
         actionType = StepActionType.IF_CONDITION,
-        applicationType = ApplicationType.WEB)
-public class CheckIfEmpty extends WebAction {
+        applicationType = ApplicationType.WINDOWS)
+public class CheckIfEmpty extends WindowsAction {
     @TestData(reference = "test-data")
     private com.testsigma.sdk.TestData testData;
     @TestData(reference = "operator", allowedValues = {"empty", "not empty"})
