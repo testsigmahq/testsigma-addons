@@ -67,7 +67,7 @@ public class StoreNonEmptyCellCount extends WebAction {
                         runTimeData.getKey() + " = " + runTimeData.getValue());
             } else if (testData1.getValue().toString().equalsIgnoreCase("rows")) {
                 // using the below logic instead of sheet.getPhysicalNumberOfRows() as it is returning larger values
-                // then expected no of rows...
+                // than expected no of rows...
                 int rowCount = 0;
                 for (Row row : sheet) {
                     boolean hasData = false;
@@ -81,7 +81,7 @@ public class StoreNonEmptyCellCount extends WebAction {
                 }
                 runTimeData.setValue(rowCount);
                 runTimeData.setKey(testData3.getValue().toString());
-                setSuccessMessage("Successfully stored the number of cells from excel file " +
+                setSuccessMessage("Successfully stored the number of rows from excel file " +
                         runTimeData.getKey() + " = " + runTimeData.getValue());
             } else if (testData1.getValue().toString().equalsIgnoreCase("columns")) {
                 int maxColumns = 0;
@@ -98,7 +98,7 @@ public class StoreNonEmptyCellCount extends WebAction {
                 }
                 runTimeData.setValue(maxColumns);
                 runTimeData.setKey(testData3.getValue().toString());
-                setSuccessMessage("Successfully stored the number of cells from excel file " +
+                setSuccessMessage("Successfully stored the number of columns from excel file " +
                         runTimeData.getKey() + " = " + runTimeData.getValue());
             }
             return result;
