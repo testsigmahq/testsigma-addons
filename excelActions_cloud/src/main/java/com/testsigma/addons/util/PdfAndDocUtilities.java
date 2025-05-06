@@ -1,6 +1,9 @@
 package com.testsigma.addons.util;
 
 import com.testsigma.sdk.Logger;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -137,5 +140,63 @@ public class PdfAndDocUtilities {
 
     }
 
+    public static int calculateExcelDataCount(String countType, XSSFSheet sheet) {
+        int count = 0;
+
+        if (countType.equalsIgnoreCase("non-empty cells")) {
+            count = countNonEmptyCells(sheet);
+        } else if (countType.equalsIgnoreCase("rows")) {
+            count = countNonEmptyRows(sheet);
+        } else if (countType.equalsIgnoreCase("columns")) {
+            count = countMaxColumns(sheet);
+        }
+
+        return count;
+    }
+
+    private static int countNonEmptyCells(XSSFSheet sheet) {
+        int cellCount = 0;
+        for (int i = 0; i <= sheet.getLastRowNum(); i++) {
+            if (sheet.getRow(i) != null) {
+                for (int j = 0; j < sheet.getRow(i).getPhysicalNumberOfCells(); j++) {
+                    if (sheet.getRow(i).getCell(j) != null && !sheet.getRow(i).getCell(j).toString().isEmpty()) {
+                        cellCount++;
+                    }
+                }
+            }
+        }
+        return cellCount;
+    }
+
+    private static int countNonEmptyRows(XSSFSheet sheet) {
+        int rowCount = 0;
+        for (Row row : sheet) {
+            boolean hasData = false;
+            for (Cell cell : row) {
+                if (cell != null && !cell.toString().trim().isEmpty()) {
+                    hasData = true;
+                    break;
+                }
+            }
+            if (hasData) rowCount++;
+        }
+        return rowCount;
+    }
+
+    private static int countMaxColumns(XSSFSheet sheet) {
+        int maxColumnCount = 0;
+        for (Row row : sheet) {
+            int currentColumnCount = 0;
+            for (Cell cell : row) {
+                if (cell != null && !cell.toString().trim().isEmpty()) {
+                    currentColumnCount = cell.getColumnIndex() + 1; // +1 because column index is zero-based
+                }
+            }
+            if (currentColumnCount > maxColumnCount) {
+                maxColumnCount = currentColumnCount;
+            }
+        }
+        return maxColumnCount;
+    }
 
 }
