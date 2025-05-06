@@ -115,7 +115,7 @@ public class StoreNonEmptyCellCount extends WebAction {
                 logger.info("Given is s3 url ...");
                 URL urlObject = new URL(url);
                 File tempFile = File.createTempFile("tempExcelFile", "."
-                        + ".xlsx");
+                        + "xlsx");
                 FileUtils.copyURLToFile(urlObject, tempFile);
                 logger.info("Temp file created with name for s3 file" + tempFile.getName()
                         + " at path " + tempFile.getAbsolutePath());
