@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.testsigma.addons</groupId>
   <artifactId>epoch_time_converter_with_system_zone</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
   <build>
     <finalName>epoch_time_converter_with_system_zone</finalName>
     <plugins>
