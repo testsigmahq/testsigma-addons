@@ -31,11 +31,10 @@ public class PdfUtils {
             logger.info(String.valueOf(url.startsWith("https://") || url.startsWith("http://")));
             if (url.startsWith("https://") || url.startsWith("http://")) {
                 // file name use the current time stamp
-                String fileName = String.valueOf(System.currentTimeMillis()) + ".pdf";
                 logger.info("Given is s3 url");
                 URL urlObject = new URL(url);
-                File tempFile = File.createTempFile(fileName.split("\\.")[0], "."
-                        + fileName.split("\\.")[1]);
+                File tempFile = File.createTempFile(String.valueOf(System.currentTimeMillis()), ".pdf");
+                tempFile.deleteOnExit();
                 FileUtils.copyURLToFile(urlObject, tempFile);
                 logger.info("Temp file created with name for s3 file" + tempFile.getName()
                         + " at path " + tempFile.getAbsolutePath());
