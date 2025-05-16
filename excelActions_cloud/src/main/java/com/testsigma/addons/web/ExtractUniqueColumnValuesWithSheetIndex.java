@@ -1,6 +1,5 @@
 package com.testsigma.addons.web;
 
-
 import com.testsigma.addons.util.PdfAndDocUtilities;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.WebAction;
@@ -17,40 +16,44 @@ import org.openqa.selenium.NoSuchElementException;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Data
-@Action(actionText = "Excel: Read the entire Column of the latest Excel file (.xlsx) using the Column Index column-index and Sheet Index sheet-index and store it in a " +
-        "variable named testdata",
-        description = "Reads the entire column of the latest Excel file using the column number and store it in a " +
-                "variable named testdata",
+@Action(
+        actionText = "Excel: Read the entire Column of the latest Excel file (.xlsx) using the Column Index column-index and Sheet Index sheet-index and store the unique values in a runtime variable variable-name",
+        description = "Reads the entire column of the latest Excel file using the column number and store it in a variable named testdata",
         applicationType = ApplicationType.WEB,
-        useCustomScreenshot = false)
-public class ExtractCompleteColumnValuesWithSheetIndex extends WebAction {
+        useCustomScreenshot = false
+)
+public class ExtractUniqueColumnValuesWithSheetIndex extends WebAction {
     @TestData(reference = "sheet-index")
     private com.testsigma.sdk.TestData sheetIndex_;
+
     @TestData(reference = "column-index")
     private com.testsigma.sdk.TestData columnIndex_;
-    @TestData(reference = "testdata", isRuntimeVariable = true)
+
+    @TestData(reference = "variable-name", isRuntimeVariable = true)
     private com.testsigma.sdk.TestData testData;
+
     @RunTimeData
     private com.testsigma.sdk.RunTimeData runTimeData;
 
     @Override
     public com.testsigma.sdk.Result execute() throws NoSuchElementException {
-        logger.info("Initiating execution");
-
+        logger.info("Initiating execution for extracting unique column values.");
         com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
 
         PdfAndDocUtilities documentutil = new PdfAndDocUtilities(driver, logger);
-        try {
 
+        try {
             File downloadedExcelFile = documentutil.copyFileFromDownloads("xlsx", null);
             logger.info("Downloaded Excel file: " + downloadedExcelFile.getAbsolutePath());
 
-            StringBuffer entireFieldValues = new StringBuffer();
+            Set<String> uniqueFieldValues = new LinkedHashSet<>();
+            StringBuffer uniqueValuesString = new StringBuffer();
 
             try (FileInputStream inputStream = new FileInputStream(downloadedExcelFile)) {
-                // Load the workbook
                 XSSFWorkbook workbook = new XSSFWorkbook(inputStream);
 
                 // Validate and parse sheet index (1-based to 0-based)
@@ -75,7 +78,6 @@ public class ExtractCompleteColumnValuesWithSheetIndex extends WebAction {
                     return com.testsigma.sdk.Result.FAILED;
                 }
 
-                // Get the specified sheet
                 XSSFSheet sheet = workbook.getSheetAt(sheetIndex);
                 logger.info("Processing sheet at index: " + userSheetIndex + " (0-based: " + sheetIndex + ")");
 
@@ -109,7 +111,7 @@ public class ExtractCompleteColumnValuesWithSheetIndex extends WebAction {
                         String cellValue;
 
                         if (cell == null) {
-                            cellValue = "null"; // Use "null" as a placeholder for empty cells
+                            cellValue = "null";
                         } else {
                             switch (cell.getCellType()) {
                                 case STRING:
@@ -132,29 +134,32 @@ public class ExtractCompleteColumnValuesWithSheetIndex extends WebAction {
                                     cellValue = "N/A";
                             }
                         }
-                        entireFieldValues.append(cellValue);
-                        logger.info("Values in row " + (rowIndex + 1) + ": " + cellValue);
-                        entireFieldValues.append(",");
+
+                        uniqueFieldValues.add(cellValue);
                     } else {
-                        logger.info("Row " + (rowIndex + 1) + " is empty");
+                        logger.info("Row " + (rowIndex + 1) + " is empty.");
                     }
                 }
             }
-            if (entireFieldValues.length() > 0) {
-                entireFieldValues.deleteCharAt(entireFieldValues.length() - 1);
+
+            for (String value : uniqueFieldValues) {
+                uniqueValuesString.append(value).append(",");
+            }
+
+            if (uniqueValuesString.length() > 0) {
+                uniqueValuesString.deleteCharAt(uniqueValuesString.length() - 1); // Remove trailing comma
             }
 
             runTimeData.setKey(testData.getValue().toString());
-            runTimeData.setValue(entireFieldValues.toString());
-            logger.info("Extractrd column values: " + entireFieldValues);
+            runTimeData.setValue(uniqueValuesString.toString());
+            logger.info("Extracted unique column values: " + uniqueValuesString);
 
-            setSuccessMessage("Extracted the Complete Column Values and Stored it in variable "
-                    + testData.getValue().toString() + " = " + runTimeData.getValue());
+            setSuccessMessage("Extracted unique column values and stored in variable '" + testData.getValue().toString() + "' = " + runTimeData.getValue());
         } catch (Exception e) {
             String errorMessage = ExceptionUtils.getStackTrace(e);
+            logger.warn("Error during execution: " + errorMessage);
+            setErrorMessage("Failed to extract column values: " + errorMessage);
             result = com.testsigma.sdk.Result.FAILED;
-            setErrorMessage(errorMessage);
-            logger.warn(errorMessage);
         }
 
         return result;

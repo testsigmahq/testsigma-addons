@@ -16,41 +16,45 @@ import org.openqa.selenium.NoSuchElementException;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Data
-@Action(actionText = "Excel: Read the entire Row of the latest Excel file (.xlsx) using the Row Index row-index and Sheet Index sheet-index and store it in a " +
-        "variable named testdata",
-        description = "Reads the entire Row of the latest Excel file using the Row index and store it in a " +
-                "variable named testdata",
+@Action(
+        actionText = "Excel: Read the entire Row of the latest Excel file (.xlsx) using the Row Index row-index and Sheet Index sheet-index and store the unique values in a runtime variable variable-name",
+        description = "Reads the entire row of the latest Excel file using the row index and stores unique values in a variable named testdata",
         applicationType = ApplicationType.WEB,
-        useCustomScreenshot = false)
-public class ExtractCompleteRowValuesWithSheetIndex extends WebAction {
+        useCustomScreenshot = false
+)
+public class ExtractUniqueRowValuesWithSheetIndex extends WebAction {
+
     @TestData(reference = "sheet-index")
     private com.testsigma.sdk.TestData sheetIndex_;
+
     @TestData(reference = "row-index")
     private com.testsigma.sdk.TestData rowIndex_;
-    @TestData(reference = "testdata", isRuntimeVariable = true)
+
+    @TestData(reference = "variable-name", isRuntimeVariable = true)
     private com.testsigma.sdk.TestData testData;
+
     @RunTimeData
     private com.testsigma.sdk.RunTimeData runTimeData;
 
     @Override
     public com.testsigma.sdk.Result execute() throws NoSuchElementException {
-        logger.info("Initiating execution");
-
+        logger.info("Starting Excel row value extraction.");
         com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
+        PdfAndDocUtilities documentUtil = new PdfAndDocUtilities(driver, logger);
 
-        PdfAndDocUtilities documentutil = new PdfAndDocUtilities(driver, logger);
         try {
-
-            File downloadedExcelFile = documentutil.copyFileFromDownloads("xlsx", null);
+            File downloadedExcelFile = documentUtil.copyFileFromDownloads("xlsx", null);
             logger.info("Downloaded Excel file: " + downloadedExcelFile.getAbsolutePath());
 
-            StringBuffer entireFieldValues = new StringBuffer();
+            Set<String> uniqueFieldValues = new LinkedHashSet<>();
+            StringBuilder uniqueValuesString = new StringBuilder();
 
-            try (FileInputStream inputStream = new FileInputStream(downloadedExcelFile)) {
-                // Load the workbook
-                XSSFWorkbook workbook = new XSSFWorkbook(inputStream);
+            try (FileInputStream inputStream = new FileInputStream(downloadedExcelFile);
+                 XSSFWorkbook workbook = new XSSFWorkbook(inputStream)) {
 
                 // Validate and parse sheet index (1-based to 0-based)
                 int userSheetIndex;
@@ -73,7 +77,6 @@ public class ExtractCompleteRowValuesWithSheetIndex extends WebAction {
                     setErrorMessage("Sheet index " + userSheetIndex + " is out of range. Workbook contains only " + workbook.getNumberOfSheets() + " sheet(s).");
                     return com.testsigma.sdk.Result.FAILED;
                 }
-
 
                 XSSFSheet sheet = workbook.getSheetAt(sheetIndex);
                 logger.info("Processing sheet at index: " + userSheetIndex + " (0-based: " + sheetIndex + ")");
@@ -109,57 +112,59 @@ public class ExtractCompleteRowValuesWithSheetIndex extends WebAction {
                     return com.testsigma.sdk.Result.SUCCESS;
                 }
 
-                // Iterate over all cells in the row
                 for (int cellIndex = 0; cellIndex < row.getLastCellNum(); cellIndex++) {
                     Cell cell = row.getCell(cellIndex);
-                    String cellValueForRow;
+                    String cellValue;
 
                     if (cell == null) {
-                        cellValueForRow = "null"; // Use "null" as a placeholder for empty cells
+                        cellValue = "null";
                     } else {
                         switch (cell.getCellType()) {
                             case STRING:
-                                cellValueForRow = cell.getStringCellValue();
+                                cellValue = cell.getStringCellValue();
                                 break;
                             case NUMERIC:
                                 if (DateUtil.isCellDateFormatted(cell)) {
-                                    cellValueForRow = cell.getDateCellValue().toString();
+                                    cellValue = cell.getDateCellValue().toString();
                                 } else {
-                                    cellValueForRow = Double.toString(cell.getNumericCellValue());
+                                    cellValue = Double.toString(cell.getNumericCellValue());
                                 }
                                 break;
                             case BOOLEAN:
-                                cellValueForRow = Boolean.toString(cell.getBooleanCellValue());
+                                cellValue = Boolean.toString(cell.getBooleanCellValue());
                                 break;
                             case FORMULA:
-                                cellValueForRow = cell.getCellFormula();
+                                cellValue = cell.getCellFormula();
                                 break;
                             default:
-                                cellValueForRow = "N/A";
-                            }
+                                cellValue = "N/A";
                         }
-                        entireFieldValues.append(cellValueForRow);
-                        logger.info("Cell Value: " + cellValueForRow);
-                        entireFieldValues.append(",");
                     }
+
+                    uniqueFieldValues.add(cellValue);
                 }
 
-            logger.info(entireFieldValues.toString());
-            if (entireFieldValues.length() > 0) {
-                entireFieldValues.deleteCharAt(entireFieldValues.length() - 1);
+                for (String value : uniqueFieldValues) {
+                    uniqueValuesString.append(value).append(",");
+                }
+
+                if (uniqueValuesString.length() > 0) {
+                    uniqueValuesString.deleteCharAt(uniqueValuesString.length() - 1);
+                }
+
+                runTimeData.setKey(testData.getValue().toString());
+                runTimeData.setValue(uniqueValuesString.toString());
+                logger.info("Extracted unique row values: " + runTimeData.getValue());
+
+                setSuccessMessage("Extracted unique row values and stored in variable '" +
+                        testData.getValue() + "' = " + runTimeData.getValue());
             }
-
-            runTimeData.setKey(testData.getValue().toString());
-            runTimeData.setValue(entireFieldValues.toString());
-            logger.info("Extracted row values: " + entireFieldValues.toString());
-
-            setSuccessMessage("Extracted the Complete Row Values and Stored it in variable " + testData.getValue().toString() + " = " + runTimeData.getValue());
 
         } catch (Exception e) {
             String errorMessage = ExceptionUtils.getStackTrace(e);
+            logger.warn("Exception occurred while reading Excel row: " + errorMessage);
+            setErrorMessage("Failed to extract Excel row data: " + errorMessage);
             result = com.testsigma.sdk.Result.FAILED;
-            setErrorMessage(errorMessage);
-            logger.warn(errorMessage);
         }
 
         return result;
