@@ -27,9 +27,7 @@ public class Verifytestdata extends WebAction {
     Result result = Result.SUCCESS;
   
     	logger.debug("testdata => " + testData1.getValue().toString());
-        System.out.println("testdata => " + testData1.getValue().toString());
         logger.debug("testdata1 => " + testData2.getValue().toString());
-        System.out.println("testdata1 => " + testData2.getValue().toString());
          
         String str = testData1.getValue().toString();
  	    
