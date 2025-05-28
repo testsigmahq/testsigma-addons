@@ -75,6 +75,11 @@ public class OCRTestingStore extends AndroidAction {
             logger.info("Number of text available " + String.valueOf(TextCompare.size()));
             logger.info("Available text " + TextCompare);
 
+            if (TextCompare.size() < 1) {
+                setErrorMessage("No matching text was found for comparison.");
+                return Result.FAILED;
+            }
+
             int selectedIndex = Integer.parseInt(index.getValue().toString());
 
             if (selectedIndex < 0 || selectedIndex >= TextCompare.size()) {
