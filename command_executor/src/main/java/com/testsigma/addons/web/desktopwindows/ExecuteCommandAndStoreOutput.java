@@ -15,7 +15,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.StringTokenizer;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Data
 @Action(actionText = "Execute command and store output in a variable. Command to execute: Executable-Command , variable name: Output-Variable",
@@ -32,6 +34,8 @@ public class ExecuteCommandAndStoreOutput extends WindowsAction {
     @RunTimeData
     private com.testsigma.sdk.RunTimeData runTimeData;
 
+    private static final long COMMAND_TIMEOUT_SECONDS = 120; // Set timeout to 120 seconds
+
 
     @Override
     public com.testsigma.sdk.Result execute() throws NoSuchElementException {
@@ -41,7 +45,7 @@ public class ExecuteCommandAndStoreOutput extends WindowsAction {
         String output = null; // Initialize output to null
         try {
             String command = commandToExecute.getValue().toString();
-            CommandResult commandResult = executeCommand(command); // Assign output from executeCommand
+            CommandResult commandResult = executeCommandWithTimeout(command, COMMAND_TIMEOUT_SECONDS); // Execute with timeout
             output = commandResult.getOutput(); // Get combined output (std + err)
 
             runTimeData = new com.testsigma.sdk.RunTimeData();
@@ -60,6 +64,10 @@ public class ExecuteCommandAndStoreOutput extends WindowsAction {
             setSuccessMessage(message); //Always Set Success Message even the output is empty
 
 
+        } catch (TimeoutException e) {
+            result = com.testsigma.sdk.Result.FAILED;
+            setErrorMessage("Command execution timed out after " + COMMAND_TIMEOUT_SECONDS + " seconds.");
+            logger.warn("Command execution timed out: " + ExceptionUtils.getStackTrace(e));
         } catch (Exception e) {
             String errorMessage = ExceptionUtils.getStackTrace(e);
             result = com.testsigma.sdk.Result.FAILED; // Keep failure as fallback
@@ -75,6 +83,35 @@ public class ExecuteCommandAndStoreOutput extends WindowsAction {
         }
         return result;
     }
+
+
+    private CommandResult executeCommandWithTimeout(String command, long timeoutSeconds) throws Exception, TimeoutException {
+        CompletableFuture<CommandResult> future = CompletableFuture.supplyAsync(() -> {
+            try {
+                return executeCommand(command); // Your original executeCommand method
+            } catch (Exception e) {
+                // Wrap the exception so it can be handled in the main thread.
+                throw new RuntimeException(e);
+            }
+        });
+
+        try {
+            return future.get(timeoutSeconds, TimeUnit.SECONDS);
+        } catch (java.util.concurrent.ExecutionException e) {
+            // Unwrap the exception thrown by executeCommand
+            Throwable cause = e.getCause();
+            if (cause instanceof Exception) {
+                throw (Exception) cause; // Re-throw the original exception
+            } else {
+                throw new Exception("Error during command execution", cause);
+            }
+
+        } catch (TimeoutException e) {
+            future.cancel(true); // Interrupt the process if it's still running
+            throw e;
+        }
+    }
+
 
     private CommandResult executeCommand(String command) throws Exception {
         StringBuilder output = new StringBuilder();
