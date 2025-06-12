@@ -16,6 +16,7 @@ import org.openqa.selenium.remote.Augmenter;
 
 import java.util.Optional;
 
+import static com.testsigma.addons.web.utilities.ResponseDataUtilities.addRequestBodyData;
 import static com.testsigma.addons.web.utilities.ResponseDataUtilities.addResponseBodyData;
 
 @Data
@@ -80,6 +81,10 @@ public class StartTracking extends WebAction {
                         logger.info("Storing response body in test case result...");
                         addResponseBodyData(testCaseResult.getId(), responseBody, logger);
                         logger.info("Response body successfully stored.");
+                        String requestBody = devTool.send(Network.getRequestPostData(requestIds[0]));
+                        logger.info("Request body successfully retrieved and will be stored.");
+                        addRequestBodyData(testCaseResult.getId(), requestBody, logger);
+                        logger.info("Request body successfully stored.");
                     } catch (Exception e) {
                         logger.warn("Error while storing response body: " + ExceptionUtils.getStackTrace(e));
                     }
