@@ -18,7 +18,7 @@ import java.net.URL;
 import java.nio.file.Paths;
 
 @Data
-@Action(actionText = "Excel: Read the entire Row of the Excel from Local filePath using the Row Index and store it in a "
+@Action(actionText = "Excel: Read the entire Row of the Excel from Local filePath using the Row Index and Sheet Index sheet-index and store it in a "
         + "variable named testdata",
         description = "Read the entire Row of the Excel file from given filepath or URL using the Row number and store it in a "
                 + "variable named testdata",
@@ -28,7 +28,9 @@ public class ExtractCompleteFieldValuesForGivenFilePath extends WebAction {
   @TestData(reference = "filePath")
   private com.testsigma.sdk.TestData filePath;
   @TestData(reference = "Index")
-  private com.testsigma.sdk.TestData testData1;
+  private com.testsigma.sdk.TestData rowIndex_;
+  @TestData(reference = "sheet-index")
+  private com.testsigma.sdk.TestData sheetIndex_;
   @TestData(reference = "testdata", isRuntimeVariable = true)
   private com.testsigma.sdk.TestData testData2;
   @RunTimeData
@@ -46,8 +48,6 @@ public class ExtractCompleteFieldValuesForGivenFilePath extends WebAction {
     try {
       logger.info("filePath: " + getFilePath().getValue().toString());
       fileLocation = getFilePath().getValue().toString();
-
-      excelFile = null;
 
       // Check if it is a URL or a local file path
       if (fileLocation.startsWith("http://") || fileLocation.startsWith("https://")) {
@@ -73,9 +73,53 @@ public class ExtractCompleteFieldValuesForGivenFilePath extends WebAction {
       try (FileInputStream inputStream = new FileInputStream(excelFile)) {
         // Load the workbook and get the first sheet
         XSSFWorkbook workbook = new XSSFWorkbook(inputStream);
-        XSSFSheet sheet = workbook.getSheetAt(0);
-        logger.info("Case Row");
-        int rowIndex = Integer.parseInt(testData1.getValue().toString());
+
+        // Validate and parse sheet index (1-based to 0-based)
+        int userSheetIndex;
+        try {
+          userSheetIndex = Integer.parseInt(sheetIndex_.getValue().toString());
+          if (userSheetIndex < 1) {
+            logger.warn("Sheet index must be greater than or equal to 1. Provided: " + userSheetIndex);
+            setErrorMessage("Sheet index must be greater than or equal to 1. Provided: " + userSheetIndex);
+            return com.testsigma.sdk.Result.FAILED;
+          }
+        } catch (NumberFormatException e) {
+          logger.warn("Invalid sheet index format: " + sheetIndex_.getValue().toString());
+          setErrorMessage("Invalid sheet index format. Must be a positive integer. Provided: " + sheetIndex_.getValue().toString());
+          return com.testsigma.sdk.Result.FAILED;
+        }
+
+        int sheetIndex = userSheetIndex - 1;
+        if (sheetIndex >= workbook.getNumberOfSheets()) {
+          logger.warn("Sheet index " + userSheetIndex + " is out of range. Workbook contains only " + workbook.getNumberOfSheets() + " sheet(s).");
+          setErrorMessage("Sheet index " + userSheetIndex + " is out of range. Workbook contains only " + workbook.getNumberOfSheets() + " sheet(s).");
+          return com.testsigma.sdk.Result.FAILED;
+        }
+
+        XSSFSheet sheet = workbook.getSheetAt(sheetIndex);
+        logger.info("Processing sheet at index: " + userSheetIndex + " (0-based: " + sheetIndex + ")");
+
+        // Validate and parse row index (0-based)
+        int rowIndex;
+        try {
+          rowIndex = Integer.parseInt(rowIndex_.getValue().toString());
+          if (rowIndex < 0) {
+            logger.warn("Row index must be non-negative. Provided: " + rowIndex);
+            setErrorMessage("Row index must be non-negative. Provided: " + rowIndex);
+            return com.testsigma.sdk.Result.FAILED;
+          }
+        } catch (NumberFormatException e) {
+          logger.warn("Invalid row index format: " + rowIndex_.getValue().toString());
+          setErrorMessage("Invalid row index format. Must be a non-negative integer. Provided: " + rowIndex_.getValue().toString());
+          return com.testsigma.sdk.Result.FAILED;
+        }
+
+        if (rowIndex > sheet.getLastRowNum()) {
+          logger.warn("Row index " + rowIndex + " is out of range. Sheet has " + (sheet.getLastRowNum() + 1) + " rows (0-based).");
+          setErrorMessage("Row index " + rowIndex + " is out of range. Sheet has " + (sheet.getLastRowNum() + 1) + " rows.");
+          return com.testsigma.sdk.Result.FAILED;
+        }
+
         var row = sheet.getRow(rowIndex);
         if (row != null) {
           logger.info("Values in row " + (rowIndex + 1) + ":");
@@ -123,6 +167,7 @@ public class ExtractCompleteFieldValuesForGivenFilePath extends WebAction {
       logger.info("Storing values");
       runTimeData.setKey(testData2.getValue().toString());
       runTimeData.setValue(entireFieldValues.toString());
+      logger.info("Extracted row values: " + entireFieldValues.toString());
 
       setSuccessMessage("Extracted the Complete Row Values and Stored it in variable "
               + testData2.getValue().toString() + " = " + runTimeData.getValue());
