@@ -7,10 +7,11 @@ import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.Result;
 import lombok.Data;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.devtools.DevTools;
 import org.openqa.selenium.devtools.HasDevTools;
-import org.openqa.selenium.devtools.v118.emulation.Emulation;
+import org.openqa.selenium.devtools.v124.emulation.Emulation;
 import org.openqa.selenium.remote.Augmenter;
 
 import java.util.Optional;
@@ -34,7 +35,7 @@ public class MockGeoLocationAction extends WebAction {
   private com.testsigma.sdk.TestData accVal;
 
   @Override
-  public Result execute() {
+  public Result execute() throws NoSuchElementException {
     Result result = Result.SUCCESS;
 
     try {
@@ -42,10 +43,6 @@ public class MockGeoLocationAction extends WebAction {
       double latitude, longitude, accuracy;
       try {
         latitude = Double.parseDouble(latVal.getValue().toString());
-        if (latitude < -90 || latitude > 90) {
-          setErrorMessage("Invalid latitude value. Must be between -90 and 90.  Value provided: " + latitude);
-          return Result.FAILED;
-        }
       } catch (NumberFormatException e) {
         setErrorMessage("Invalid latitude format. Must be a number. Value provided: " + latVal.getValue());
         return Result.FAILED;
@@ -53,15 +50,10 @@ public class MockGeoLocationAction extends WebAction {
 
       try {
         longitude = Double.parseDouble(longVal.getValue().toString());
-        if (longitude < -180 || longitude > 180) {
-          setErrorMessage("Invalid longitude value. Must be between -180 and 180. Value provided: " + longitude);
-          return Result.FAILED;
-        }
       } catch (NumberFormatException e) {
         setErrorMessage("Invalid longitude format. Must be a number. Value provided: " + longVal.getValue());
         return Result.FAILED;
       }
-
 
       try {
         accuracy = Double.parseDouble(accVal.getValue().toString());
@@ -74,26 +66,18 @@ public class MockGeoLocationAction extends WebAction {
         return Result.FAILED;
       }
 
+      // Enhance the driver to support DevTools
+      logger.info("Augmenting driver to support DevTools...");
+      driver = new Augmenter().augment(driver);
 
-      WebDriver augmentedDriver = new Augmenter().augment(driver);
+      // Initialize DevTools and create a session
+      logger.info("Initializing DevTools...");
+      DevTools devTool = ((HasDevTools) driver).getDevTools();
+      devTool.createSessionIfThereIsNotOne();
+      logger.info("DevTools session successfully created.");
 
-      if (augmentedDriver instanceof HasDevTools) {
-        HasDevTools devToolsDriver = (HasDevTools) augmentedDriver;
-        DevTools devTools = devToolsDriver.getDevTools();
-        devTools.createSession();
-
-        logger.info("Latitude: " + latitude + " Longitude: " + longitude + " accuracy: " + accuracy);
-
-        devTools.send(Emulation.setGeolocationOverride(Optional.of(latitude), Optional.of(longitude), Optional.of(accuracy)));
-        logger.info("Geolocation override applied successfully.");
-
-      } else {
-        logger.warn("WebDriver instance does not support DevTools.");
-        setErrorMessage("WebDriver instance does not support DevTools.");
-        result = Result.FAILED;
-      }
-
-
+      devTool.send(Emulation.setGeolocationOverride(Optional.of(latitude), Optional.of(longitude), Optional.of(accuracy)));
+      logger.info("Geolocation override applied successfully.");
     } catch (Exception e) {
       logger.warn("Failed to override geolocation. Error: " + ExceptionUtils.getStackTrace(e));
       setErrorMessage("Failed to override geolocation. Error: " + ExceptionUtils.getStackTrace(e));
