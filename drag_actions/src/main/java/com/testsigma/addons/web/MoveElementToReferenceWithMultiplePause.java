@@ -1,5 +1,6 @@
 package com.testsigma.addons.web;
 
+import com.testsigma.addons.utils.DragActionUtils;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
@@ -46,6 +47,7 @@ public class MoveElementToReferenceWithMultiplePause extends WebAction {
 
         Point targetPoint = null;
         try {
+            DragActionUtils dragActionUtils = new DragActionUtils(driver, logger);
             int xOffset = Integer.parseInt(xOffsetData.getValue().toString());
             int yOffset = Integer.parseInt(yOffsetData.getValue().toString());
             String relativePosition = relativePositionData.getValue().toString().toLowerCase();
@@ -53,11 +55,9 @@ public class MoveElementToReferenceWithMultiplePause extends WebAction {
             WebElement dragWebElement = driver.findElement(dragElement.getBy());
             WebElement dropWebElement = driver.findElement(dropElement.getBy());
 
-
-            scrollToElement(dropWebElement);
-
+            dragActionUtils.scrollToElement(dropWebElement);
             try {
-                this.restStepWait(1);
+                dragActionUtils.restStepWait(1);
             } catch (Exception e) {
                 logger.info("Error occurred while waiting for element " + ExceptionUtils.getStackTrace(e));
                 setErrorMessage("Error occurred while waiting for element " + ExceptionUtils.getStackTrace(e));
@@ -65,13 +65,13 @@ public class MoveElementToReferenceWithMultiplePause extends WebAction {
             }
             logger.info("waited for 1 second before calculating drop location");
 
-            Point startPoint = getCenterPoint(driver.findElement(dragElement.getBy()));
-            targetPoint = calculateTargetPoint(driver.findElement(dropElement.getBy()),
+            Point startPoint = dragActionUtils.getCenterPoint(driver.findElement(dragElement.getBy()));
+            targetPoint = dragActionUtils.calculateTargetPoint(driver.findElement(dropElement.getBy()),
                     relativePosition, xOffset, yOffset);
 
             logger.info("Start Point: " + startPoint + " Target Point: " + targetPoint);
 
-            performDragAndDrop(dragWebElement, startPoint, targetPoint);
+            dragActionUtils.performDragAndDrop(dragWebElement, startPoint, targetPoint);
             logger.info("performed drag and drop");
             setSuccessMessage("Moved element to the " + relativePosition + " of the reference element");
         } catch (NoSuchElementException e) {
@@ -88,113 +88,6 @@ public class MoveElementToReferenceWithMultiplePause extends WebAction {
             result = com.testsigma.sdk.Result.FAILED;
         }
         return result;
-
     }
-
-    private Point getCenterPoint(WebElement element) {
-        Map<String, Object> rect = getBoundingClientRect(element);
-        int x = ((Number) rect.get("x")).intValue() + ((Number) rect.get("width")).intValue() / 2;
-        int y = ((Number) rect.get("y")).intValue() + ((Number) rect.get("height")).intValue() / 2;
-        return new Point(x, y);
-    }
-
-    private Point calculateTargetPoint(WebElement reference, String relativePosition, int xOffset, int yOffset) {
-        Map<String, Object> rect = getBoundingClientRect(reference);
-        int x = ((Number) rect.get("x")).intValue();
-        int y = ((Number) rect.get("y")).intValue();
-        int width = ((Number) rect.get("width")).intValue();
-        int height = ((Number) rect.get("height")).intValue();
-
-        switch (relativePosition) {
-            case "center":
-                x += width / 2;
-                y += height / 2;
-                break;
-            case "right":
-                x += width;
-                y += height / 2;
-                break;
-            case "left":
-                y += height / 2;
-                break;
-            case "top":
-                x += width / 2;
-                break;
-            case "bottom":
-                x += width / 2;
-                y += height;
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid relative direction: " + relativePosition);
-        }
-
-        return new Point(x + xOffset, y + yOffset);
-    }
-
-    private void performDragAndDrop(WebElement source, Point start, Point target) {
-        PointerInput mouse = new PointerInput(PointerInput.Kind.MOUSE, "mouse");
-
-        Sequence sequence = new Sequence(mouse,1);
-        // Step 1: Move to source
-        sequence.addAction(mouse.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), start.x, start.y));
-        // Step 2: Click and hold (press left mouse button)
-        sequence.addAction(mouse.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
-        // Step 3: Pause for 500ms
-        sequence.addAction(new Pause(mouse, Duration.ofMillis(500)));
-        // Step 4: Move slightly away from source
-        sequence.addAction(mouse.createPointerMove(Duration.ofMillis(200),
-                PointerInput.Origin.viewport(), start.x - 5, start.y - 5));
-        // Step 5: Pause for 500ms
-        sequence.addAction(new Pause(mouse, Duration.ofMillis(500)));
-        // Step 6: Move to (700, 420)
-        sequence.addAction(mouse.createPointerMove(Duration.ofMillis(300),
-                PointerInput.Origin.viewport(), target.x, target.y));
-        // Step 7: Pause for 500ms
-        sequence.addAction(new Pause(mouse, Duration.ofMillis(500)));
-        // Step 8: Release mouse button
-        sequence.addAction(mouse.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
-        // Perform the sequence
-        ((RemoteWebDriver) driver).perform(Collections.singletonList(sequence));
-    }
-
-    private Map<String, Object> getBoundingClientRect(WebElement element) {
-        return (Map<String, Object>) ((JavascriptExecutor) driver).executeScript(
-                "var rect = arguments[0].getBoundingClientRect();" +
-                        " return {x: rect.x, y: rect.y, width: rect.width, height: rect.height};",
-                element);
-    }
-
-    protected void scrollToElement(WebElement element) {
-        String scrollToElement = "try{ "
-                + "arguments[0].scrollIntoView({"
-                + " behavior: 'auto', block: 'center', inline: 'center'"
-                + "}); return false;"
-                + "}catch(e){"
-                + "return true;"
-                + "}";
-        Object result = ((JavascriptExecutor) driver).executeScript(scrollToElement, element);
-
-        if (result instanceof Boolean && (Boolean) result) {
-            String scrollElementIntoMiddle = "var viewPortHeight = Math.max(document.documentElement.clientHeight, "
-                    + "window.innerHeight || 0);"
-                    + "var elementTop = arguments[0].getBoundingClientRect().top;"
-                    + "window.scrollBy(0, elementTop-(viewPortHeight/2));";
-
-            ((JavascriptExecutor) driver).executeScript(scrollElementIntoMiddle, element);
-        }
-    }
-
-    private void restStepWait(Integer waitInSeconds) {
-        synchronized (this) {
-            try {
-                this.wait((waitInSeconds * 1000) - 10);
-            } catch (Exception e) {
-                logger.info(ExceptionUtils.getStackTrace(e));
-                setErrorMessage("Unable to minimize window. Error: " + ExceptionUtils.getStackTrace(e));
-            }
-        }
-    }
-
-
 }
 
