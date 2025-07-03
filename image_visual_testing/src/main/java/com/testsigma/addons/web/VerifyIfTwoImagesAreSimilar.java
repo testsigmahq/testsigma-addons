@@ -23,17 +23,20 @@ import java.io.IOException;
 import java.util.List;
 
 @Data
-@Action(actionText = "Verify if  Two Images actual-image and base-image are similar",
+@Action(actionText = "Verify if image actual-image is similar to base-image that matches upto test-data percentage",
         description = "This action compares two images using visual testing and returns the result.",
         applicationType = com.testsigma.sdk.ApplicationType.WEB,
         useCustomScreenshot = true)
-public class CompareTwoImagesUsingVisualTesting extends WebAction {
+public class VerifyIfTwoImagesAreSimilar extends WebAction {
 
     @TestData(reference = "actual-image")
     private com.testsigma.sdk.TestData image1;
 
     @TestData(reference = "base-image")
     private com.testsigma.sdk.TestData image2;
+
+    @TestData(reference = "percentage")
+    private com.testsigma.sdk.TestData percentage;
 
     @TestStepResult
     private com.testsigma.sdk.TestStepResult testStepResult;
@@ -73,14 +76,17 @@ public class CompareTwoImagesUsingVisualTesting extends WebAction {
             logger.info("Actual image file path: " + file2.getAbsolutePath());
 
 //            logger.info("Base image dimensions: " + baseImage.getWidth() + "x" + baseImage.getHeight());
-            boolean status = performApiCall(file1, file2);
+            double percentageSimilarity = performApiCall(file1, file2);
             if (responseObject.getDiff_coordinates() == null) {
                 logger.info("Diff coordinates are null, initializing to empty list");
                 responseObject.setDiff_coordinates(List.of());
             }
-            if(status) {
-                logger.info("Images are identical, no differences found.");
-                setSuccessMessage("Successfully verified that the base image and actual image are same by visual testing.");
+            if ((percentageSimilarity * 100) >= Double.parseDouble(percentage.getValue().toString())) {
+                logger.info("Images are identical, upto percentage " +
+                        (percentageSimilarity * 100) + "%");
+                uploadScreenshot(true, file2, actualImage, null, errorMessageBuilder);
+                setSuccessMessage("Successfully verified that the base image and actual image match the" +
+                        " expected percentage of similarity: " + (percentageSimilarity * 100) + "%");
                 return Result.SUCCESS;
             }
             combined = imageComparisonUtils.mergeImagesAndHighlightDifferences(baseImage, actualImage,
@@ -90,7 +96,7 @@ public class CompareTwoImagesUsingVisualTesting extends WebAction {
             File combinedImage = null;
             combinedImage = File.createTempFile("combined", ".png");
             logger.info("Combined image file created at: " + combinedImage.getAbsolutePath());
-            return uploadScreenshot(status, file2,
+            return uploadScreenshot(false, file2,
                     combined, combinedImage, errorMessageBuilder);
         } catch (IOException e) {
             logger.info("image not found ");
@@ -101,13 +107,13 @@ public class CompareTwoImagesUsingVisualTesting extends WebAction {
 
     /**
      * Performs the API call to the visual testing server to compare two images.
-     * returns true if both images are same, false if they are different.
+     * returns percentage match of image.
      *
      * @param baseImage
      * @param actualImage
      * @return
      */
-    public boolean performApiCall(File baseImage, File actualImage) {
+    public double performApiCall(File baseImage, File actualImage) {
         try {
             logger.info(String.format("Performing visual testing for %s and %s", baseImage.getAbsolutePath(),
                     actualImage.getAbsolutePath()));
@@ -145,7 +151,7 @@ public class CompareTwoImagesUsingVisualTesting extends WebAction {
                     logger.info("Deserialized the response body");
                     double percentage = responseObject.getPer_similar();
                     logger.info("Percentage similarity: " + percentage * 100);
-                    return percentage == 1 && responseObject.getDiff_coordinates().isEmpty();
+                    return percentage;
                 } else {
                     setErrorMessage("Visual testing failed no response body " +
                             "present in the visual test response");

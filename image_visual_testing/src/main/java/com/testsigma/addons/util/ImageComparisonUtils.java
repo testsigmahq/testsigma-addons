@@ -43,15 +43,22 @@ public class ImageComparisonUtils {
             if (url.startsWith("https://") || url.startsWith("http://")) {
                 logger.info("Given is s3 url ...File name:" + fileName);
                 URL urlObject = new URL(url);
-                File tempFile = File.createTempFile(fileName.split("\\.")[0], "."
-                        + fileName.split("\\.")[1]);
+                String baseName = fileName;
+                String extension = "";
+                int lastDotIndex = fileName.lastIndexOf('.');
+                if (lastDotIndex > 0) {
+                    baseName = fileName.substring(0, lastDotIndex);
+                    extension = fileName.substring(lastDotIndex);
+                }
+                File tempFile = File.createTempFile(baseName, extension);
                 FileUtils.copyURLToFile(urlObject, tempFile);
                 logger.info("Temp file created with name for s3 file" + tempFile.getName()
                         + " at path " + tempFile.getAbsolutePath());
                 return tempFile;
             } else {
                 logger.info("Given is local file path..");
-                return createLocalFileFromDownloadsCopy(url, ".png");
+                return new File(url);
+//                return createLocalFileFromDownloadsCopy(url, ".png");
             }
         } catch (Exception e) {
             logger.info("Error while accessing: " + url);
@@ -163,7 +170,6 @@ public class ImageComparisonUtils {
         logger.info("Images merged and differences highlighted");
         return combined;
     }
-
 
 
 }

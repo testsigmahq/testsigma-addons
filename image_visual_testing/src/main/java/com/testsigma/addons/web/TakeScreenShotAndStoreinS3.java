@@ -18,7 +18,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 @Data
-@Action(actionText = "test: Take Screenshot and Store it in S3 url test-data",
+@Action(actionText = "take screenshot of the current page and store the saved image file path in runtime variable" +
+        " test-data",
         description = "validates options count in a select drop-down",
         applicationType = ApplicationType.WEB,
         useCustomScreenshot = false)
