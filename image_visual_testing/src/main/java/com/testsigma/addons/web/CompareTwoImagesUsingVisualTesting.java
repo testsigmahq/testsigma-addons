@@ -52,6 +52,7 @@ public class CompareTwoImagesUsingVisualTesting extends WebAction {
     public Result execute() {
         StringBuilder errorMessageBuilder = new StringBuilder();
 
+
         // implementation for comparing two images using visual testing goes here
         logger.info("Comparing images: " + image1.getValue().toString() + " and " + image2.getValue().toString());
         String baseImagePath = image1.getValue().toString();

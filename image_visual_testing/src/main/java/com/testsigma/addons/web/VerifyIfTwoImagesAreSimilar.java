@@ -14,7 +14,6 @@ import com.testsigma.sdk.annotation.TestStepResult;
 import lombok.Data;
 import okhttp3.*;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.http.client.config.RequestConfig;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -43,11 +42,7 @@ public class VerifyIfTwoImagesAreSimilar extends WebAction {
 
     @RunTimeData
     private com.testsigma.sdk.RunTimeData runTimeData;
-    RequestConfig config = RequestConfig.custom()
-            .setSocketTimeout(10 * 60 * 1000)
-            .setConnectionRequestTimeout(60 * 1000)
-            .setConnectTimeout(60 * 1000)
-            .build();
+
     ObjectMapper mapper = new ObjectMapper();
     ResponseObject responseObject = new ResponseObject();
 
@@ -99,8 +94,7 @@ public class VerifyIfTwoImagesAreSimilar extends WebAction {
             return uploadScreenshot(false, file2,
                     combined, combinedImage, errorMessageBuilder);
         } catch (IOException e) {
-            logger.info("image not found ");
-            logger.info(ExceptionUtils.getStackTrace(e));
+            logger.info("Failed to process images: " + ExceptionUtils.getStackTrace(e));
             throw new RuntimeException(e);
         }
     }
@@ -158,8 +152,8 @@ public class VerifyIfTwoImagesAreSimilar extends WebAction {
                     throw new RuntimeException("Visual testing failed with no response body");
                 }
             } else {
-                setErrorMessage("Visual testing failed  error occurred internally");
-                throw new RuntimeException("Visual testing failed with internal server error");
+                setErrorMessage("Visual testing failed with HTTP " + response.code() + ": " + response.message());
+                              throw new RuntimeException("Visual testing failed with HTTP " + response.code());
             }
         } catch (IOException e) {
 
