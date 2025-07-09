@@ -46,52 +46,7 @@ public class DownloadImageFromImgTag extends WebAction {
     @Override
     public com.testsigma.sdk.Result execute() {
         com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
-
-        /*
-        try {
-            logger.info("initiating execution of DownloadImageFromImgTag action");
-
-            String basePdfDirectoryPath = String.valueOf(Files.createTempDirectory("basePdfDirectory"));
-            logger.info("Base PDF Directory Path: " + basePdfDirectoryPath);
-            String timeNow = String.valueOf(System.currentTimeMillis());
-            File file1 = new File(basePdfDirectoryPath + File.separator
-                    + "element_image_" + timeNow + ".png");
-
-            WebElement webElement = elementLocator.getElement();
-            // get the src attribute to find the image URL
-            String tagName = webElement.getTagName().toLowerCase();
-            byte[] imageBytes;
-
-            if ("img".equals(tagName)) {
-                // If it's an img tag, get the image source and download it
-                String imageSrc = webElement.getAttribute("src");
-                logger.info("Found img element with src: " + imageSrc);
-                imageBytes = downloadImageFromUrl(imageSrc);
-            } else {
-                // If it's not an img tag, take a screenshot of the element
-                logger.info("Element is not an img tag, taking element screenshot");
-                imageBytes = webElement.getScreenshotAs(OutputType.BYTES);
-            }
-
-            logger.info("Image captured successfully");
-            saveBytesArrayToFile(file1.getAbsolutePath(), imageBytes);
-            logger.info("Image saved at: " + file1.getAbsolutePath());
-
-            runTimeData.setKey(variableName.getValue().toString());
-            runTimeData.setValue(file1.getAbsolutePath());
-            setSuccessMessage("Successfully downloaded the image and stored the file path in runtime variable: "
-                    + variableName.getValue().toString());
-        } catch (NoSuchElementException ne) {
-            logger.info("Element not found: " + ExceptionUtils.getStackTrace(ne));
-            setErrorMessage("Element not found: " + ne.getMessage());
-            result = com.testsigma.sdk.Result.FAILED;
-        }catch (Exception e) {
-            result = com.testsigma.sdk.Result.FAILED;
-            logger.info("Failed to download image: " + ExceptionUtils.getStackTrace(e));
-            setErrorMessage("Failed to download image: " + e.getMessage());
-        }
-        return result;*/
-
+        
         try {
             logger.info("initiating execution of DownloadImageFromImgTag action");
 
