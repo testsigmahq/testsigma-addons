@@ -67,4 +67,45 @@ public class ResponseDataUtilities {
         return responseBody;
     }
 
+    public static JsonArray getRequestBodyData(Long runId, com.testsigma.sdk.Logger logger) throws Exception {
+        logger.info("Getting all request body data for runId: " + runId);
+        String encodedData = FileUtilities.readFromFile(runId);
+        if (encodedData == null || encodedData.isEmpty()) {
+            logger.info("Request body data is not present for runId: " + runId);
+            return new JsonArray();
+        }
+
+        String json = new String(Base64.getDecoder().decode(encodedData));
+        logger.info("Decoded request body data for runId: " + runId + ", json: " + json);
+        try {
+            JsonObject data = gson.fromJson(json, JsonObject.class);
+            if (data != null && data.has("requestBody")) {
+                logger.info("Got all request body data for runId: " + runId + ", data: " + data);
+                return data.getAsJsonArray("requestBody");
+            } else{
+                logger.info("No request body data found for runId: " + runId);
+            }
+        } catch (JsonParseException e) {
+            clearResponseDataByRunId(runId);
+            logger.info("Failed to parse request body data for runId: " + runId + " with exception: " + e.getMessage());
+            throw new Exception(e);
+        }
+        logger.info("Failed to get any request body data for runId: " + runId);
+        throw new Exception("Failed to get any request body data for runId: " + runId);
+    }
+
+    public static void addRequestBodyData(Long runId, String requestBody, com.testsigma.sdk.Logger logger) throws Exception {
+        JsonObject jsonObject = new JsonObject();
+        JsonArray jsonArray = new JsonArray();
+        jsonArray.add(requestBody);
+        jsonObject.add("requestBody", jsonArray);
+        saveAllData(runId, jsonObject, logger);
+    }
+
+    public static String getRequestBody(Long runId, com.testsigma.sdk.Logger logger) throws Exception {
+        String requestBody = getRequestBodyData(runId, logger).getAsString();
+        clearResponseDataByRunId(runId);
+        return requestBody;
+    }
+
 }
