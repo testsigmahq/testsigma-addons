@@ -25,7 +25,7 @@ public class MouseOvertheElement extends WebAction {
 
   @Override
   public Result execute() {
-    logger.info("Initiating double tap and hold action");
+    logger.info("Initiating action");
     Result result = Result.SUCCESS;
 
     try {
@@ -38,8 +38,8 @@ public class MouseOvertheElement extends WebAction {
       setSuccessMessage("Successfully performed hover on the element");
     } catch (Exception e) {
       result = Result.FAILED;
-      logger.warn("Exception during double tap and hold: " + ExceptionUtils.getStackTrace(e));
-      setErrorMessage("Failed to perform double tap and hold. Error: " + ExceptionUtils.getMessage(e));
+      logger.warn("Exception Occurred: " + ExceptionUtils.getStackTrace(e));
+      setErrorMessage("Exception Occurred. Error: " + ExceptionUtils.getMessage(e));
     }
 
     return result;
