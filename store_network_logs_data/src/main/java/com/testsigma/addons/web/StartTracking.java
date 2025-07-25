@@ -21,7 +21,7 @@ import java.util.Optional;
 import static com.testsigma.addons.web.utilities.ResponseDataUtilities.saveAllNetworkData;
 
 @Data
-@Action(actionText = "test q1: Add Network Listener to find the response for the request url url_value" +
+@Action(actionText = "Add Network Listener to find the response for the request url url_value" +
         " and the request method method_value",
         description = "Add Network Listener to find the response for the given request url and given request method",
         applicationType = ApplicationType.WEB)
