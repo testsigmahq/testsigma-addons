@@ -1,5 +1,7 @@
 package com.testsigma.addons.web;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
 import com.testsigma.sdk.WebAction;
@@ -16,11 +18,11 @@ import org.openqa.selenium.remote.Augmenter;
 
 import java.util.Optional;
 
-import static com.testsigma.addons.web.utilities.ResponseDataUtilities.addRequestBodyData;
-import static com.testsigma.addons.web.utilities.ResponseDataUtilities.addResponseBodyData;
+import static com.testsigma.addons.web.utilities.ResponseDataUtilities.saveAllNetworkData;
 
 @Data
-@Action(actionText = "Add Network Listener to find the response for the request url url_value and the request method method_value",
+@Action(actionText = "Add Network Listener to find the response for the request url url_value" +
+        " and the request method method_value",
         description = "Add Network Listener to find the response for the given request url and given request method",
         applicationType = ApplicationType.WEB)
 public class StartTracking extends WebAction {
@@ -51,21 +53,51 @@ public class StartTracking extends WebAction {
 
             // Enable network interception with high buffer size
             logger.info("Enabling network interception...");
-            devTool.send(Network.enable(Optional.empty(), Optional.empty(), Optional.of(100000000)));
+            devTool.send(Network.enable(Optional.empty(),
+                    Optional.empty(), Optional.of(100000000)));
 
             final RequestId[] requestIds = new RequestId[1];
+            final String[] capturedRequestHeaders = new String[1];
 
             // Listener to intercept network requests
             logger.info("Adding listener for network requests...");
             devTool.addListener(Network.requestWillBeSent(), request -> {
                 String requestUrl = request.getRequest().getUrl();
+
+                request.getRequest().getHeaders();
                 logger.info("Intercepted request URL: " + requestUrl);
 
                 // Check if the URL and method match the specified criteria
                 if (requestUrl.contains(urlValue.getValue().toString()) &&
                         request.getRequest().getMethod().equalsIgnoreCase(methodValue.getValue().toString())) {
-                    logger.info("Matching request found with URL: " + requestUrl + " and method: " + methodValue.getValue());
+                    logger.info("Matching request found with URL: " + requestUrl +
+                            " and method: " + methodValue.getValue());
                     requestIds[0] = request.getRequestId();
+                    // Capture request headers from the request event and format them properly
+                    StringBuilder headersBuilder = new StringBuilder();
+                    logger.info("Capturing headers for request: " + request.getRequestId());
+                    logger.info("Headers map: " + request.getRequest().getHeaders());
+
+                    if (request.getRequest().getHeaders() != null && !request.getRequest().getHeaders().isEmpty()) {
+                        request.getRequest().getHeaders().forEach((key, value) -> {
+                            logger.info("Header - " + key + ": " + value);
+                            if (headersBuilder.length() > 0) {
+                                headersBuilder.append("\n");
+                            }
+                            headersBuilder.append(key).append(": ").append(value != null ? value.toString() : "");
+                        });
+                    } else {
+                        logger.warn("No headers found in request. Trying alternative approach...");
+                        // Fallback: try to get headers from the request object directly
+                        if (request.getRequest().getUrl() != null) {
+                            headersBuilder.append(":method: ").append(request.getRequest().getMethod()).append("\n");
+                            headersBuilder.append(":path: ").append(request.getRequest().getUrl()).append("\n");
+                            headersBuilder.append(":scheme: https\n");
+                        }
+                    }
+
+                    capturedRequestHeaders[0] = headersBuilder.toString();
+                    logger.info("Captured headers string: " + capturedRequestHeaders[0]);
                 }
             });
 
@@ -78,13 +110,31 @@ public class StartTracking extends WebAction {
                     try {
                         // Retrieve the response body using the captured RequestId
                         String responseBody = devTool.send(Network.getResponseBody(requestIds[0])).getBody();
-                        logger.info("Storing response body in test case result...");
-                        addResponseBodyData(testCaseResult.getId(), responseBody, logger);
-                        logger.info("Response body successfully stored.");
-                        String requestBody = devTool.send(Network.getRequestPostData(requestIds[0]));
-                        logger.info("Request body successfully retrieved and will be stored.");
-                        addRequestBodyData(testCaseResult.getId(), requestBody, logger);
-                        logger.info("Request body successfully stored.");
+                        int status = response.getResponse().getStatus();
+                        response.getResponse().getHeaders().forEach((key, value) -> {
+                            logger.info("Response Header - " + key + ": " + value);
+                        });
+                        logger.info("Response status: " + status);
+                        logger.info("Storing all network data together...");
+                        String requestHeaders = capturedRequestHeaders[0] != null ? capturedRequestHeaders[0] : "";
+                        logger.info("Request headers to store: " + requestHeaders);
+                        logger.info("Response body to store: " + responseBody);
+
+                        // Store all data together in one operation
+                        JsonObject allData = new JsonObject();
+                        allData.addProperty("statusCode", status);
+
+                        JsonArray headersArray = new JsonArray();
+                        headersArray.add(requestHeaders);
+                        allData.add("requestHeaders", headersArray);
+
+                        JsonArray responseArray = new JsonArray();
+                        responseArray.add(responseBody);
+                        allData.add("responseBody", responseArray);
+
+                        // Save all data at once
+                        saveAllNetworkData(testCaseResult.getId(), allData, logger);
+                        logger.info("All network data stored together successfully.");
                     } catch (Exception e) {
                         logger.warn("Error while storing response body: " + ExceptionUtils.getStackTrace(e));
                     }
@@ -94,7 +144,8 @@ public class StartTracking extends WebAction {
         } catch (Exception e) {
             // Log the exception details and set the error message
             logger.warn("Exception occurred during execution: " + ExceptionUtils.getStackTrace(e));
-            setErrorMessage("Exception occurred while adding Network Response Listener to the driver: " + e.getMessage());
+            setErrorMessage("Exception occurred while adding Network Response Listener" +
+                    " to the driver: " + e.getMessage());
             return Result.FAILED;
         }
 

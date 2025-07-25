@@ -1,7 +1,5 @@
 package com.testsigma.addons.web;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
 import com.testsigma.sdk.WebAction;
@@ -12,13 +10,9 @@ import com.testsigma.sdk.annotation.TestData;
 import lombok.Data;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
+import static com.testsigma.addons.web.utilities.ResponseDataUtilities.getSpecificHeaderValue;
 
-
-import static com.testsigma.addons.web.utilities.ResponseDataUtilities.getRequestBody;
 
 @Data
 @Action(actionText = "get value of the request header from the attribute header_key  " +
@@ -51,90 +45,34 @@ public class GetDataFromRequestBody extends WebAction {
         logger.info("Execution started for action: GetDataFromrequestBody");
 
         try {
-            // Step 1: Robustly fetch the request body
-            logger.info("Fetching request body for test case result ID: " + testCaseResult.getId());
-            String requestBody;
+            // Step 1: Get the specific header value
+            logger.info("Getting header value for key: " + headerKey.getValue().toString() + " from test case result ID: " + testCaseResult.getId());
+            String headerValue;
             try {
-                requestBody = getRequestBody(testCaseResult.getId(), logger);
+                headerValue = getSpecificHeaderValue(testCaseResult.getId(), headerKey.getValue().toString(), logger);
             } catch (IllegalStateException e) {
-                throw new Exception("Failed to retrieve request body. The API response from" +
-                        " the preceding step might be missing or empty.", e);
+                throw new Exception("Failed to retrieve header value. The network request from the preceding step might be missing or empty.", e);
             }
 
-            if (requestBody == null || requestBody.trim().isEmpty()) {
-                throw new Exception("Retrieved request body is empty. Cannot search for attributes.");
+            if (headerValue == null || headerValue.trim().isEmpty()) {
+                throw new Exception("Retrieved header value is empty. Cannot proceed.");
             }
-            logger.info("request body successfully retrieved.");
+            logger.info("Header value successfully retrieved: " + headerValue);
 
-            // Step 2: Parse the entire JSON into a generic object to handle any structure
-            logger.info("Parsing request body JSON...");
-            ObjectMapper mapper = new ObjectMapper();
-            Object parsedJson;
-            try {
-                parsedJson = mapper.readValue(requestBody, Object.class);
-            } catch (JsonProcessingException e) {
-                logger.info("request body is not a valid JSON. Error: " + e.getMessage());
-                throw new Exception("request body is not a valid JSON. Error: " + e.getMessage());
-            }
-
-            // Step 3: Get parameters
-            String attributeKey = headerKey.getValue().toString();
-
-            // Step 4: Find all occurrences of the attribute using recursion
-            List<Object> foundValues = new ArrayList<>();
-            findAttributeRecursively(parsedJson, attributeKey, foundValues);
-
-            // Step 5: Validate the result and get the desired occurrence
-            if (foundValues.isEmpty()) {
-                throw new Exception("Attribute '" + attributeKey + "' was not found anywhere in the request body.");
-            }
-
-            // Step 6: Convert the found value to a String and store it
-            Object rawValue = foundValues.get(0);
-            String valueToStore = (rawValue == null) ? "null" : rawValue.toString();
-
+            // Step 2: Store the header value in runtime data
             runTimeData.setKey(variableName.getValue().toString());
-            runTimeData.setValue(valueToStore);
+            runTimeData.setValue(headerValue);
 
-            logger.info("Successfully extracted header value and stored it in runtime variable: " + runTimeData.getValue());
-            setSuccessMessage("Header value fetched and stored in runtime variable: " + runTimeData.getValue());
+            logger.info("Successfully extracted header value and stored it in runtime variable: " + runTimeData.getValue().toString());
+            setSuccessMessage("Header value fetched and stored in runtime variable: " + runTimeData.getValue().toString());
 
         } catch (Exception e) {
             logger.warn("Exception occurred during execution: " + ExceptionUtils.getStackTrace(e));
-            setErrorMessage("Exception occurred while fetching data from request body: " + e.getMessage());
+            setErrorMessage("Exception occurred while fetching data from request headers: " + e.getMessage());
             return Result.FAILED;
         }
         return Result.SUCCESS;
-
     }
-
-    /**
-     * Recursively traverses any JSON structure (Map or List) and collects all values for a given key.
-     */
-    private void findAttributeRecursively(Object obj, String key, List<Object> found) {
-        if (obj == null) {
-            return;
-        }
-
-        if (obj instanceof Map) {
-            // It's a JSON object, check its keys
-            Map<?, ?> map = (Map<?, ?>) obj;
-            for (Map.Entry<?, ?> entry : map.entrySet()) {
-                if (key.equals(entry.getKey())) {
-                    found.add(entry.getValue());
-                }
-                // Continue searching in the value, which could be another Map or List
-                findAttributeRecursively(entry.getValue(), key, found);
-            }
-        } else if (obj instanceof List) {
-            // It's a JSON array, iterate through its items
-            List<?> list = (List<?>) obj;
-            for (Object item : list) {
-                findAttributeRecursively(item, key, found);
-            }
-        }
-    }
-
 }
 
 
