@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.testsigma.addons</groupId>
   <artifactId>click_element_if_visible_and_clickable_within_wait_time</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
   <build>
     <finalName>click_element_if_visible_and_clickable_within_wait_time</finalName>
     <plugins>
