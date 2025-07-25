@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import com.testsigma.sdk.Logger;
 
 import java.util.Base64;
 
@@ -12,7 +13,7 @@ public class ResponseDataUtilities {
     private static final Gson gson = new Gson();
 
 
-    private static void saveAllData(Long runId, JsonObject jsonObject, com.testsigma.sdk.Logger logger) throws Exception {
+    private static void saveAllData(Long runId, JsonObject jsonObject, Logger logger) throws Exception {
         try {
             logger.info("Saving data for the current testcase " + jsonObject);
             String json = gson.toJson(jsonObject);
@@ -28,7 +29,7 @@ public class ResponseDataUtilities {
         FileUtilities.deleteFile(runId);
     }
 
-    private static JsonArray getResponseBodyData(Long runId, com.testsigma.sdk.Logger logger) throws Exception {
+    private static JsonArray getResponseBodyData(Long runId, Logger logger) throws Exception {
         logger.info("Getting all data for runId: " + runId);
         String encodedData = FileUtilities.readFromFile(runId);
         if (encodedData == null || encodedData.isEmpty()) {
@@ -53,7 +54,7 @@ public class ResponseDataUtilities {
     }
 
 
-    public static void addResponseBodyData(Long runId, String responseBody, com.testsigma.sdk.Logger logger) throws Exception {
+    public static void addResponseBodyData(Long runId, String responseBody, Logger logger) throws Exception {
         JsonObject jsonObject = new JsonObject();
         JsonArray jsonArray = new JsonArray();
         jsonArray.add(responseBody);
@@ -61,51 +62,156 @@ public class ResponseDataUtilities {
         saveAllData(runId, jsonObject, logger);
     }
 
-    public static String getResponseBody(Long runId, com.testsigma.sdk.Logger logger) throws Exception {
+    public static String getResponseBody(Long runId, Logger logger) throws Exception {
         String responseBody = getResponseBodyData(runId, logger).getAsString();
         clearResponseDataByRunId(runId);
         return responseBody;
     }
 
-    public static JsonArray getRequestBodyData(Long runId, com.testsigma.sdk.Logger logger) throws Exception {
-        logger.info("Getting all request body data for runId: " + runId);
+    public static JsonArray getRequestHeadersData(Long runId, Logger logger) throws Exception {
+        logger.info("Getting all request headers data for runId: " + runId);
         String encodedData = FileUtilities.readFromFile(runId);
         if (encodedData == null || encodedData.isEmpty()) {
-            logger.info("Request body data is not present for runId: " + runId);
+            logger.info("Request headers data is not present for runId: " + runId);
             return new JsonArray();
         }
 
         String json = new String(Base64.getDecoder().decode(encodedData));
-        logger.info("Decoded request body data for runId: " + runId + ", json: " + json);
+//        logger.info("Decoded request headers data for runId: " + runId + ", json: " + json);
         try {
             JsonObject data = gson.fromJson(json, JsonObject.class);
-            if (data != null && data.has("requestBody")) {
-                logger.info("Got all request body data for runId: " + runId + ", data: " + data);
-                return data.getAsJsonArray("requestBody");
+            if (data != null && data.has("requestHeaders")) {
+                logger.info("request headers : " + data.getAsJsonArray("requestHeaders"));
+                return data.getAsJsonArray("requestHeaders");
             } else{
-                logger.info("No request body data found for runId: " + runId);
+                logger.info("No request headers data found for runId: " + runId);
             }
         } catch (JsonParseException e) {
             clearResponseDataByRunId(runId);
-            logger.info("Failed to parse request body data for runId: " + runId + " with exception: " + e.getMessage());
+            logger.info("Failed to parse request headers data for runId: " + runId + " with exception: " + e.getMessage());
             throw new Exception(e);
         }
-        logger.info("Failed to get any request body data for runId: " + runId);
-        throw new Exception("Failed to get any request body data for runId: " + runId);
+        logger.info("Failed to get any request headers data for runId: " + runId);
+        throw new Exception("Failed to get any request headers data for runId: " + runId);
     }
 
-    public static void addRequestBodyData(Long runId, String requestBody, com.testsigma.sdk.Logger logger) throws Exception {
+    public static void addRequestHeadersData(Long runId, String requestHeaders, Logger logger) throws Exception {
         JsonObject jsonObject = new JsonObject();
         JsonArray jsonArray = new JsonArray();
-        jsonArray.add(requestBody);
-        jsonObject.add("requestBody", jsonArray);
+        jsonArray.add(requestHeaders);
+        jsonObject.add("requestHeaders", jsonArray);
         saveAllData(runId, jsonObject, logger);
     }
 
-    public static String getRequestBody(Long runId, com.testsigma.sdk.Logger logger) throws Exception {
-        String requestBody = getRequestBodyData(runId, logger).getAsString();
+    public static void addStatusCodeAndRequestHeadersData(Long runId, int statusCode, String requestHeaders, Logger logger) throws Exception {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("statusCode", statusCode);
+        JsonArray jsonArray = new JsonArray();
+        jsonArray.add(requestHeaders);
+        jsonObject.add("requestHeaders", jsonArray);
+        saveAllData(runId, jsonObject, logger);
+    }
+
+    public static void addAllNetworkData(Long runId, int statusCode, String requestHeaders, String responseBody, Logger logger) throws Exception {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("statusCode", statusCode);
+
+        JsonArray requestHeadersArray = new JsonArray();
+        requestHeadersArray.add(requestHeaders);
+        jsonObject.add("requestHeaders", requestHeadersArray);
+
+        JsonArray responseBodyArray = new JsonArray();
+        responseBodyArray.add(responseBody);
+        jsonObject.add("responseBody", responseBodyArray);
+
+        saveAllData(runId, jsonObject, logger);
+    }
+
+    public static void saveAllNetworkData(Long runId, JsonObject allData, Logger logger) throws Exception {
+        saveAllData(runId, allData, logger);
+    }
+
+    public static String getRequestHeaders(Long runId, Logger logger) throws Exception {
+        String requestHeaders = getRequestHeadersData(runId, logger).getAsString();
         clearResponseDataByRunId(runId);
-        return requestBody;
+        return requestHeaders;
+    }
+
+    public static String getSpecificHeaderValue(Long runId, String headerKey, Logger logger) throws Exception {
+        logger.info("Getting specific header value for key: " + headerKey + " from runId: " + runId);
+        JsonArray headersArray = getRequestHeadersData(runId, logger);
+
+        if (headersArray.size() == 0) {
+            throw new Exception("No headers found for runId: " + runId);
+        }
+
+        String headersString = headersArray.get(0).getAsString();
+        logger.info("Headers string: " + headersString);
+
+        // Parse the headers string (format: "key1: value1\nkey2: value2\n...")
+        String[] headerLines = headersString.split("\n");
+        for (String headerLine : headerLines) {
+            if (headerLine.trim().isEmpty()) continue;
+
+            int colonIndex = headerLine.indexOf(": ");
+            if (colonIndex > 0) {
+                String key = headerLine.substring(0, colonIndex).trim();
+                String value = headerLine.substring(colonIndex + 2).trim();
+
+                logger.info("Checking header - Key: " + key + ", Value: " + value);
+
+                if (key.equalsIgnoreCase(headerKey)) {
+                    logger.info("Found matching header: " + key + " = " + value);
+                    return value;
+                }
+            }
+        }
+
+        throw new Exception("Header '" + headerKey + "' not found in request headers");
+    }
+
+    public static void addStatusCodeData(Long runId, int statusCode, Logger logger) throws Exception {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("statusCode", statusCode);
+        saveAllData(runId, jsonObject, logger);
+    }
+
+    public static void clearStatusCodeDataByRunId(Long runId) throws Exception {
+        FileUtilities.deleteFile(runId);
+    }
+    public static int getStatusCode(Long runId, Logger logger) throws Exception {
+        int statusCode = getStatusCodeData(runId, logger);
+        clearStatusCodeDataByRunId(runId);
+        if (statusCode == -1) {
+            logger.info("No status code found for runId: " + runId);
+            throw new Exception("No status code found for runId: " + runId);
+        }
+        return statusCode;
+    }
+
+    public static int getStatusCodeData(Long runId, Logger logger) throws Exception {
+        logger.info("Getting status code for runId: " + runId);
+        String encodedData = FileUtilities.readFromFile(runId);
+        if (encodedData == null || encodedData.isEmpty()) {
+            logger.info("Status code data is not present for runId: " + runId);
+            return -1;
+        }
+
+        String json = new String(Base64.getDecoder().decode(encodedData));
+        try {
+            JsonObject data = gson.fromJson(json, JsonObject.class);
+            if (data != null && data.has("statusCode")) {
+                int statusCode = data.get("statusCode").getAsInt();
+                logger.info("Got status code for runId: " + runId + ", statusCode: " + statusCode);
+                return statusCode;
+            }
+        } catch (JsonParseException e) {
+            clearResponseDataByRunId(runId);
+            logger.info("Failed to parse status code data for runId: " + runId + " with exception: " + e.getMessage());
+            throw new Exception(e);
+        }
+        logger.info("Failed to get any status code for runId: " + runId);
+        throw new Exception("Failed to get any status code for runId: " + runId);
     }
 
 }
