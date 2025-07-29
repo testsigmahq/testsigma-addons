@@ -3,8 +3,8 @@ package com.testsigma.addons.web;
 
 import com.testsigma.sdk.*;
 import com.testsigma.sdk.annotation.Action;
-import lombok.Data;
 import com.testsigma.sdk.annotation.OCR;
+import lombok.Data;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.languagetool.JLanguageTool;
 import org.languagetool.language.AmericanEnglish;
@@ -12,21 +12,20 @@ import org.languagetool.rules.RuleMatch;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 
-
 import java.io.File;
 import java.util.List;
 
 @Data
 @Action(actionText = "Check for the spelling mistakes in the current screen",
-        description = "This action checks for the spelling mistakes in the current page.",
+        description = "This action checks for the spelling mistakes in the current screen by taking screenshot.",
         applicationType = ApplicationType.WEB)
 public class CheckForSpellingInTheCurrentScreen extends WebAction {
     @OCR
     private com.testsigma.sdk.OCR ocr;
 
     @Override
-    public com.testsigma.sdk.Result execute () {
-        com.testsigma.sdk.Result result = Result.SUCCESS;
+    public Result execute() {
+        Result result = Result.SUCCESS;
         File screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
         logger.info("Screenshot taken");
 
@@ -38,11 +37,21 @@ public class CheckForSpellingInTheCurrentScreen extends WebAction {
         List<OCRTextPoint> textPoints = ocr.extractTextFromImage(imageObj);
         logger.info("Extracted text from image: " + textPoints);
 
+        if (textPoints == null || textPoints.isEmpty()) {
+            logger.info("No text extracted from the screenshot.");
+            setSuccessMessage("No text found in the screenshot to check for spelling.");
+            return Result.SUCCESS;
+        }
         // Log all extracted text for debugging
         String allExtractedText = textPoints.stream()
                 .map(OCRTextPoint::getText)
                 .reduce("", String::concat);
         logger.info("All extracted text combined: '" + allExtractedText + "'");
+        if( allExtractedText.isEmpty()) {
+            logger.info("No text found in the screenshot to check for spelling.");
+            setSuccessMessage("No text found in the screenshot to check for spelling.");
+            return Result.SUCCESS;
+        }
 
 
         try {
@@ -63,13 +72,13 @@ public class CheckForSpellingInTheCurrentScreen extends WebAction {
                     }
                 }
                 if (spellMismatchCount != 0) {
-                    logger.warn("Spelling/Grammar issues found:\n" + issues);
+                    logger.warn("Spelling mistakes found:\n" + issues);
                     result = Result.FAILED;
-                    setErrorMessage("Found <b>" + spellMismatchCount + "</b> spelling/grammar issues:\n" + issues);
+                    setErrorMessage("Found <b>" + spellMismatchCount + "</b> spelling issues:\n" + issues);
                 }
             }
-            logger.info("No spelling/grammar issues found.");
-            setSuccessMessage("No spelling/grammar issues found.");
+            logger.info("No spelling issues found.");
+            setSuccessMessage("No spelling issues found.");
 
         } catch (Exception e) {
             logger.warn("Error during spell checking " + ExceptionUtils.getStackTrace(e));
@@ -79,19 +88,3 @@ public class CheckForSpellingInTheCurrentScreen extends WebAction {
         return result;
     }
 }
-
-
-        /*AIRequest aiRequest = new AIRequest();
-        aiRequest.setPrompt(prompt + textPoints);
-        aiRequest.setModel("gpt-4o");
-
-        String aiResponse = ai.invokeAI(aiRequest);
-        logger.info("AI response: {}" + aiResponse);
-        if(aiResponse.equalsIgnoreCase("no mistakes")) {
-            logger.info("No spelling mistakes found in the current page.");
-            setSuccessMessage("No spelling mistakes found in the current page.");
-        } else {
-            logger.info("Spelling mistakes found: " + aiResponse);
-            setErrorMessage("Found spelling mistakes " + aiResponse);
-            result = Result.FAILED;
-        }*/
