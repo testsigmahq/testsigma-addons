@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.testsigma.addons</groupId>
     <artifactId>store_network_logs_data</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.5</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -48,7 +48,7 @@
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-java</artifactId>
-            <version>4.20.0</version>
+            <version>4.33.0</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/io.appium/java-client -->
         <dependency>
@@ -68,8 +68,8 @@
         </dependency>
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
-            <artifactId>selenium-devtools-v124</artifactId>
-            <version>4.20.0</version>
+            <artifactId>selenium-devtools-v137</artifactId>
+            <version>4.33.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
