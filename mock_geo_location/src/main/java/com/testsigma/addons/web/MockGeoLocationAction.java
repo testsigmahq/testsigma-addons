@@ -11,7 +11,7 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.devtools.DevTools;
 import org.openqa.selenium.devtools.HasDevTools;
-import org.openqa.selenium.devtools.v124.emulation.Emulation;
+import org.openqa.selenium.devtools.v137.emulation.Emulation;
 import org.openqa.selenium.remote.Augmenter;
 
 import java.util.Optional;
@@ -68,15 +68,25 @@ public class MockGeoLocationAction extends WebAction {
 
       // Enhance the driver to support DevTools
       logger.info("Augmenting driver to support DevTools...");
-      driver = new Augmenter().augment(driver);
+      WebDriver driver1 = driver;
+      driver1 = new Augmenter().augment(driver1);
 
       // Initialize DevTools and create a session
       logger.info("Initializing DevTools...");
-      DevTools devTool = ((HasDevTools) driver).getDevTools();
+      DevTools devTool = ((HasDevTools) driver1).getDevTools();
       devTool.createSessionIfThereIsNotOne();
       logger.info("DevTools session successfully created.");
 
-      devTool.send(Emulation.setGeolocationOverride(Optional.of(latitude), Optional.of(longitude), Optional.of(accuracy)));
+      devTool.send(Emulation.setGeolocationOverride(
+              Optional.of(latitude),
+              Optional.of(longitude),
+              Optional.of(accuracy),
+              Optional.empty(), // altitude
+              Optional.empty(), // heading
+              Optional.empty(), // speed
+              Optional.empty()  // satelliteCount
+      ));
+
       logger.info("Geolocation override applied successfully.");
     } catch (Exception e) {
       logger.warn("Failed to override geolocation. Error: " + ExceptionUtils.getStackTrace(e));
