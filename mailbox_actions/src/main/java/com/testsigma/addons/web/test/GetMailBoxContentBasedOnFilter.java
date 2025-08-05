@@ -1,4 +1,4 @@
-package com.testsigma.addons.web;
+package com.testsigma.addons.web.test;
 
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.MailboxMessage;
@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
         description = "Get email content from mailbox using emailID and" +
                 " store the content based ont the filter in a runtime variable.",
         applicationType = ApplicationType.WEB)
-public class GetGmailContent extends WebAction {
+public class GetMailBoxContentBasedOnFilter extends WebAction {
 
     @Mailbox
     private com.testsigma.sdk.Mailbox mailbox;

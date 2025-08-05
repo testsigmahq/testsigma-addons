@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project
-        xmlns="http://maven.apache.org/POM/4.0.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.testsigma.addons</groupId>
-    <artifactId>gmail_api_with_filters</artifactId>
+    <artifactId>mailbox_actions</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
@@ -61,6 +61,7 @@
             <artifactId>jackson-annotations</artifactId>
             <version>2.13.0</version>
         </dependency>
+
         <dependency>
             <groupId>javax.mail</groupId>
             <artifactId>javax.mail-api</artifactId>
@@ -73,7 +74,7 @@
         </dependency>
     </dependencies>
     <build>
-        <finalName>gmail_api_with_filters</finalName>
+        <finalName>mailbox_actions</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
