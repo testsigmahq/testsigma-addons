@@ -1,5 +1,7 @@
 package com.testsigma.addons.utilities;
 
+// Add these imports to your existing XMLUtility imports
+
 import com.testsigma.sdk.Logger;
 import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.WebDriver;
@@ -25,7 +27,7 @@ public class XMLUtility {
 
     private WebDriver driver;
     private Logger logger;
-    private static final String LINE_NUMBER_KEY = "lineNumber";
+    private static final String LINE_NUMBER_KEY = "lineNumber"; // Key for line number
 
     public XMLUtility(WebDriver driver, Logger logger) {
         this.driver = driver;
@@ -66,7 +68,7 @@ public class XMLUtility {
         saxFactory.setNamespaceAware(true);
         SAXParser saxParser = saxFactory.newSAXParser();
 
-        DomBuilderWithLineNumbers handler = new DomBuilderWithLineNumbers(builder, logger);
+        DomBuilderWithLineNumbers handler = new DomBuilderWithLineNumbers(builder, logger); // Pass logger
 
         try {
             saxParser.parse(file, handler);
@@ -126,7 +128,8 @@ public class XMLUtility {
         if (isIgnorableNode(node1) && isIgnorableNode(node2)) {
             return differences; // Both ignorable, treat as no difference
         }
-
+        // Handle cases where one is ignorable and the other isn't (could be difference or just formatting)
+        // This logic depends on how strictly you want to compare. For now, we proceed.
 
         // --- Compare Node Names ---
         if (!Objects.equals(node1.getNodeName(), node2.getNodeName())) {
@@ -149,12 +152,16 @@ public class XMLUtility {
 
         // --- Compare Text Content (if text/cdata node) ---
         if (node1.getNodeType() == Node.TEXT_NODE || node1.getNodeType() == Node.CDATA_SECTION_NODE) {
+            // Trim whitespace? Decide based on requirements. Often useful.
+            // String val1 = node1.getNodeValue() != null ? node1.getNodeValue().trim() : "";
+            // String val2 = node2.getNodeValue() != null ? node2.getNodeValue().trim() : "";
             String val1 = node1.getNodeValue() != null ? node1.getNodeValue() : "";
             String val2 = node2.getNodeValue() != null ? node2.getNodeValue() : "";
 
             // Only report difference if the text itself isn't just whitespace
             if (!val1.trim().isEmpty() || !val2.trim().isEmpty()) {
                 if (!Objects.equals(val1, val2)) {
+                    // Report difference based on the parent element's context if possible
                     Node parent1 = node1.getParentNode();
                     Node parent2 = node2.getParentNode();
                     String parentPath = getXPath(parent1 != null ? parent1 : node1); // Fallback to node's path
@@ -181,10 +188,13 @@ public class XMLUtility {
         for (String prefix : ignoredXPathPrefixes) {
             if (prefix != null && !prefix.trim().isEmpty()) {
                 // Check if the current path starts with the ignored prefix.
+                // Add ending '/' to prefix ensure "/root/a" doesn't ignore "/root/ab"
+                // Or ensure the ignored path is an exact match.
                 String trimmedPrefix = prefix.trim();
                 if (currentXPath.equals(trimmedPrefix) || currentXPath.startsWith(trimmedPrefix + "/")) {
                     return true;
                 }
+                // Add more sophisticated matching logic here if needed (e.g., regex, XPath engine)
             }
         }
         return false;
@@ -206,7 +216,7 @@ public class XMLUtility {
     }
 
 
-    // --- Attribute Comparison (checks ignored paths) ---
+    // --- NEW/MODIFIED: Attribute Comparison (checks ignored paths) ---
     private void compareAttributes(Node node1, Node node2, String file1Name, String file2Name, String elementXPath, List<String> differences, Set<String> ignoredXPathPrefixes) {
         NamedNodeMap attrs1 = node1.getAttributes();
         NamedNodeMap attrs2 = node2.getAttributes();
@@ -279,7 +289,7 @@ public class XMLUtility {
     }
 
 
-    // --- Child Node Comparison (passes ignored paths down) ---
+    // --- NEW/MODIFIED: Child Node Comparison (passes ignored paths down) ---
     private void compareChildNodes(Node node1, Node node2, String file1Name, String file2Name, List<String> differences, Set<String> ignoredXPathPrefixes) {
         NodeList children1 = node1.getChildNodes();
         NodeList children2 = node2.getChildNodes();
@@ -318,7 +328,7 @@ public class XMLUtility {
 
     // ---  XPath Generation ---
     public String getXPath(Node node) {
-        // Using StringBuilder for efficiency
+        // Use StringBuilder for efficiency
         StringBuilder pathBuilder = new StringBuilder();
         return buildXPath(node, pathBuilder).toString();
     }
@@ -363,6 +373,9 @@ public class XMLUtility {
 
         // Add index [n] only if it's ambiguous (multiple siblings with same name/type)
         int index = getNodeIndex(node);
+        // Optimization: only add [index] if it's > 1 OR if needed to distinguish
+        // For simplicity and consistency with previous code, we'll always add it for now.
+        // More advanced: Check if siblings exist with the same name/type.
         pathBuilder.append("[").append(index).append("]");
     }
 
@@ -416,6 +429,11 @@ public class XMLUtility {
                     // Optional: only count non-empty text nodes if normalizing elsewhere
                     if (typesMatch && isIgnorableNode(sibling)) continue; // Skip ignorable siblings
                 }
+                // For comments, just match type
+                else if (nodeType == Node.COMMENT_NODE) {
+                    // Type already matched
+                }
+                // If other types need specific name matching, add here
             }
 
             // If it's a comparable sibling
@@ -427,8 +445,7 @@ public class XMLUtility {
             }
         }
         // Fallback - should technically be found
-        logger.warn("Could not definitively determine node index for: " + getXPath(node) +
-                ". Returning calculated index: " + index);
+        logger.warn("Could not definitively determine node index for: " + getXPath(node) + ". Returning calculated index: " + index);
         return index;
     }
 
@@ -449,11 +466,11 @@ public class XMLUtility {
         private Locator locator;
         private final Stack<Element> elementStack = new Stack<>();
         private final StringBuilder textBuffer = new StringBuilder();
-        private final Logger logger;
+        private final Logger logger; // Added logger
 
         public DomBuilderWithLineNumbers(DocumentBuilder builder, Logger logger) {
             this.docBuilder = builder;
-            this.logger = logger;
+            this.logger = logger; // Store logger
         }
 
         public Document getDocument() {
