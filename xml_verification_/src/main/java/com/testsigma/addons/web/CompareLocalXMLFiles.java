@@ -19,9 +19,10 @@ import java.util.List;
 import java.util.Set;
 
 @Data
-@Action(actionText = "Xml: Verify if local files with filepath filepath1 and filepath filepath2 are equal while ignoring specific XPaths X-Paths",
-        description = "Verifies if files with given filepath are equal while ignoring given xPaths " +
-                "(separate xPaths by comma) e.g: xpath1, xpath2",
+@Action(actionText = "xml: Verify if local files with filepath filepath1 and filepath filepath2 are equal while ignoring specific XPaths X-Paths",
+        description = "Verifies if two XML files are structurally and content-wise equal, reporting differences with line numbers. " +
+                "Allows ignoring specific parts of the documents based on their XPath (separate by comma). " +
+                "Example ignored XPaths: /Xpath1,/Xpath2",
         applicationType = ApplicationType.WEB)
 public class CompareLocalXMLFiles extends WebAction {
 
@@ -38,12 +39,12 @@ public class CompareLocalXMLFiles extends WebAction {
     protected Result execute() throws NoSuchElementException {
         logger.info("initiating execution");
         Result result;
-        XMLUtility xmlUtility = new XMLUtility(driver, logger);
+        XMLUtility xmlUtility = new XMLUtility(driver, logger); // Assuming XMLUtility needs driver/logger
         File baseFile = null;
         File actualFile = null;
 
         try {
-            //  Get File Paths and Ignored XPaths
+            // 1. Get File Paths and Ignored XPaths
             String filePath1 = testData1.getValue().toString();
             String filePath2 = testData2.getValue().toString();
             String xPathsToIgnoreRaw = testData3.getValue().toString();
@@ -68,7 +69,7 @@ public class CompareLocalXMLFiles extends WebAction {
             }
 
 
-            //  Convert URLs/Paths to Temporary Files
+            // 2. Convert URLs/Paths to Temporary Files
             baseFile = File.createTempFile("baseXml_", ".xml");
             actualFile = File.createTempFile("actualXml_", ".xml");
             logger.info("Created temporary base file: " + baseFile.getAbsolutePath());
@@ -79,11 +80,11 @@ public class CompareLocalXMLFiles extends WebAction {
             actualFile = xmlUtility.urlToFileConverter(filePath2);
             logger.info("Prepared base & actual file content.");
 
-            // Ensure temp files are deleted on exit
+            // Ensure temp files are deleted on exit (redundant if urlToFileConverter does it, but safe)
             baseFile.deleteOnExit();
             actualFile.deleteOnExit();
 
-            // Parse XML Files with Line Number Tracking
+            // 3. Parse XML Files with Line Number Tracking
             logger.info("Parsing base XML file...");
             Document doc1 = xmlUtility.parseXMLWithLineNumbers(baseFile);
             logger.info("Parsing actual XML file...");
@@ -91,7 +92,7 @@ public class CompareLocalXMLFiles extends WebAction {
             logger.info("Successfully parsed both XML files with line number tracking.");
 
 
-            // Find Differences, Respecting Ignored Paths
+            // 4. Find Differences, Respecting Ignored Paths
             logger.info("Starting XML comparison...");
             List<String> differences = xmlUtility.findDifferencesWithIgnore(
                     doc1.getDocumentElement(),
@@ -103,13 +104,13 @@ public class CompareLocalXMLFiles extends WebAction {
             logger.info("Comparison finished.");
 
 
-            // Report Results
+            // 5. Report Results
             if (differences.isEmpty()) {
                 setSuccessMessage(String.format("<b>The given XML files are equal</b> (considering ignored XPaths).",
                         filePath1, filePath2));
                 result = Result.SUCCESS;
             } else {
-                // Define the character limit for displaying error messages properly
+                // Define the character limit
                 final int MAX_DETAILS_LENGTH = 350;
 
                 // Build the difference message
@@ -147,12 +148,8 @@ public class CompareLocalXMLFiles extends WebAction {
             result = Result.FAILED;
 
         } finally {
-            if (baseFile != null && baseFile.exists()) {
-                baseFile.delete();
-            }
-            if (actualFile != null && actualFile.exists()) {
-                actualFile.delete();
-            }
+            if (baseFile != null && baseFile.exists()) { baseFile.delete(); }
+            if (actualFile != null && actualFile.exists()) { actualFile.delete(); }
         }
         return result;
     }
