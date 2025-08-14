@@ -8,30 +8,32 @@ import java.awt.event.KeyEvent;
 public class KeyboardUtils {
 
     // Allowed values for modifier keys
-    public static final String[] MODIFIER_KEYS = {"Alt", "Ctrl", "Enter", "Shift", "Tab", "WINDOW"};
-    
+    public static final String[] MODIFIER_KEYS = {"Alt", "BackSpace", "CapsLock", "Ctrl", "Delete", "Down", "Enter",
+            "Esc", "Left", "Right", "Shift", "Tab", "Up", "WINDOW"};
+
     // Allowed values for alphanumeric keys
     public static final String[] ALPHANUMERIC_KEYS = {
-        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
-        "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
-        "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T",
-        "U", "V", "W", "X", "Y", "Z",
-        "Space", "Comma", "Period", "Semicolon", "Colon", "Exclamation", "Question",
-        "At", "Hash", "Dollar", "Percent", "Caret", "Ampersand", "Asterisk",
-        "Left_Parenthesis", "Right_Parenthesis", "Minus", "Plus", "Equals",
-        "Left_Bracket", "Right_Bracket", "Backslash", "Forward_Slash", "Pipe",
-        "Left_Brace", "Right_Brace", "Tilde", "Backtick", "Quote", "Double_Quote"
+            "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+            "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
+            "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T",
+            "U", "V", "W", "X", "Y", "Z",
+            "Space", "Comma", "Period", "Semicolon", "Colon", "Exclamation", "Question",
+            "At", "Hash", "Dollar", "Percent", "Caret", "Ampersand", "Asterisk",
+            "Left_Parenthesis", "Right_Parenthesis", "Minus", "Plus", "Equals",
+            "Left_Bracket", "Right_Bracket", "Backslash", "Forward_Slash", "Pipe",
+            "Left_Brace", "Right_Brace", "Tilde", "Backtick", "Quote", "Double_Quote"
     };
 
     // Allowed values for specific keys
     public static final String[] SPECIFIC_KEYS = {
-        "Space", "Backspace", "Delete", "Escape", "Home", "End", 
-        "Page_Up", "Page_Down", "Insert", "F1", "F2", "F3", "F4", 
-        "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12"
+            "Space", "Backspace", "Delete", "Escape", "Home", "End",
+            "Page_Up", "Page_Down", "Insert", "F1", "F2", "F3", "F4",
+            "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12"
     };
 
     /**
      * Maps the modifier key string to its corresponding KeyEvent constant
+     *
      * @param key The modifier key string
      * @return The corresponding KeyEvent constant
      * @throws IllegalArgumentException if the key is not supported
@@ -49,7 +51,23 @@ public class KeyboardUtils {
             case "tab":
                 return KeyEvent.VK_TAB;
             case "window":
-                return KeyEvent.VK_META;
+                return KeyEvent.VK_WINDOWS;
+            case "backspace":
+                return KeyEvent.VK_BACK_SPACE;
+            case "esc":
+                return KeyEvent.VK_ESCAPE;
+            case "delete":
+                return KeyEvent.VK_DELETE;
+            case "capslock":
+                return KeyEvent.VK_CAPS_LOCK;
+            case "up":
+                return KeyEvent.VK_UP;
+            case "down":
+                return KeyEvent.VK_DOWN;
+            case "left":
+                return KeyEvent.VK_LEFT;
+            case "right":
+                return KeyEvent.VK_RIGHT;
             default:
                 throw new IllegalArgumentException("Unsupported modifier key: " + key);
         }
@@ -57,6 +75,7 @@ public class KeyboardUtils {
 
     /**
      * Maps the alphanumeric key string to its corresponding KeyEvent constant
+     *
      * @param key The alphanumeric key string
      * @return The corresponding KeyEvent constant
      * @throws IllegalArgumentException if the key is not supported
@@ -66,12 +85,12 @@ public class KeyboardUtils {
         if (key.length() == 1 && Character.isDigit(key.charAt(0))) {
             return KeyEvent.getExtendedKeyCodeForChar(key.charAt(0));
         }
-        
+
         // Handle letters
         if (key.length() == 1 && Character.isLetter(key.charAt(0))) {
             return KeyEvent.getExtendedKeyCodeForChar(Character.toUpperCase(key.charAt(0)));
         }
-        
+
         // Handle specific key mappings
         switch (key.toUpperCase()) {
             case "0":
@@ -213,6 +232,7 @@ public class KeyboardUtils {
 
     /**
      * Maps the specific key string to its corresponding KeyEvent constant
+     *
      * @param key The specific key string
      * @return The corresponding KeyEvent constant
      * @throws IllegalArgumentException if the key is not supported
@@ -227,7 +247,7 @@ public class KeyboardUtils {
                 return KeyEvent.getExtendedKeyCodeForChar(c);
             }
         }
-        
+
         // Handle special keys
         switch (key.toLowerCase()) {
             case "space":
@@ -282,4 +302,13 @@ public class KeyboardUtils {
                 throw new IllegalArgumentException("Unsupported specific key: " + key);
         }
     }
+
+    public static void sleep(int delayInMilliseconds) {
+        try {
+            Thread.sleep(delayInMilliseconds);
+        } catch (InterruptedException interruptedException) {
+            // ignore the exception
+        }
+    }
+
 } 

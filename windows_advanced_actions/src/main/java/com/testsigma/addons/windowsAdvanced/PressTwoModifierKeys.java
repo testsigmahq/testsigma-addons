@@ -1,10 +1,12 @@
 package com.testsigma.addons.windowsAdvanced;
 
+import com.testsigma.addons.windowsAdvanced.utils.ScreenshotUtils;
 import com.testsigma.addons.windowsAdvanced.utils.KeyboardUtils;
 import com.testsigma.sdk.Result;
 import com.testsigma.sdk.WindowsAdvancedAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
+import com.testsigma.sdk.annotation.TestStepResult;
 import lombok.Data;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -12,16 +14,23 @@ import java.awt.*;
 
 @Data
 @Action(actionText = "Press two modifier keys simultaneously: Modifier Key 1: key-type-1, Modifier Key 2: key-type-2",
-        description = "This action allows you to press two modifier keys simultaneously on the keyboard.",
+        description = "This action allows you to press two modifier keys simultaneously on the keyboard. " +
+                "This works only for local executions",
         applicationType = com.testsigma.sdk.ApplicationType.WINDOWS_ADVANCED,
-        displayName = "PressTwoModifierKeys")
+        displayName = "PressTwoModifierKeys",
+        useCustomScreenshot = true)
 public class PressTwoModifierKeys extends WindowsAdvancedAction {
 
-    @TestData(reference = "key-type-1", allowedValues = {"Alt", "Ctrl", "Enter", "Shift", "Tab", "WINDOW"})
+    @TestData(reference = "key-type-1", allowedValues = {"Alt", "BackSpace", "CapsLock", "Ctrl", "Delete", "Down",
+            "Enter", "Esc", "Left", "Right", "Shift", "Tab", "Up", "WINDOW"})
     private com.testsigma.sdk.TestData keyType1;
 
-    @TestData(reference = "key-type-2", allowedValues = {"Alt", "Ctrl", "Enter", "Shift", "Tab"})
+    @TestData(reference = "key-type-2", allowedValues = {"Alt", "BackSpace", "CapsLock", "Ctrl", "Delete", "Down",
+            "Enter", "Esc", "Left", "Right", "Shift", "Tab", "Up", "WINDOW"})
     private com.testsigma.sdk.TestData keyType2;
+
+    @TestStepResult
+    private com.testsigma.sdk.TestStepResult testStepResult;
 
     @Override
     public Result execute() {
@@ -48,11 +57,19 @@ public class PressTwoModifierKeys extends WindowsAdvancedAction {
             robot.keyRelease(keyCode1);
 
             setSuccessMessage("Successfully pressed the " + key1 + " and " + key2 + " keys simultaneously.");
+            
+            // Capture and upload screenshot
+            ScreenshotUtils.captureAndUploadScreenshot(testStepResult, "press_two_modifier_keys_screenshot", logger);
+            
         } catch (Exception e) {
             setErrorMessage("An error occurred while pressing the two modifier keys: " + e.getMessage());
             logger.debug("Error pressing two modifier keys: " + ExceptionUtils.getStackTrace(e));
             result = Result.FAILED;
+            // Capture and upload screenshot even on failure
+            ScreenshotUtils.captureAndUploadScreenshot(testStepResult, "press_two_modifier_keys_failure_screenshot", logger);
         }
         return result;
     }
+    
+
 } 
