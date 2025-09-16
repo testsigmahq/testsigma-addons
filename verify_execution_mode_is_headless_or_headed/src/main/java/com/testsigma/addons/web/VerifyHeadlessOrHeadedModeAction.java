@@ -34,7 +34,7 @@ public class VerifyHeadlessOrHeadedModeAction extends WebAction {
                 return result;
             }
 
-            if(mode.getValue().toString().toLowerCase().equals("headless")) {
+            if ("headless".equalsIgnoreCase(mode.getValue().toString())) {
                 if (userAgent.contains("Headless")) {
                     logger.info("Browser is running in HEADLESS mode");
                     setSuccessMessage("Browser is running in HEADLESS mode");
