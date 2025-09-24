@@ -1,4 +1,4 @@
-package com.testsigma.addons.web;
+package com.testsigma.addons.mobileweb;
 
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
@@ -6,6 +6,7 @@ import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.RunTimeData;
 import com.testsigma.sdk.annotation.TestData;
+import io.appium.java_client.AppiumDriver;
 import lombok.Data;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.openqa.selenium.JavascriptExecutor;
@@ -14,7 +15,7 @@ import org.openqa.selenium.NoSuchElementException;
 @Data
 @Action(actionText = "Execute JavaScript snippet testdata and store the returned value in variable var1",
         description = "Executes JS and stores the value in runtime variable",
-        applicationType = ApplicationType.WEB)
+        applicationType = ApplicationType.MOBILE_WEB)
 public class StoreJsValue extends WebAction {
 
   @TestData(reference = "testdata")
@@ -32,15 +33,16 @@ public class StoreJsValue extends WebAction {
     logger.info("Initiating execution");
     logger.info("JS SNIPPET IS "+jssnippet.getValue().toString());
 
-    Result result = Result.SUCCESS;
+    com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
     try {
-        JavascriptExecutor js = (JavascriptExecutor) driver;
+        AppiumDriver appiumDriver = (AppiumDriver) driver;
+        JavascriptExecutor js = (JavascriptExecutor) appiumDriver;
         Object obj = js.executeScript(jssnippet.getValue().toString());
         String str = (obj == null) ? "" : obj.toString();
 
         runTimeData.setKey(variable.getValue().toString());
         runTimeData.setValue(str);
-        setSuccessMessage("Successfully stored returned result "+str+" into a runtime variable "+runTimeData);
+        setSuccessMessage("Successfully stored retured result "+str+" into a runtime variable "+runTimeData);
     }
     
     catch(Exception e) {
