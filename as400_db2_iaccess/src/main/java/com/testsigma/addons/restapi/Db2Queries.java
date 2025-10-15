@@ -13,7 +13,7 @@ import java.sql.*;
 
 @Data
 @Action(actionText = "Execute DB2 Query on the connection with host host, port port, database dbname, username username, password password",
-description = "This action executes given DB2 query against the connection provided and prints the results.",
+description = "This action executes any type of DB2 query (SELECT, INSERT, UPDATE, DELETE, etc.) and displays the results.",
 applicationType = ApplicationType.REST_API)
 public class Db2Queries extends RestApiAction {
 
@@ -57,14 +57,18 @@ public class Db2Queries extends RestApiAction {
 			// Load DB2 JDBC Driver
 			Class.forName("com.ibm.db2.jcc.DB2Driver");
 
-			// Get connection
-			connection = DriverManager.getConnection(url, username, password);
-			stmt = connection.createStatement();
+		// Get connection
+		connection = DriverManager.getConnection(url, username, password);
+		stmt = connection.createStatement();
+		
+		// Check query type and execute accordingly
+		if(query.trim().toUpperCase().startsWith("SELECT")) {
+			// Handle SELECT queries - display result set
 			resultSet = stmt.executeQuery(query);
 			
 			ResultSetMetaData rsmd = resultSet.getMetaData();
 			int columnNo = resultSet.getMetaData().getColumnCount();
-			sb.append("Successfully Executed DB2 Query and Resultset is : " + "\n");
+			sb.append("Successfully Executed SELECT Query and Resultset is : " + "\n");
 			
 			// Print column headers
 			for (int i = 1; i <= columnNo; i++) {
@@ -74,6 +78,7 @@ public class Db2Queries extends RestApiAction {
 			sb.append("\n");
 			
 			// Print rows
+			int rowCount = 0;
 			while (resultSet.next()) {
 				for (int j = 1; j <= columnNo; j++) {
 					if (j > 1) sb.append(", ");
@@ -85,10 +90,18 @@ public class Db2Queries extends RestApiAction {
 					}
 				}
 				sb.append("\n");
+				rowCount++;
 			}
-			
-			setSuccessMessage(sb.toString());
-			logger.info(sb.toString());
+			sb.append("\nTotal rows fetched: " + rowCount + "\n");
+		} else {
+			// Handle non-SELECT queries (INSERT, UPDATE, DELETE, etc.)
+			int rowsAffected = stmt.executeUpdate(query);
+			sb.append("Successfully Executed DB2 Query: " + query.trim().toUpperCase().split("\\s+")[0] + "\n");
+			sb.append("Number of rows affected: " + rowsAffected + "\n");
+		}
+		
+		setSuccessMessage(sb.toString());
+		logger.info(sb.toString());
 		}
 		catch (ClassNotFoundException e) {
 			String errorMessage = "DB2 Driver not found. Make sure db2jcc4.jar is in classpath. " + ExceptionUtils.getStackTrace(e);
