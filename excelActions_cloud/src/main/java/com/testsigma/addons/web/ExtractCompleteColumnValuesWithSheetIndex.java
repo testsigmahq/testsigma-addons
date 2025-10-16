@@ -1,7 +1,8 @@
 package com.testsigma.addons.web;
 
 
-import com.testsigma.addons.util.PdfAndDocUtilities;
+import com.testsigma.addons.util.ExcelUtilities;
+import com.testsigma.addons.util.ExcelUtilitiesFactory;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
@@ -41,10 +42,10 @@ public class ExtractCompleteColumnValuesWithSheetIndex extends WebAction {
 
         com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
 
-        PdfAndDocUtilities documentutil = new PdfAndDocUtilities(driver, logger);
+        ExcelUtilities excelutil = ExcelUtilitiesFactory.create(driver, logger);
         try {
 
-            File downloadedExcelFile = documentutil.copyFileFromDownloads("xlsx", null);
+            File downloadedExcelFile = excelutil.copyFileFromDownloads("xlsx", null);
             logger.info("Downloaded Excel file: " + downloadedExcelFile.getAbsolutePath());
 
             StringBuffer entireFieldValues = new StringBuffer();
