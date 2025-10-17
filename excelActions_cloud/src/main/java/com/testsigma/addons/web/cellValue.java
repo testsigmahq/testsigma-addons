@@ -1,6 +1,7 @@
 package com.testsigma.addons.web;
 
-import com.testsigma.addons.util.PdfAndDocUtilities;
+import com.testsigma.addons.util.ExcelUtilities;
+import com.testsigma.addons.util.ExcelUtilitiesFactory;
 import com.testsigma.sdk.WebAction;
 
 import com.testsigma.sdk.ApplicationType;
@@ -43,11 +44,11 @@ public class cellValue extends WebAction {
 
 		com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
 
-		PdfAndDocUtilities documentutil = new PdfAndDocUtilities(driver, logger);
+        ExcelUtilities excelutil = ExcelUtilitiesFactory.create(driver, logger);
 
 		try {
 
-			File downloadedExcelFile = documentutil.copyFileFromDownloads("xlsx",null);
+			File downloadedExcelFile = excelutil.copyFileFromDownloads("xlsx",null);
 
 			FileInputStream inputStream = new FileInputStream(downloadedExcelFile);
 

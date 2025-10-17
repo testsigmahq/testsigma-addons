@@ -1,5 +1,7 @@
 package com.testsigma.addons.web;
 
+import com.testsigma.addons.util.ExcelUtilities;
+import com.testsigma.addons.util.ExcelUtilitiesFactory;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
@@ -12,7 +14,6 @@ import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.openqa.selenium.NoSuchElementException;
-import com.testsigma.addons.util.PdfAndDocUtilities;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -35,10 +36,10 @@ public class ExtractCompleteRowValues extends WebAction {
 
         com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
 
-        PdfAndDocUtilities documentutil = new PdfAndDocUtilities(driver, logger);
+        ExcelUtilities excelutil = ExcelUtilitiesFactory.create(driver, logger);
         try {
 
-            File downloadedExcelFile = documentutil.copyFileFromDownloads("xlsx", null);
+            File downloadedExcelFile = excelutil.copyFileFromDownloads("xlsx", null);
 
             StringBuffer entireFieldValues = new StringBuffer();
 
@@ -50,7 +51,6 @@ public class ExtractCompleteRowValues extends WebAction {
                 int rowIndex = Integer.parseInt(testData1.getValue().toString());
                 var row = sheet.getRow(rowIndex);
                 if (row != null) {
-                    logger.info("Values in row " + (rowIndex + 1) + ":");
 
                     // Iterate over all cells in the row
                     for (Cell cell : row) {

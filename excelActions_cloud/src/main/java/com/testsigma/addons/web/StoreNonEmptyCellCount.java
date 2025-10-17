@@ -1,6 +1,5 @@
 package com.testsigma.addons.web;
 
-import com.testsigma.addons.util.PdfAndDocUtilities;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
@@ -9,6 +8,8 @@ import com.testsigma.sdk.annotation.TestData;
 import lombok.Data;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
@@ -23,8 +24,8 @@ import java.net.URL;
         useCustomScreenshot = false)
 public class StoreNonEmptyCellCount extends WebAction {
 
-    @TestData(reference = "test-data", allowedValues = {"Non-Empty cells", "Rows", "Columns"})
-    private com.testsigma.sdk.TestData countTypeData;
+    @TestData(reference = "test-data", allowedValues = {"non-empty cells", "rows", "columns"})
+    private com.testsigma.sdk.TestData testData;
     @TestData(reference = "file-url")
     private com.testsigma.sdk.TestData fileUrlData;
     @TestData(reference = "runtime-variable", isRuntimeVariable = true)
@@ -37,7 +38,6 @@ public class StoreNonEmptyCellCount extends WebAction {
     public com.testsigma.sdk.Result execute() {
         com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
         logger.info("Initiating execution");
-        logger.info("Count type: " + countTypeData.getValue().toString());
         logger.info("File URL: " + fileUrlData.getValue().toString());
 
         try {
@@ -48,14 +48,16 @@ public class StoreNonEmptyCellCount extends WebAction {
 
             logger.info("Successfully opened workbook");
             XSSFSheet sheet = workbook.getSheetAt(0);
-            String countType = countTypeData.getValue().toString();
-            int calculatedCount = PdfAndDocUtilities.calculateExcelDataCount(countType, sheet);
-
+            String countType = testData.getValue().toString();
+            logger.info("Count type: " + countType);
+//            int calculatedCount = PdfAndDocUtilities.calculateExcelDataCount("non-empty cells", sheet);
+            int calculatedCount = calculateExcelDataCount(countType, sheet);
+            logger.info("Calculated count: " + calculatedCount);
             String variableName = runtimeVariableName.getValue().toString();
-            runTimeData.setValue(calculatedCount);
             runTimeData.setKey(variableName);
-
-            setSuccessMessage("Successfully stored the count of " + countType + " from excel file to " +
+            runTimeData.setValue(String.valueOf(calculatedCount));
+            logger.info("runtime data: " + runTimeData.getValue());
+            setSuccessMessage("Successfully stored the count of non-empty " + countType + " from excel file to " +
                     variableName + " = " + calculatedCount);
             return result;
         } catch (Exception e) {
@@ -63,6 +65,65 @@ public class StoreNonEmptyCellCount extends WebAction {
             setErrorMessage("Failed to read the excel file: " + ExceptionUtils.getStackTrace(e));
             return com.testsigma.sdk.Result.FAILED;
         }
+    }
+
+    public static int calculateExcelDataCount(String countType, XSSFSheet sheet) {
+        int count = 0;
+
+        if (countType.equalsIgnoreCase("non-empty cells")) {
+            count = countNonEmptyCells(sheet);
+        } else if (countType.equalsIgnoreCase("rows")) {
+            count = countNonEmptyRows(sheet);
+        } else if (countType.equalsIgnoreCase("columns")) {
+            count = countMaxColumns(sheet);
+        }
+
+        return count;
+    }
+
+    private static int countNonEmptyCells(XSSFSheet sheet) {
+        int cellCount = 0;
+        for (int i = 0; i <= sheet.getLastRowNum(); i++) {
+            if (sheet.getRow(i) != null) {
+                for (int j = 0; j < sheet.getRow(i).getPhysicalNumberOfCells(); j++) {
+                    if (sheet.getRow(i).getCell(j) != null && !sheet.getRow(i).getCell(j).toString().isEmpty()) {
+                        cellCount++;
+                    }
+                }
+            }
+        }
+        return cellCount;
+    }
+
+    private static int countNonEmptyRows(XSSFSheet sheet) {
+        int rowCount = 0;
+        for (Row row : sheet) {
+            boolean hasData = false;
+            for (Cell cell : row) {
+                if (cell != null && !cell.toString().trim().isEmpty()) {
+                    hasData = true;
+                    break;
+                }
+            }
+            if (hasData) rowCount++;
+        }
+        return rowCount;
+    }
+
+    private static int countMaxColumns(XSSFSheet sheet) {
+        int maxColumnCount = 0;
+        for (Row row : sheet) {
+            int currentColumnCount = 0;
+            for (Cell cell : row) {
+                if (cell != null && !cell.toString().trim().isEmpty()) {
+                    currentColumnCount = cell.getColumnIndex() + 1; // +1 because column index is zero-based
+                }
+            }
+            if (currentColumnCount > maxColumnCount) {
+                maxColumnCount = currentColumnCount;
+            }
+        }
+        return maxColumnCount;
     }
 
     private File downloadFileFromUrl(String url) {

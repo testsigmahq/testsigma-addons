@@ -1,5 +1,7 @@
 package com.testsigma.addons.web;
 
+import com.testsigma.addons.util.ExcelUtilities;
+import com.testsigma.addons.util.ExcelUtilitiesFactory;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
@@ -12,7 +14,6 @@ import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.openqa.selenium.NoSuchElementException;
-import com.testsigma.addons.util.PdfAndDocUtilities;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -40,7 +41,7 @@ public class ExtractCompleteFieldValuesForGivenFile extends WebAction {
 
         com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
 
-        PdfAndDocUtilities documentutil = new PdfAndDocUtilities(driver, logger);
+        ExcelUtilities excelutil = ExcelUtilitiesFactory.create(driver, logger);
         logger.info("line 42");
         try {
 
@@ -50,7 +51,7 @@ public class ExtractCompleteFieldValuesForGivenFile extends WebAction {
             if (updatedFileName.endsWith(".xlsx")) {
                 updatedFileName = updatedFileName.substring(0, updatedFileName.length() - 5);
             }
-            File downloadedExcelFile = documentutil.copyFileFromDownloads("xlsx", updatedFileName);
+            File downloadedExcelFile = excelutil.copyFileFromDownloads("xlsx", updatedFileName);
             StringBuilder entireFieldValues = new StringBuilder();
             logger.info("entireFieldValues: " + entireFieldValues);
             try (FileInputStream inputStream = new FileInputStream(downloadedExcelFile)) {

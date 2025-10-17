@@ -1,7 +1,8 @@
 package com.testsigma.addons.web;
 
+import com.testsigma.addons.util.ExcelUtilities;
+import com.testsigma.addons.util.ExcelUtilitiesFactory;
 import com.testsigma.sdk.WebAction;
-import com.testsigma.addons.util.PdfAndDocUtilities;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
@@ -17,8 +18,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 
 @Data
 @Action(actionText = "Write the data datavalue into Latest Excelfile with Cell value rowNo,columnNo",
@@ -48,11 +47,11 @@ public class WriteCellvalueWithSheet extends WebAction {
 
 		String data = testData3.getValue().toString();
 
-		PdfAndDocUtilities documentutil = new PdfAndDocUtilities(driver, logger);
+        ExcelUtilities excelutil = ExcelUtilitiesFactory.create(driver, logger);
 		
 		File downloadedExcelFile = null;
 		try {
-			downloadedExcelFile = documentutil.copyFileFromDownloads("xlsx",null);
+			downloadedExcelFile = excelutil.copyFileFromDownloads("xlsx",null);
 		} catch (Exception el) {
 			String errorMessage = ExceptionUtils.getStackTrace(el);
 			result = com.testsigma.sdk.Result.FAILED;
