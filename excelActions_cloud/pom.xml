@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.testsigma.addons</groupId>
     <artifactId>excelactions_cloud</artifactId>
-    <version>1.0.10</version>
+    <version>1.0.15</version>
     <packaging>jar</packaging>
 
     <properties>

@@ -1,7 +1,8 @@
 package com.testsigma.addons.web;
 
+import com.testsigma.addons.util.ExcelUtilities;
+import com.testsigma.addons.util.ExcelUtilitiesFactory;
 import com.testsigma.sdk.WebAction;
-import com.testsigma.addons.util.PdfAndDocUtilities;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.RunTimeData;
@@ -15,7 +16,6 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.openqa.selenium.NoSuchElementException;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -43,13 +43,13 @@ public class WriteNewExcelFile extends WebAction {
 
 		com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
 
-		PdfAndDocUtilities documentutil = new PdfAndDocUtilities(driver, logger);
+        ExcelUtilities excelutil = ExcelUtilitiesFactory.create(driver, logger);
 
 		String dataValues = data.getValue().toString();
 
 		try {
 			
-			File downloadedExcelFile = documentutil.copyFileFromDownloads("xlsx",null);
+			File downloadedExcelFile = excelutil.copyFileFromDownloads("xlsx",null);
 			
 			FileInputStream inputStream = new FileInputStream(downloadedExcelFile);
 			Workbook workbook = new XSSFWorkbook(inputStream);

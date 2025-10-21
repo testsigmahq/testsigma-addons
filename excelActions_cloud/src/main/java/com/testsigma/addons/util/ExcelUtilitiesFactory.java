@@ -8,13 +8,16 @@ public class ExcelUtilitiesFactory {
 
     public static ExcelUtilities create(WebDriver driver, Logger logger) {
         String browserName = ((RemoteWebDriver) driver).getCapabilities().getBrowserName().toLowerCase();
-        System.out.println("browserName: " + browserName);
+        logger.info("browserName: " + browserName);
 
-        if (browserName.contains("chrome")) {
+        if (browserName.toLowerCase().contains("chrome")) {
+            logger.info("Chrome browser found");
             return new ChromeExcelUtilities(driver, logger);
-        } else if (browserName.contains("edge")) {
+        } else if (browserName.toLowerCase().contains("edge")) {
+            logger.info("Edge browser found");
             return new EdgeExcelUtilities(driver, logger);
         } else {
+            logger.info("Unsupported browser found");
             throw new RuntimeException("Unsupported browser: " + browserName);
         }
     }
