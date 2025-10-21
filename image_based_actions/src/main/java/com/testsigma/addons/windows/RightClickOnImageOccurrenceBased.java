@@ -11,7 +11,6 @@ import com.testsigma.sdk.annotation.TestStepResult;
 import lombok.Data;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
-
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.event.InputEvent;
@@ -20,14 +19,19 @@ import java.io.File;
 import java.util.NoSuchElementException;
 
 @Data
-@Action(actionText = "Click on image image-url, occurrence position found-at-position",
-        description = "Click on give image, at given position",
-        applicationType = ApplicationType.WINDOWS)
-public class ClickOnImageOccurrenceBased extends WindowsAction {
+@Action(
+        actionText = "Right-Click on image image-url, occurrence based found-at-position",
+        description = "Right Click on given image, at given position",
+        applicationType = ApplicationType.WINDOWS
+)
+public class RightClickOnImageOccurrenceBased extends WindowsAction {
+
     @TestData(reference = "image-url")
     private com.testsigma.sdk.TestData testData1;
+
     @TestData(reference = "found-at-position")
     private com.testsigma.sdk.TestData testData2;
+
     @OCR
     private com.testsigma.sdk.OCR ocr;
 
@@ -38,64 +42,57 @@ public class ClickOnImageOccurrenceBased extends WindowsAction {
     protected Result execute() throws NoSuchElementException {
         Result result = Result.SUCCESS;
         try {
-            // Instantiate the Robot Class
             Robot robot = new Robot();
-
-
-            // Fetch the Details of the Screen Size
+            // Capture current screen
             Rectangle screenSize = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
-
-            // Take the Snapshot of the Screen
             BufferedImage tmp = robot.createScreenCapture(screenSize);
 
-            // Provide the destination details to copy the screenshot
+            // Save screenshot temporarily
             String tempDir = System.getProperty("java.io.tmpdir");
-            String filename = "screenshot"+System.currentTimeMillis()+".jpg";
+            String filename = "screenshot_" + System.currentTimeMillis() + ".jpg";
             String path = tempDir + filename;
+            ImageIO.write(tmp, "jpg", new File(path));
 
-            // To copy source image in to destination path
-            ImageIO.write(tmp, "jpg",new File(path));
-            int width = tmp.getWidth();
-            int height = tmp.getHeight();
-            logger.info("Width of image: " + width);
-            logger.info("Height of image: " + height);
+            logger.info("Screen captured and saved at: " + path);
+            logger.info("Screen dimensions: " + tmp.getWidth() + "x" + tmp.getHeight());
 
             File baseImageFile = new File(path);
             String url = testStepResult.getScreenshotUrl();
-            ocr.uploadFile(url, baseImageFile);
-            logger.info("url: "+ testStepResult.getScreenshotUrl());
+            logger.info("Amazon S3 URL where the base image is stored: " + url);
             int occurrence = Integer.parseInt(testData2.getValue().toString());
+
+            // Upload to OCR and find image
+            ocr.uploadFile(url, baseImageFile);
             FindImageResponse responseObject = ocr.findImage(testData1.getValue().toString(),occurrence);
-            if (responseObject.getIsFound()){
-                boolean isFound = responseObject.getIsFound();
+
+            if (responseObject.getIsFound()) {
                 int x1 = responseObject.getX1();
                 int y1 = responseObject.getY1();
                 int x2 = responseObject.getX2();
                 int y2 = responseObject.getY2();
 
-                int clickLocationX = (x1 + x2) / 2;
-                int clickLocationY = (y1 + y2) / 2;
+                int clickX = (x1 + x2) / 2;
+                int clickY = (y1 + y2) / 2;
 
-                logger.info("Click Location X: " + clickLocationX);
-                logger.info("Click Location Y: " + clickLocationY);
+                logger.info("Right-click location X: " + clickX + ", Y: " + clickY);
 
-                robot.mouseMove(clickLocationX, clickLocationY);
-                robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-                robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-                setSuccessMessage("Image Found :" + isFound +
-                        "    Image coordinates :" + "x1-" + x1 + ", x2-" + x2 + ", y1-" + y1 + ", y2-" + y2);
-                Thread.sleep(2000);
+                // Move mouse and perform right-click
+                robot.mouseMove(clickX, clickY);
+                Thread.sleep(500);
+                robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
+                robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
+
+                setSuccessMessage("Right-click performed successfully on image at coordinates: " +
+                        "x1=" + x1 + ", y1=" + y1 + ", x2=" + x2 + ", y2=" + y2);
             } else {
-                setErrorMessage("Unable to fetch the coordinates");
+                setErrorMessage("Image not found on screen.");
                 result = Result.FAILED;
             }
-        }
-        catch (Exception e){
-            logger.info("Exception: "+ ExceptionUtils.getStackTrace(e));
-            setErrorMessage("Exception occurred while performing click action");
+        } catch (Exception e) {
+            logger.info("Exception: " + ExceptionUtils.getStackTrace(e));
+            setErrorMessage("Exception occurred while performing right-click action on image.");
             result = Result.FAILED;
         }
         return result;
     }
-
 }
