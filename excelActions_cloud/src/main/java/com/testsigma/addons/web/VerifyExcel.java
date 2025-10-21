@@ -14,6 +14,8 @@ import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.openqa.selenium.remote.RemoteWebDriver;
+
 import java.io.File;
 import java.io.FileInputStream;
 
@@ -38,11 +40,12 @@ public class VerifyExcel extends WebAction {
 		logger.info("Initiating execution");
 
 		com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
+        String browserName = ((RemoteWebDriver) driver).getCapabilities().getBrowserName().toLowerCase();
+        logger.info("browserName: " + browserName);
 
         ExcelUtilities excelutil = ExcelUtilitiesFactory.create(driver, logger);
 
 		try {
-			
 			File downloadedExcelFile = excelutil.copyFileFromDownloads("xlsx",null);
 
 			FileInputStream inputStream = new FileInputStream(downloadedExcelFile);
