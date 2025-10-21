@@ -20,7 +20,7 @@ import java.nio.file.Paths;
 
 @Data
 @Action(
-        actionText = "Testing Verify the value in the ExcelFile(xls) fullfilepath with Cell value rowNo,columnNo and sheet sheet-index(starts with 1)",
+        actionText = "Verify the value in the ExcelFile(xls) fullfilepath with Cell value rowNo,columnNo and sheet sheet-index(starts with 1)",
         description = "Verify the specific cell value from the Excel file",
         applicationType = ApplicationType.WEB
 )

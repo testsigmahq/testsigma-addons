@@ -20,7 +20,7 @@ import java.nio.file.Paths;
 
 @Data
 @Action(
-        actionText = "Testing Write the data datavalue into Excel(xls) filepath with Cell value rowNo,columnNo and Sheet sheet-index(starts with 1) and store the path in runtime variable variable-name",
+        actionText = "Write the data datavalue into Excel(xls) filepath with Cell value rowNo,columnNo and Sheet sheet-index(starts with 1) and store the path in runtime variable variable-name",
         description = "Write the data into a specific cell in the Excel file",
         applicationType = ApplicationType.WEB
 )
