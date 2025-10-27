@@ -28,7 +28,7 @@ public class StoreDeviceScreenDimensions extends IOSAction {
 
     @Override
     public Result execute() throws NoSuchElementException {
-        logger.info("Starting to fetch Android device screen dimensions...");
+        logger.info("Starting to fetch ios device screen dimensions...");
         Result result = Result.SUCCESS;
 
         try {
