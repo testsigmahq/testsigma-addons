@@ -93,8 +93,8 @@ public class ChromeExcelUtilities implements ExcelUtilities {
                             "var reader = new FileReader(); " +
                             "reader.onload = function (ev) { callback(reader.result); }; " +
                             "reader.onerror = function (ex) { callback(ex.message); }; " +
-                            "reader.readAsDataURL(input.files[0]); "
-                            + "input.remove();",
+                            "reader.readAsDataURL(input.files[0]); " +
+                            "input.remove();",
                     elem
             );
 
@@ -103,11 +103,31 @@ public class ChromeExcelUtilities implements ExcelUtilities {
             }
 
             String base64String = result.toString().substring(result.toString().indexOf("base64,") + 7);
-            File f = new File(path);
-            String fileName = f.getName();
+
+            String originalName;
+            if (path.contains("\\")) {
+                originalName = path.substring(path.lastIndexOf("\\") + 1);
+            } else if (path.contains("/")) {
+                originalName = path.substring(path.lastIndexOf("/") + 1);
+            } else {
+                originalName = path;
+            }
+
+            String extension = "";
+            int dotIndex = originalName.lastIndexOf('.');
+            if (dotIndex != -1) {
+                extension = originalName.substring(dotIndex); // ".xlsx"
+                originalName = originalName.substring(0, dotIndex);
+            }
+
+            String safePrefix = originalName.replaceAll("[^a-zA-Z0-9-_]", "_");
+            if (safePrefix.length() < 3) safePrefix = "tmp";
+
+            File tempDir = new File(System.getProperty("java.io.tmpdir"));
+            File downloadedFile = File.createTempFile(safePrefix + "_", extension, tempDir);
+
             byte[] decodedBytes = Base64.getDecoder().decode(base64String);
-            File downloadedFile = File.createTempFile(fileName, "." + fileFormat);
-            Files.write(Paths.get(downloadedFile.getAbsolutePath()), decodedBytes);
+            Files.write(downloadedFile.toPath(), decodedBytes);
             logger.info("Local path: " + downloadedFile.getAbsolutePath());
             return downloadedFile;
 
