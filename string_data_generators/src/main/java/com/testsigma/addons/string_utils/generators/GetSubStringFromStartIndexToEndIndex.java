@@ -20,7 +20,7 @@ public class GetSubStringFromStartIndexToEndIndex extends TestDataFunction {
     public TestData generate() throws Exception {
         String actualString = string.getValue().toString();
         int fromIndex = Integer.valueOf(startIndex.getValue().toString());
-        int tillIndex = Integer.valueOf(startIndex.getValue().toString());
+        int tillIndex = Integer.valueOf(endIndex.getValue().toString());
         String substring = actualString.substring(fromIndex, tillIndex);
         return new TestData(substring);
     }
