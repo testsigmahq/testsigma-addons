@@ -49,10 +49,6 @@ public class JSONUtilities {
                 .replaceAll("\\uFEFF", "")   // Remove byte order marks
                 .trim();                     // Remove leading/trailing whitespace
 
-        // Normalize multiple consecutive spaces to single spaces
-        cleaned = cleaned.replaceAll("\\s+", " ");
-
-
         logger.info("Preprocessed JSON string: removed problematic characters and normalized whitespace");
 
 
@@ -206,25 +202,24 @@ public class JSONUtilities {
 
         try {
             String preprocessedJson = preprocessJsonString(jsonString, logger);
+
             DocumentContext documentContext = JsonPath.using(Configuration.defaultConfiguration()).parse(preprocessedJson);
-            List<Object> pathResults = documentContext.read(path);
+            Object pathResults = documentContext.read(path);
 
-            for (Object result : pathResults) {
-                if (result != null) {
-                    values.add(result);
+            if (pathResults instanceof List) {
+                for (Object result : (List<?>) pathResults) {
+                    if (result != null) {
+                        values.add(result);
+                    }
                 }
+            } else if (pathResults != null) {
+                values.add(pathResults);
             }
-
-
             logger.info("Extracted " + values.size() + " values from JSON path: " + path);
             logger.info("Extracted values: " + values);
-
-
         } catch (Exception e) {
             String errorMsg = "Error extracting values from JSON path: " + path + " - " + e.getMessage();
-
             logger.warn(errorMsg);
-
         }
 
         return values;

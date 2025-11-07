@@ -44,12 +44,7 @@ public class VerifyJsonOrder extends WebAction {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode jsonNode = mapper.readTree(preprocessedJson);
 
-            if (!jsonNode.isArray()) {
-                String errorMsg = "JSON string must be an array for order verification";
-                setErrorMessage(errorMsg);
-                logger.warn(errorMsg);
-                return com.testsigma.sdk.Result.FAILED;
-            }
+
 
             // Extract values using JSON path via utils
             List<Object> extractedValues = jsonUtilities.extractValuesFromJsonPath(preprocessedJson, path, logger);

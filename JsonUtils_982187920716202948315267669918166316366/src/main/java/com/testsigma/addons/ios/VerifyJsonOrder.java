@@ -40,17 +40,6 @@ public class VerifyJsonOrder extends IOSAction {
             String preprocessedJson = jsonUtilities.preprocessJsonString(jsonStr, logger);
             logger.info("Preprocessed JSON string for parsing");
 
-            // Parse JSON string
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode jsonNode = mapper.readTree(preprocessedJson);
-
-            if (!jsonNode.isArray()) {
-                String errorMsg = "JSON string must be an array for order verification";
-                setErrorMessage(errorMsg);
-                logger.warn(errorMsg);
-                return com.testsigma.sdk.Result.FAILED;
-            }
-
             // Extract values using JSON path via utils
             List<Object> extractedValues = jsonUtilities.extractValuesFromJsonPath(preprocessedJson, path, logger);
 
