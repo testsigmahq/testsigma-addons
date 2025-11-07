@@ -42,8 +42,8 @@ public class GetScreenMode extends AndroidAction {
                 setErrorMessage("Screen mode Could not be determined");
                 return Result.FAILED;
             } else {
-                logger.info("Screen mode is not " + screenMode);
-                setErrorMessage("Screen mode is <b?" + modeNameValue == "dark" ? "light" : "dark" + "</b>");
+                logger.info("Screen mode mismatch. Expected " + modeNameValue + " but got " + screenMode);
+                setErrorMessage("Expected screen mode <b>" + modeNameValue + "</b> but found <b>" + screenMode + "</b>");
                 return Result.FAILED;
             }
         } catch (Exception e) {

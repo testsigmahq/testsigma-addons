@@ -38,10 +38,10 @@ public class GetScreenMode extends IOSAction {
                 setErrorMessage("Screen mode Could not be determined");
                 return Result.FAILED;
             } else {
-                logger.info("Screen mode is not " + screenMode);
-                setErrorMessage("Screen mode is <b?" + modeNameValue == "dark" ? "light" : "dark" + "</b>");
-                return Result.FAILED;
-            }
+                    logger.info("Screen mode mismatch. Expected " + modeNameValue + " but got " + screenMode);
+                    setErrorMessage("Expected screen mode <b>" + modeNameValue + "</b> but found <b>" + screenMode + "</b>");
+                    return Result.FAILED;
+                }
         } catch (Exception e) {
             logger.warn("Error getting screen mode: " + ExceptionUtils.getStackTrace(e));
             setErrorMessage("Error getting screen mode: " + ExceptionUtils.getStackTrace(e));

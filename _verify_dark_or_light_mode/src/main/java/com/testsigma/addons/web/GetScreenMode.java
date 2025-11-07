@@ -18,10 +18,11 @@ import java.util.List;
         description = "This action gets the screen mode of the web application",
         applicationType = ApplicationType.WEB)
 public class GetScreenMode extends WebAction {
-    @TestData(reference = "mode-name",allowedValues = {"dark","light"})
+    @TestData(reference = "mode-name", allowedValues = {"dark", "light"})
     private com.testsigma.sdk.TestData modeName;
     @AI
     private com.testsigma.sdk.AI ai;
+
     @Override
     public Result execute() {
         try {
@@ -32,13 +33,13 @@ public class GetScreenMode extends WebAction {
                 logger.info("Screen mode is " + screenMode);
                 setSuccessMessage("Successfully verified that the screen mode is <b>" + screenMode + "</b>");
                 return Result.SUCCESS;
-            } else if(screenMode.equalsIgnoreCase("unknown")) {
+            } else if (screenMode.equalsIgnoreCase("unknown")) {
                 logger.info("Screen mode is unknown");
                 setErrorMessage("Screen mode Could not be determined");
                 return Result.FAILED;
             } else {
-                logger.info("Screen mode is not " + screenMode);
-                setErrorMessage("Screen mode is <b?" + modeNameValue == "dark" ? "light" : "dark" + "</b>");
+                logger.info("Screen mode mismatch. Expected " + modeNameValue + " but got " + screenMode);
+                setErrorMessage("Expected screen mode <b>" + modeNameValue + "</b> but found <b>" + screenMode + "</b>");
                 return Result.FAILED;
             }
         } catch (Exception e) {
@@ -47,6 +48,7 @@ public class GetScreenMode extends WebAction {
             return Result.FAILED;
         }
     }
+
     private String getScreenMode() {
         try {
 
@@ -65,9 +67,9 @@ public class GetScreenMode extends WebAction {
                     "be either dark or light.");
             String response = ai.invokeAI(aiRequest);
             logger.info("Response is " + response);
-            if(response.toLowerCase().contains("dark")) {
+            if (response.toLowerCase().contains("dark")) {
                 return "dark";
-            } else if(response.toLowerCase().contains("light")) {
+            } else if (response.toLowerCase().contains("light")) {
                 return "light";
             }
             return "unknown";
