@@ -42,30 +42,35 @@ public class ExtractTextUsingJsonPathInJson extends WebAction {
             logger.info("JSON Path: " + jsonPath);
 
             try {
-                String output = JSONUtilities.readJsonData(jsonString, jsonPath);
+                JSONUtilities jsonUtilities = new JSONUtilities(logger);
+                String output = jsonUtilities.readJsonData(jsonString, jsonPath, logger);
                 runTimeData = new com.testsigma.sdk.RunTimeData();
                 runTimeData.setValue(output);
                 runTimeData.setKey(variable_name.getValue().toString());
-                setSuccessMessage("Stored the desired date into the runtime variable. " + variable_name.getValue().toString() +
+                setSuccessMessage("Stored the desired data into the runtime variable. " + variable_name.getValue().toString() +
                         " = " + runTimeData.getValue());
                 logger.info("Extracted Output: " + output);
             } catch (PathNotFoundException e) {
-                setErrorMessage("Invalid JSON Path: " + jsonPath + ". Please verify the path.");
-                logger.info("Invalid JSON Path: " + jsonPath);
+                String errorMsg = "Invalid JSON Path: " + jsonPath + ". Please verify the path.";
+                setErrorMessage(errorMsg);
+                logger.warn(errorMsg);
                 return Result.FAILED;
             } catch (Exception e) {
-                setErrorMessage("An unexpected error occurred." + ExceptionUtils.getStackTrace(e));
-                logger.info(ExceptionUtils.getStackTrace(e));
+                String errorMsg = "An unexpected error occurred while extracting JSON data: " + ExceptionUtils.getMessage(e);
+                setErrorMessage(errorMsg);
+                logger.warn("Error details: " + ExceptionUtils.getStackTrace(e));
                 return Result.FAILED;
             }
             return result;
         } catch (NullPointerException e) {
-            logger.info("Null value encountered in test data or JSON path.");
-            setErrorMessage("Null value encountered in test data or JSON path.");
+            String errorMsg = "Null value encountered in test data or JSON path. Please verify all required fields are provided.";
+            logger.warn(errorMsg);
+            setErrorMessage(errorMsg);
             return Result.FAILED;
         } catch (Exception e) {
-            setErrorMessage("An unexpected error occurred." + ExceptionUtils.getMessage(e));
-            logger.info(ExceptionUtils.getStackTrace(e));
+            String errorMsg = "An unexpected error occurred: " + ExceptionUtils.getMessage(e);
+            setErrorMessage(errorMsg);
+            logger.warn("Error details: " + ExceptionUtils.getStackTrace(e));
             return Result.FAILED;
         }
     }

@@ -1,26 +1,23 @@
-package com.testsigma.addons.web;
+package com.testsigma.addons.ios;
 
+import com.jayway.jsonpath.PathNotFoundException;
 import com.testsigma.addons.utils.JSONUtilities;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.openqa.selenium.NoSuchElementException;
-
 import com.testsigma.sdk.ApplicationType;
+import com.testsigma.sdk.IOSAction;
 import com.testsigma.sdk.Result;
-import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.RunTimeData;
 import com.testsigma.sdk.annotation.TestData;
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.PathNotFoundException;
-
 import lombok.Data;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.openqa.selenium.NoSuchElementException;
 
 @Data
-@Action(actionText = "Extract text from a JSON text test-data1 using the specified JSON path test-data2 " +
-        "and store it in a runtime variable variable_name",
+@Action(actionText = "Extract text from a JSON text test-data1 using the specified JSON path test-data2 and" +
+        " store it in a runtime variable variable_name",
         description = "Extract required json data using JSON string and JSON path, store data into a runtime variable",
-        applicationType = ApplicationType.WEB)
-public class ExtractTextUsingJsonPathInJson extends WebAction {
+        applicationType = ApplicationType.IOS)
+public class ExtractTextUsingJsonPathInJson extends IOSAction {
 
     @TestData(reference = "test-data1")
     private com.testsigma.sdk.TestData jsonText;
@@ -38,6 +35,7 @@ public class ExtractTextUsingJsonPathInJson extends WebAction {
     protected Result execute() throws NoSuchElementException {
         try {
             Result result = Result.SUCCESS;
+
             String jsonString = jsonText.getValue().toString();
             logger.info("JSON Data: " + jsonString);
 
@@ -50,7 +48,8 @@ public class ExtractTextUsingJsonPathInJson extends WebAction {
                 runTimeData = new com.testsigma.sdk.RunTimeData();
                 runTimeData.setValue(output);
                 runTimeData.setKey(variable_name.getValue().toString());
-                setSuccessMessage("Stored the desired data into the runtime variable. " + variable_name.getValue().toString() +
+                setSuccessMessage("Stored the desired data into the runtime variable. "
+                        + variable_name.getValue().toString() +
                         " = " + runTimeData.getValue());
                 logger.info("Extracted Output: " + output);
             } catch (PathNotFoundException e) {
