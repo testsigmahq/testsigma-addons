@@ -37,7 +37,6 @@ public class ExtractTextUsingJsonPathInJson extends WebAction {
     protected Result execute() throws NoSuchElementException {
         try {
             Result result = Result.SUCCESS;
-
             String jsonString = jsonText.getValue().toString();
             logger.info("JSON Data: " + jsonString);
 
