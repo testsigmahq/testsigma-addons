@@ -57,7 +57,13 @@ public class VerifyAllElementsHaveNonEmptyValue extends AndroidAction {
                     // Try getAttribute("value") as another fallback
                     elementValue = webElement.getAttribute("value");
                 }
-            } catch (Exception e) {
+                if (elementValue == null || elementValue.trim().isEmpty()) {
+                    // Accessibility label fallback for many Android widgets
+                    elementValue = webElement.getAttribute("contentDescription");
+                }
+                if (elementValue == null || elementValue.trim().isEmpty()) {
+                    elementValue = webElement.getAttribute("content-desc");
+                }            } catch (Exception e) {
                 logger.warn("Error getting value for element at index " + i + ": " + e.getMessage());
             }
             
