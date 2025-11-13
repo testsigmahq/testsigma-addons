@@ -21,8 +21,20 @@ public class HttpApiCallUtil {
 
     public String makeApiCall(String apiUri, String method, String queryParams, String requestBodyStr,
                               String authToken, String customHeaders) throws Exception {
+        // Validate required parameters
+        if (apiUri == null || apiUri.trim().isEmpty()) {
+            throw new IllegalArgumentException("API URI cannot be null or empty");
+        }
+        if (method == null || method.trim().isEmpty()) {
+            throw new IllegalArgumentException("HTTP method cannot be null or empty");
+        }
+
+        // Normalize method to uppercase
+        method = method.trim().toUpperCase();
+        apiUri = apiUri.trim();
+
         // Add query parameters if provided
-        if (queryParams != null) {
+        if (queryParams != null && !queryParams.trim().isEmpty()) {
             String queryString = buildQueryString(queryParams);
             if (!queryString.isEmpty()) {
                 apiUri += (apiUri.contains("?") ? "&" : "?") + queryString;
@@ -31,7 +43,7 @@ public class HttpApiCallUtil {
 
         Request.Builder requestBuilder = new Request.Builder().url(apiUri);
         // Add headers
-        addHeaders(requestBuilder,authToken, customHeaders);
+        addHeaders(requestBuilder, authToken, customHeaders);
 
         // Add request body for methods that support it
         RequestBody body = null;
@@ -57,14 +69,18 @@ public class HttpApiCallUtil {
     }
 
     private String buildQueryString(String queryParamsStr) throws Exception {
-        if (queryParamsStr == null || queryParamsStr.trim().isEmpty()) {
+        if (queryParamsStr == null) {
+            return "";
+        }
+        String trimmed = queryParamsStr.trim();
+        if (trimmed.isEmpty()) {
             return "";
         }
 
         // Try to parse as JSON first (key-value pairs)
         try {
             logger.info("Attempting to parse query parameters as JSON.");
-            ObjectNode paramsJson = (ObjectNode) mapper.readTree(queryParamsStr);
+            ObjectNode paramsJson = (ObjectNode) mapper.readTree(trimmed);
             StringBuilder queryBuilder = new StringBuilder();
             paramsJson.fields().forEachRemaining(entry -> {
                 if (queryBuilder.length() > 0) {
@@ -84,7 +100,7 @@ public class HttpApiCallUtil {
             // If not JSON, treat as URL-encoded query string
             logger.info("Warning: Could not parse query parameters as JSON: " + e.getMessage());
             logger.info("Using raw query parameters string.");
-            return queryParamsStr;
+            return trimmed;
         }
     }
 

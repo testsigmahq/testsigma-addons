@@ -33,17 +33,41 @@ public class GenericApiAction extends Hook {
         try {
             logger.info("Starting Generic API Call Hook execution.");
 
-            String apiUri = apiUrl.getValue().toString();
-            String method = httpMethod.getValue().toString().toUpperCase();
-            String query = (queryParams != null) ? queryParams.getValue().toString() : null;
-            String requestBodyStr = (requestBody != null) ? requestBody.getValue().toString() : null;
-            String authToken = (authorizationToken != null) ? authorizationToken.getValue().toString() : null;
-            String customHeaders = (headers != null) ? headers.getValue().toString() : null;
-            HttpApiCallUtil apiUtil = new HttpApiCallUtil(logger);
-            logger.info(String.format("received apiUri: %s, method: %s, query: %s, requestBody: %s, customHeaders: %s",
-                    apiUri, method, query, requestBodyStr, customHeaders));
+            // Safely extract values with null handling
+            String apiUri = getValueSafely(apiUrl);
+            String method = getValueSafely(httpMethod);
+            String query = getValueSafely(queryParams);
+            String requestBodyStr = getValueSafely(requestBody);
+            String authToken = getValueSafely(authorizationToken);
+            String customHeaders = getValueSafely(headers);
 
-            // call to api endpoint
+            // Validate required fields - only apiUrl and httpMethod are required
+            if (apiUri == null || apiUri.isEmpty()) {
+                String errorMsg = "API URL is required but was not provided.";
+                logger.info(errorMsg);
+                setErrorMessage(errorMsg);
+                return Result.FAILURE;
+            }
+
+            if (method == null || method.isEmpty()) {
+                String errorMsg = "HTTP method is required but was not provided.";
+                logger.info(errorMsg);
+                setErrorMessage(errorMsg);
+                return Result.FAILURE;
+            }
+
+            // Normalize method to uppercase (already trimmed by getValueSafely)
+            method = method.toUpperCase();
+
+            HttpApiCallUtil apiUtil = new HttpApiCallUtil(logger);
+            logger.info(String.format("Making API call with available details - apiUri: %s, method: %s, query: %s, requestBody: %s, authToken: %s, customHeaders: %s",
+                    apiUri, method, 
+                    query != null ? "provided" : "null", 
+                    requestBodyStr != null ? "provided" : "null",
+                    authToken != null ? "provided" : "null",
+                    customHeaders != null ? "provided" : "null"));
+
+            // call to api endpoint with available details
             String response = apiUtil.makeApiCall(apiUri, method, query, requestBodyStr, authToken, customHeaders);
             logger.info("API call successful. Response: " + response);
             setSuccessMessage("api Response: " + response);
@@ -52,6 +76,28 @@ public class GenericApiAction extends Hook {
             logger.info("API call failed: " + e.getMessage());
             setErrorMessage("Failed to make API call: " + e.getMessage());
             return Result.FAILURE;
+        }
+    }
+
+    /**
+     * Safely extracts value from TestData object, handling all null cases
+     * @param testData The TestData object to extract value from
+     * @return The trimmed string value, or null if testData or its value is null/empty
+     */
+    private String getValueSafely(com.testsigma.sdk.TestData testData) {
+        if (testData == null) {
+            return null;
+        }
+        try {
+            Object value = testData.getValue();
+            if (value == null) {
+                return null;
+            }
+            String strValue = value.toString().trim();
+            return strValue.isEmpty() ? null : strValue;
+        } catch (Exception e) {
+            logger.info("Error extracting value from TestData: " + e.getMessage());
+            return null;
         }
     }
 }
