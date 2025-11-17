@@ -124,4 +124,29 @@ public class DatabaseUtil {
 		}
 		return json.replaceAll("\\s+", "").trim();
 	}
+	
+	/**
+	 * Masks sensitive information in database connection URLs for logging
+	 * Masks passwords in JDBC URLs like: jdbc:postgresql://host:port/db?user=user&password=pass
+	 */
+	public String maskConnectionUrl(String url) {
+		if (url == null || url.isEmpty()) {
+			return url;
+		}
+		// Mask password in connection string
+		return url.replaceAll("(?i)(password|pwd)=[^&;\\s]+", "$1=***");
+	}
+	
+	/**
+	 * Masks potentially sensitive data in JSON strings for logging
+	 * Masks common sensitive field names like password, pwd, secret, token, etc.
+	 */
+	public String maskSensitiveJson(String json) {
+		if (json == null || json.isEmpty()) {
+			return json;
+		}
+		// Mask sensitive fields in JSON (password, pwd, secret, token, apiKey, etc.)
+		return json.replaceAll("(?i)\"(password|pwd|secret|token|apikey|apikey|auth|credential)\"\\s*:\\s*\"[^\"]*\"", 
+			"\"$1\":\"***\"");
+	}
 }

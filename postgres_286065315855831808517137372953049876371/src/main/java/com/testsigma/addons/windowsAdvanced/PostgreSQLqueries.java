@@ -1,7 +1,6 @@
 package com.testsigma.addons.windowsAdvanced;
 
 import com.testsigma.addons.postgresql.util.DatabaseUtil;
-import com.testsigma.addons.util.ScreenshotUtils;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
 import com.testsigma.sdk.WindowsAdvancedAction;
@@ -72,16 +71,12 @@ public class PostgreSQLqueries extends WindowsAdvancedAction {
 			}
 			setSuccessMessage(sb.toString());
 			logger.info(sb.toString());
-			ScreenshotUtils.captureAndUploadScreenshot(testStepResult, 
-					"postgresql_queries_screenshot", logger);
 		}
 		catch (Exception e){
 			String errorMessage = ExceptionUtils.getStackTrace(e);
 			result = com.testsigma.sdk.Result.FAILED;
 			setErrorMessage(errorMessage);
 			logger.warn(errorMessage);
-			ScreenshotUtils.captureAndUploadScreenshot(testStepResult, 
-					"postgresql_queries_failure_screenshot", logger);
 		}
 		return result;
 	}

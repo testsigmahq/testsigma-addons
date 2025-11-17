@@ -1,7 +1,6 @@
 package com.testsigma.addons.windowsAdvanced;
 
 import com.testsigma.addons.postgresql.util.DatabaseUtil;
-import com.testsigma.addons.util.ScreenshotUtils;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
 import com.testsigma.sdk.WindowsAdvancedAction;
@@ -77,16 +76,12 @@ public class PostgreSQLselect extends WindowsAdvancedAction {
 			runTimeData.setKey(testData3.getValue().toString());
 			setSuccessMessage("Successfully Executed Select Query and Resultset is : " +sb.toString());
 			logger.info("Successfully Executed Select Query and Resultset is : " +sb.toString());
-			ScreenshotUtils.captureAndUploadScreenshot(testStepResult, 
-					"postgresql_select_screenshot", logger);
 		}
 		catch (Exception e){
 			String errorMessage = ExceptionUtils.getStackTrace(e);
 			result = com.testsigma.sdk.Result.FAILED;
 			setErrorMessage(errorMessage);
 			logger.warn(errorMessage);
-			ScreenshotUtils.captureAndUploadScreenshot(testStepResult, 
-					"postgresql_select_failure_screenshot", logger);
 		}
 		return result;
 	}

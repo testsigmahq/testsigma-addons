@@ -1,7 +1,6 @@
 package com.testsigma.addons.windowsAdvanced;
 
 import com.testsigma.addons.postgresql.util.DatabaseUtil;
-import com.testsigma.addons.util.ScreenshotUtils;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
 import com.testsigma.sdk.WindowsAdvancedAction;
@@ -23,7 +22,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 @Action(actionText = "Execute PostgreSQL Select_Query on the connection DB_Connection_URL and verify output is Expected_Value",
 description = "This Action executes a given Select Query and validates the result(First cell data) aginst the expected value.",
 applicationType = ApplicationType.WINDOWS_ADVANCED,
-useCustomScreenshot = true)
+useCustomScreenshot = false)
 
 public class PostgreSQLselectvalidate extends WindowsAdvancedAction {
 
@@ -74,8 +73,7 @@ public class PostgreSQLselectvalidate extends WindowsAdvancedAction {
 				sb.append("<br>Actual output from query:"+sb.toString());
 				setSuccessMessage(sb.toString());
 				logger.info(sb.toString());
-				ScreenshotUtils.captureAndUploadScreenshot(testStepResult, 
-						"postgresql_select_validate_screenshot", logger);
+
 			}
 			else {
 				result = com.testsigma.sdk.Result.FAILED;
@@ -84,8 +82,7 @@ public class PostgreSQLselectvalidate extends WindowsAdvancedAction {
 				sb.append("Actual value from query execution:"+sb.toString() + "<br>");
 				setErrorMessage(sb.toString());
 				logger.warn(sb.toString());
-				ScreenshotUtils.captureAndUploadScreenshot(testStepResult, 
-						"postgresql_select_validate_failure_screenshot", logger);
+
 			}
 		}
 		catch (Exception e){
@@ -94,8 +91,6 @@ public class PostgreSQLselectvalidate extends WindowsAdvancedAction {
 			result = com.testsigma.sdk.Result.FAILED;
 			setErrorMessage(sb.toString());
 			logger.warn(sb.toString());
-			ScreenshotUtils.captureAndUploadScreenshot(testStepResult, 
-					"postgresql_select_validate_failure_screenshot", logger);
 		}
 		return result;
 	}

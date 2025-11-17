@@ -1,7 +1,6 @@
 package com.testsigma.addons.windowsAdvanced;
 
 import com.testsigma.addons.postgresql.util.DatabaseUtil;
-import com.testsigma.addons.util.ScreenshotUtils;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
 import com.testsigma.sdk.WindowsAdvancedAction;
@@ -74,8 +73,6 @@ public class PostgreSQLselectvalidateFull extends WindowsAdvancedAction {
 				sb.append("<br>Actual JSON:<br><pre>").append(actualJson).append("</pre>");
 				setSuccessMessage(sb.toString());
 				logger.info(sb.toString());
-				ScreenshotUtils.captureAndUploadScreenshot(testStepResult, 
-						"postgresql_select_validate_full_screenshot", logger);
 			}
 			else {
 				result = com.testsigma.sdk.Result.FAILED;
@@ -84,8 +81,6 @@ public class PostgreSQLselectvalidateFull extends WindowsAdvancedAction {
 				sb.append("<br>Actual JSON:<br><pre>").append(actualJson).append("</pre>");
 				setErrorMessage(sb.toString());
 				logger.warn(sb.toString());
-				ScreenshotUtils.captureAndUploadScreenshot(testStepResult, 
-						"postgresql_select_validate_full_failure_screenshot", logger);
 			}
 		}
 		catch (Exception e){
@@ -94,8 +89,6 @@ public class PostgreSQLselectvalidateFull extends WindowsAdvancedAction {
 			result = com.testsigma.sdk.Result.FAILED;
 			setErrorMessage(sb.toString());
 			logger.warn(sb.toString());
-			ScreenshotUtils.captureAndUploadScreenshot(testStepResult, 
-					"postgresql_select_validate_full_failure_screenshot", logger);
 		}
 		return result;
 	}

@@ -1,7 +1,6 @@
 package com.testsigma.addons.windowsAdvanced;
 
 import com.testsigma.addons.postgresql.util.DatabaseUtil;
-import com.testsigma.addons.util.ScreenshotUtils;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
 import com.testsigma.sdk.WindowsAdvancedAction;
@@ -22,7 +21,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 @Action(actionText = "Execute PostgreSQL Query on the Connection DB_Connection_URL and verify affected rows count is Row-Count",
 description = "This Action executes given SQL query and validates the affected rows.",
 applicationType = ApplicationType.WINDOWS_ADVANCED,
-useCustomScreenshot = true)
+useCustomScreenshot = false)
 
 public class PostgreSQLqueriesValidate extends WindowsAdvancedAction {
 
@@ -69,9 +68,7 @@ public class PostgreSQLqueriesValidate extends WindowsAdvancedAction {
 				sb.append("Affected row count is matching with expected value." + "<br>");
 				setSuccessMessage(sb.toString());
 				logger.info(sb.toString());
-				ScreenshotUtils.captureAndUploadScreenshot(testStepResult, 
-						"postgresql_queries_validate_screenshot", logger);
-			}
+				}
 			else {
 				result = com.testsigma.sdk.Result.FAILED;
 				sb.append("The affected rows does not match with expected rows:" + "<br>");
@@ -79,9 +76,7 @@ public class PostgreSQLqueriesValidate extends WindowsAdvancedAction {
 				sb.append("Actual affected rows from query execution:"+rowsUpdatedOrFetched + "<br>");
 				setErrorMessage(sb.toString());
 				logger.warn(sb.toString());
-				ScreenshotUtils.captureAndUploadScreenshot(testStepResult, 
-						"postgresql_queries_validate_failure_screenshot", logger);
-			}
+				}
 		}
 		catch (Exception e){
 			String errorMessage = ExceptionUtils.getStackTrace(e);
@@ -89,9 +84,7 @@ public class PostgreSQLqueriesValidate extends WindowsAdvancedAction {
 			result = com.testsigma.sdk.Result.FAILED;
 			setErrorMessage(sb.toString());
 			logger.warn(sb.toString());
-			ScreenshotUtils.captureAndUploadScreenshot(testStepResult, 
-					"postgresql_queries_validate_failure_screenshot", logger);
-		}
+			}
 		return result;
 	}
 }
