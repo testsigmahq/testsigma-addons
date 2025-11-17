@@ -16,8 +16,6 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang3.exception.ExceptionUtils;
-
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Action(actionText = "Execute PostgreSQL Select_Query on the connection DB_Connection_URL and verify full output matches Expected_JSON",
@@ -38,23 +36,24 @@ public class PostgreSQLselectvalidateFull extends WindowsAdvancedAction {
 	
 	@TestStepResult
 	private com.testsigma.sdk.TestStepResult testStepResult;
-	
-	StringBuffer sb = new StringBuffer();
 
 	@Override
 	protected Result execute() {
 		Result result = Result.SUCCESS;
-		logger.info("=== Execute PostgreSQL Select Validate Full: Starting Execution ===");
-		logger.info("Executing the Select Query:"+testData1.getValue().toString());
-		logger.info("Connection URL:"+testData2.getValue().toString());
-		logger.info("Expected JSON:"+testData3.getValue().toString());
-
 		DatabaseUtil databaseUtil = new DatabaseUtil();
-		try{
-			Connection connection = databaseUtil.getConnection(testData2.getValue().toString());
-			Statement stmt = connection.createStatement();
-			String query = testData1.getValue().toString();
-			ResultSet resultSet = stmt.executeQuery(query);
+		String connectionUrl = testData2.getValue().toString();
+		String query = testData1.getValue().toString();
+		String expectedJsonInput = testData3.getValue().toString();
+		
+		logger.info("=== Execute PostgreSQL Select Validate Full: Starting Execution ===");
+		logger.info("Initiating execution");
+		logger.info("Executing the Select Query");
+		logger.info("Connection URL:" + databaseUtil.maskConnectionUrl(connectionUrl));
+		logger.info("Expected JSON provided");
+
+		try (Connection connection = databaseUtil.getConnection(connectionUrl);
+			 Statement stmt = connection.createStatement();
+			 ResultSet resultSet = stmt.executeQuery(query)) {
 			
 			// Convert result set to List of Maps using util method
 			List<Map<String, Object>> resultRows = databaseUtil.resultSetToList(resultSet);
@@ -63,34 +62,37 @@ public class PostgreSQLselectvalidateFull extends WindowsAdvancedAction {
 			String actualJson = databaseUtil.convertToJson(resultRows);
 			
 			// Normalize expected JSON (remove whitespace for comparison)
-			String expectedJson = databaseUtil.normalizeJson(testData3.getValue().toString());
+			String expectedJson = databaseUtil.normalizeJson(expectedJsonInput);
 			String normalizedActualJson = databaseUtil.normalizeJson(actualJson);
 			
 			// Compare JSON strings
 			if(expectedJson.equals(normalizedActualJson)) {
-				sb.append("<br>The output from the Select Query matches the expected JSON.");
-				sb.append("<br>Expected JSON:<br><pre>").append(testData3.getValue().toString()).append("</pre>");
-				sb.append("<br>Actual JSON:<br><pre>").append(actualJson).append("</pre>");
-				setSuccessMessage(sb.toString());
-				logger.info(sb.toString());
+				StringBuilder message = new StringBuilder();
+				message.append("<br>The output from the Select Query matches the expected JSON.");
+				message.append("<br>Expected JSON:<br><pre>")
+				       .append(databaseUtil.maskSensitiveJson(expectedJsonInput)).append("</pre>");
+				message.append("<br>Actual JSON:<br><pre>")
+				       .append(databaseUtil.maskSensitiveJson(actualJson)).append("</pre>");
+				setSuccessMessage(message.toString());
+				logger.info("JSON validation passed: output matches expected JSON");
 			}
 			else {
 				result = com.testsigma.sdk.Result.FAILED;
-				sb.append("The query output does not match the expected JSON:" + "<br>");
-				sb.append("Expected JSON:<br><pre>").append(testData3.getValue().toString()).append("</pre>");
-				sb.append("<br>Actual JSON:<br><pre>").append(actualJson).append("</pre>");
-				setErrorMessage(sb.toString());
-				logger.warn(sb.toString());
+				StringBuilder message = new StringBuilder();
+				message.append("The query output does not match the expected JSON:").append("<br>");
+				message.append("Expected JSON:<br><pre>")
+				       .append(databaseUtil.maskSensitiveJson(expectedJsonInput)).append("</pre>");
+				message.append("<br>Actual JSON:<br><pre>")
+				       .append(databaseUtil.maskSensitiveJson(actualJson)).append("</pre>");
+				setErrorMessage(message.toString());
+				logger.warn("JSON validation failed: output does not match expected JSON");
 			}
 		}
 		catch (Exception e){
-			String errorMessage = ExceptionUtils.getStackTrace(e);
-			sb.append("<br>").append(errorMessage);
 			result = com.testsigma.sdk.Result.FAILED;
-			setErrorMessage(sb.toString());
-			logger.warn(sb.toString());
+			setErrorMessage("Error executing query: " + e.getMessage());
+			logger.warn("Error executing query: " + e.getMessage());
 		}
 		return result;
 	}
 }
-

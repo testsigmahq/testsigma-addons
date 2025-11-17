@@ -15,14 +15,12 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Statement;
 
-import org.apache.commons.lang3.exception.ExceptionUtils;
-
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Action(actionText = "Execute PostgreSQL Select_Query on the connection DB_Connection_URL and verify output is Expected_Value",
 description = "This Action executes a given Select Query and validates the result(First cell data) aginst the expected value.",
 applicationType = ApplicationType.WINDOWS_ADVANCED,
-useCustomScreenshot = false)
+useCustomScreenshot = true)
 
 public class PostgreSQLselectvalidate extends WindowsAdvancedAction {
 
@@ -35,64 +33,65 @@ public class PostgreSQLselectvalidate extends WindowsAdvancedAction {
 	
 	@TestStepResult
 	private com.testsigma.sdk.TestStepResult testStepResult;
-	
-	StringBuffer sb = new StringBuffer();
 
 	@Override
 	protected Result execute() {
 		Result result = Result.SUCCESS;
-		logger.info("=== Execute PostgreSQL Select Validate: Starting Execution ===");
-		logger.info("Executing the Select Query:"+testData1.getValue().toString());
-		logger.info("Connection URL:"+testData2.getValue().toString());
-		logger.info("Expected Value:"+testData3.getValue().toString());
-
 		DatabaseUtil databaseUtil = new DatabaseUtil();
-		try{
-			Connection connection = databaseUtil.getConnection(testData2.getValue().toString());
-			Statement stmt = connection.createStatement();
-			String query = testData1.getValue().toString();
-			ResultSet resultSet = stmt.executeQuery(query);
+		String connectionUrl = testData2.getValue().toString();
+		String query = testData1.getValue().toString();
+		String expectedValue = testData3.getValue().toString();
+		
+		logger.info("=== Execute PostgreSQL Select Validate: Starting Execution ===");
+		logger.info("Initiating execution");
+		logger.info("Executing the Select Query");
+		logger.info("Connection URL:" + databaseUtil.maskConnectionUrl(connectionUrl));
+		logger.info("Expected Value provided");
+
+		try (Connection connection = databaseUtil.getConnection(connectionUrl);
+			 Statement stmt = connection.createStatement();
+			 ResultSet resultSet = stmt.executeQuery(query)) {
+			
 			ResultSetMetaData rsmd = resultSet.getMetaData();
-			int columnNo = resultSet.getMetaData().getColumnCount();
-			for (int i = 1; i <= columnNo; i++) {
-		        	}
+			int columnNo = rsmd.getColumnCount();
+			StringBuilder sb = new StringBuilder();
+			
 			while (resultSet.next()) {
-				 for (int j = 1; j <= columnNo; j++) {
-			           if (j > 1) sb.append(", ");
-			           String columnValue = resultSet.getString(j);
-			           if (resultSet.wasNull()) {
-			        	   sb.append("");
-			        	}
-			           sb.append(columnValue);
-				 }
+				for (int j = 1; j <= columnNo; j++) {
+					if (j > 1) sb.append(", ");
+					String columnValue = resultSet.getString(j);
+					if (resultSet.wasNull()) {
+						sb.append("");
+					} else {
+						sb.append(columnValue);
+					}
+				}
 			}
-
-			if(testData3.getValue().toString().equals(sb.toString())) {
-				sb.append("<br>The output from the Select Query is matching with expected value.");
-				sb.append("<br>Expected value:"+testData3.getValue().toString());
-				sb.append("<br>Actual output from query:"+sb.toString());
-				setSuccessMessage(sb.toString());
-				logger.info(sb.toString());
-
+			
+			String actualValue = sb.toString();
+			if(expectedValue.equals(actualValue)) {
+				StringBuilder message = new StringBuilder();
+				message.append("<br>The output from the Select Query is matching with expected value.");
+				message.append("<br>Expected value:").append(expectedValue);
+				message.append("<br>Actual output from query:").append(actualValue);
+				setSuccessMessage(message.toString());
+				logger.info("Validation passed: output matches expected value");
 			}
 			else {
 				result = com.testsigma.sdk.Result.FAILED;
-				sb.append("The selected query value not match with expected rows:" + "<br>");
-				sb.append("Expected value of select query:"+testData3.getValue().toString() + "<br>");
-				sb.append("Actual value from query execution:"+sb.toString() + "<br>");
-				setErrorMessage(sb.toString());
-				logger.warn(sb.toString());
-
+				StringBuilder message = new StringBuilder();
+				message.append("The selected query value not match with expected rows:").append("<br>");
+				message.append("Expected value of select query:").append(expectedValue).append("<br>");
+				message.append("Actual value from query execution:").append(actualValue).append("<br>");
+				setErrorMessage(message.toString());
+				logger.warn("Validation failed: output does not match expected value");
 			}
 		}
 		catch (Exception e){
-			String errorMessage = ExceptionUtils.getStackTrace(e);
-			sb.append("<br>"+errorMessage);
 			result = com.testsigma.sdk.Result.FAILED;
-			setErrorMessage(sb.toString());
-			logger.warn(sb.toString());
+			setErrorMessage("Error executing query: " + e.getMessage());
+			logger.warn("Error executing query: " + e.getMessage());
 		}
 		return result;
 	}
 }
-

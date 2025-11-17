@@ -14,14 +14,12 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
-import org.apache.commons.lang3.exception.ExceptionUtils;
-
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Action(actionText = "Execute PostgreSQL Query on the Connection DB_Connection_URL and verify affected rows count is Row-Count",
 description = "This Action executes given SQL query and validates the affected rows.",
 applicationType = ApplicationType.WINDOWS_ADVANCED,
-useCustomScreenshot = false)
+useCustomScreenshot = true)
 
 public class PostgreSQLqueriesValidate extends WindowsAdvancedAction {
 
@@ -34,58 +32,73 @@ public class PostgreSQLqueriesValidate extends WindowsAdvancedAction {
 	
 	@TestStepResult
 	private com.testsigma.sdk.TestStepResult testStepResult;
-	
-	StringBuffer sb = new StringBuffer();
 
 	@Override
 	protected Result execute() {
-		logger.info("=== Execute PostgreSQL Query Validate: Starting Execution ===");
-		logger.info("Executing the Query:"+testData1.getValue().toString());
-		logger.info("Connection URL:"+testData2.getValue().toString());
-		logger.info("Expected Row Count:"+testData3.getValue().toString());
-
 		Result result = Result.SUCCESS;
-		logger.info("Initiating execution");
 		DatabaseUtil databaseUtil = new DatabaseUtil();
-		int rowsUpdatedOrFetched = 0;
-		try{
-			Connection connection = databaseUtil.getConnection(testData2.getValue().toString());
-			Statement stmt = connection.createStatement();
-			String query = testData1.getValue().toString();
-			if(query.trim().toUpperCase().startsWith("SELECT")) {
-				ResultSet resultSet = stmt.executeQuery(query);
-				while (resultSet.next()){
-					resultSet.getObject(1).toString();
-					rowsUpdatedOrFetched ++;
-				}
-				sb.append("Successfully Executed Database Query and Rows fetched from DB : " +rowsUpdatedOrFetched + "<br>");
-			}else {
-				rowsUpdatedOrFetched = stmt.executeUpdate(query);
-				sb.append("Successfully Executed Database Query, No. of rows affected in DB : " +rowsUpdatedOrFetched + "<br>");
+		String connectionUrl = testData2.getValue().toString();
+		String query = testData1.getValue().toString();
+		int expectedRowCount = Integer.parseInt(testData3.getValue().toString());
+		
+		logger.info("=== Execute PostgreSQL Query Validate: Starting Execution ===");
+		logger.info("Initiating execution");
+		logger.info("Executing the Query");
+		logger.info("Connection URL:" + databaseUtil.maskConnectionUrl(connectionUrl));
+		logger.info("Expected Row Count:" + expectedRowCount);
 
+		int rowsUpdatedOrFetched = 0;
+		try (Connection connection = databaseUtil.getConnection(connectionUrl);
+			 Statement stmt = connection.createStatement()) {
+			
+			if(query.trim().toUpperCase().startsWith("SELECT")) {
+				try (ResultSet resultSet = stmt.executeQuery(query)) {
+					while (resultSet.next()){
+						resultSet.getObject(1).toString();
+						rowsUpdatedOrFetched++;
+					}
+				}
+				StringBuilder sb = new StringBuilder();
+				sb.append("Successfully Executed Database Query and Rows fetched from DB : ")
+				  .append(rowsUpdatedOrFetched).append("<br>");
+				
+				if(rowsUpdatedOrFetched == expectedRowCount) {
+					sb.append("Affected row count is matching with expected value.").append("<br>");
+					setSuccessMessage(sb.toString());
+					logger.info("Row count validation passed: " + rowsUpdatedOrFetched);
+				} else {
+					result = com.testsigma.sdk.Result.FAILED;
+					sb.append("The affected rows does not match with expected rows:").append("<br>");
+					sb.append("Expected no. of affected rows:").append(expectedRowCount).append("<br>");
+					sb.append("Actual affected rows from query execution:").append(rowsUpdatedOrFetched).append("<br>");
+					setErrorMessage(sb.toString());
+					logger.warn("Row count mismatch. Expected: " + expectedRowCount + ", Actual: " + rowsUpdatedOrFetched);
+				}
+			} else {
+				rowsUpdatedOrFetched = stmt.executeUpdate(query);
+				StringBuilder sb = new StringBuilder();
+				sb.append("Successfully Executed Database Query, No. of rows affected in DB : ")
+				  .append(rowsUpdatedOrFetched).append("<br>");
+				
+				if(rowsUpdatedOrFetched == expectedRowCount) {
+					sb.append("Affected row count is matching with expected value.").append("<br>");
+					setSuccessMessage(sb.toString());
+					logger.info("Row count validation passed: " + rowsUpdatedOrFetched);
+				} else {
+					result = com.testsigma.sdk.Result.FAILED;
+					sb.append("The affected rows does not match with expected rows:").append("<br>");
+					sb.append("Expected no. of affected rows:").append(expectedRowCount).append("<br>");
+					sb.append("Actual affected rows from query execution:").append(rowsUpdatedOrFetched).append("<br>");
+					setErrorMessage(sb.toString());
+					logger.warn("Row count mismatch. Expected: " + expectedRowCount + ", Actual: " + rowsUpdatedOrFetched);
+				}
 			}
-			if(rowsUpdatedOrFetched == Integer.parseInt(testData3.getValue().toString())) {
-				sb.append("Affected row count is matching with expected value." + "<br>");
-				setSuccessMessage(sb.toString());
-				logger.info(sb.toString());
-				}
-			else {
-				result = com.testsigma.sdk.Result.FAILED;
-				sb.append("The affected rows does not match with expected rows:" + "<br>");
-				sb.append("Expected no. of affected rows:"+testData3.getValue().toString() + "<br>");
-				sb.append("Actual affected rows from query execution:"+rowsUpdatedOrFetched + "<br>");
-				setErrorMessage(sb.toString());
-				logger.warn(sb.toString());
-				}
 		}
 		catch (Exception e){
-			String errorMessage = ExceptionUtils.getStackTrace(e);
-			sb.append("<br>"+errorMessage);
 			result = com.testsigma.sdk.Result.FAILED;
-			setErrorMessage(sb.toString());
-			logger.warn(sb.toString());
-			}
+			setErrorMessage("Error executing query: " + e.getMessage());
+			logger.warn("Error executing query: " + e.getMessage());
+		}
 		return result;
 	}
 }
-
