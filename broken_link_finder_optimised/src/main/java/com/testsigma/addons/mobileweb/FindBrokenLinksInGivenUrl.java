@@ -32,9 +32,8 @@ public class FindBrokenLinksInGivenUrl extends WebAction {
                 logger.warn("Invalid connection timeout value provided: " + testData2.getValue().toString() +
                         ". Using default timeout.");
             }
-            assert currentUrl != null;
             String urlToCheck = testData.getValue().toString();
-            if (!currentUrl.equals(urlToCheck)) {
+            if (currentUrl == null || !currentUrl.equals(urlToCheck)) {
                 driver.get(urlToCheck);
             }
             // call util to find broken links (depth=0 means only current page, no child pages)

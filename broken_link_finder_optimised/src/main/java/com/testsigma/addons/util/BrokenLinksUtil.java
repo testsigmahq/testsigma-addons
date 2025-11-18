@@ -21,6 +21,7 @@ public class BrokenLinksUtil {
         this.driver = driver;
     }
     private static final int CONNECTION_TIMEOUT = 30000;
+    private static final int MAX_REDIRECTS = 3;
 
     /**
      * Finds all broken links in the given URL and its child pages up to the specified depth
@@ -143,29 +144,46 @@ public class BrokenLinksUtil {
     }
 
     /**
-     * Checks if a link is broken
+     * Checks if a link is broken.
      */
     private boolean isBrokenLink(String url, int connectionTimeout) {
+        return isBrokenLink(url, connectionTimeout, 0);
+    }
+
+    /**
+     * Internal helper that tracks redirect depth to avoid infinite loops.
+     */
+    private boolean isBrokenLink(String url, int connectionTimeout, int redirectDepth) {
+        if (redirectDepth > MAX_REDIRECTS) {
+            logger.warn("Max redirect depth exceeded while checking link: " + url);
+            return true;
+        }
+        HttpURLConnection connection = null;
         try {
-            HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+            connection = (HttpURLConnection) new URL(url).openConnection();
             connection.setRequestMethod("HEAD");
             connection.setConnectTimeout(connectionTimeout);
             connection.setReadTimeout(connectionTimeout);
             connection.setInstanceFollowRedirects(false);
             int responseCode = connection.getResponseCode();
-            
-            // Follow redirects manually
+
+            // Follow redirects manually, resolving relative Location headers
             if (responseCode >= 300 && responseCode < 400) {
                 String redirectUrl = connection.getHeaderField("Location");
-                if (redirectUrl != null) {
-                    return isBrokenLink(redirectUrl, connectionTimeout);
+                if (redirectUrl != null && !redirectUrl.isEmpty()) {
+                    String resolvedRedirect = resolveUrl(redirectUrl, url);
+                    return isBrokenLink(resolvedRedirect, connectionTimeout, redirectDepth + 1);
                 }
             }
-            
+
             return responseCode >= 400;
         } catch (Exception e) {
             logger.warn("Error checking link: " + url + " - " + e.getMessage());
             return true; // Consider it broken if we can't check it
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
     }
 
