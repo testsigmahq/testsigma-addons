@@ -71,11 +71,11 @@ public class ExcelFileUtils {
      */
     private String getFileExtensionFromUrl(String url) {
         String lowerUrl = url.toLowerCase();
-        if (lowerUrl.endsWith(".xlsx")) {
+        if (lowerUrl.contains(".xlsx")) {
             return ".xlsx";
-        } else if (lowerUrl.endsWith(".xls")) {
+        } else if (lowerUrl.contains(".xls")) {
             return ".xls";
-        } else if (lowerUrl.endsWith(".csv")) {
+        } else if (lowerUrl.contains(".csv")) {
             return ".csv";
         }
         // Default to .csv if extension cannot be determined
@@ -181,11 +181,11 @@ public class ExcelFileUtils {
         String fileName = file.getName().toLowerCase();
 
         // Determine file type and process accordingly
-        if (fileName.endsWith(".csv")) {
+        if (fileName.contains(".csv")) {
             return convertCsvRowToJson(file.getAbsolutePath(), rowNumber);
-        } else if (fileName.endsWith(".xlsx")) {
+        } else if (fileName.contains(".xlsx")) {
             return convertExcelRowToJson(file.getAbsolutePath(), rowNumber, true);
-        } else if (fileName.endsWith(".xls")) {
+        } else if (fileName.contains(".xls")) {
             return convertExcelRowToJson(file.getAbsolutePath(), rowNumber, false);
         } else {
             throw new IOException("Unsupported file format. Supported formats: .csv, .xls, .xlsx");
