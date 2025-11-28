@@ -34,6 +34,7 @@ public class Oraclequeries extends WebAction {
 		DatabaseUtil databaseUtil = new DatabaseUtil();
 		Connection connection = null;
 		Statement stmt = null;
+		CallableStatement callableStmt = null;
 		try {
 			connection = databaseUtil.getConnection(testData2.getValue().toString());
 			if (connection == null) {
@@ -42,27 +43,84 @@ public class Oraclequeries extends WebAction {
 				return result;
 			}
 
-			stmt = connection.createStatement();
-			String query = testData1.getValue().toString();
-			ResultSet resultSet = stmt.executeQuery(query);
-			ResultSetMetaData rsmd = resultSet.getMetaData();
-			int columnNo = resultSet.getMetaData().getColumnCount();
-			sb.append("Successfully Executed Query and Resultset is : " + "<br>");
-			for (int i = 1; i <= columnNo; i++) {
-				sb.append(rsmd.getColumnName(i));
-				sb.append(", ");
-			}
-			sb.append("<br>");
-			while (resultSet.next()) {
-				for (int j = 1; j <= columnNo; j++) {
-					if (j > 1) sb.append(", ");
-					String columnValue = resultSet.getString(j);
-					if (resultSet.wasNull()) {
-						sb.append("");
+			String query = testData1.getValue().toString().trim();
+			String upper = query.toUpperCase();
+			StringBuilder sb = new StringBuilder();
+
+			// Check if it's a stored procedure call
+			boolean isProcedure = upper.startsWith("CALL") || 
+								  upper.startsWith("EXEC ") || 
+								  upper.startsWith("EXECUTE ") ||
+								  (upper.startsWith("BEGIN") && upper.contains("END"));
+
+			if (isProcedure) {
+				// Handle stored procedure using CallableStatement
+				callableStmt = connection.prepareCall(query);
+				boolean hasResultSet = callableStmt.execute();
+				
+				if (hasResultSet) {
+					// Procedure returned a ResultSet
+					ResultSet resultSet = callableStmt.getResultSet();
+					ResultSetMetaData rsmd = resultSet.getMetaData();
+					int columnNo = rsmd.getColumnCount();
+
+					sb.append("Successfully Executed Procedure and Resultset is : <br>");
+
+					// print column names
+					for (int i = 1; i <= columnNo; i++) {
+						sb.append(rsmd.getColumnName(i)).append(", ");
 					}
-					sb.append(columnValue);
+					sb.append("<br>");
+
+					// print rows
+					while (resultSet.next()) {
+						for (int j = 1; j <= columnNo; j++) {
+							if (j > 1) sb.append(", ");
+							String columnValue = resultSet.getString(j);
+							if (resultSet.wasNull()) columnValue = "";
+							sb.append(columnValue);
+						}
+						sb.append("<br>");
+					}
+				} else {
+					// Procedure executed but no ResultSet
+					int updateCount = callableStmt.getUpdateCount();
+					sb.append("Procedure executed successfully.");
+					if (updateCount >= 0) {
+						sb.append(" Rows affected: ").append(updateCount);
+					}
+				}
+			} else if (upper.startsWith("SELECT")) {
+				// Handle SELECT queries
+				stmt = connection.createStatement();
+				ResultSet resultSet = stmt.executeQuery(query);
+				ResultSetMetaData rsmd = resultSet.getMetaData();
+				int columnNo = rsmd.getColumnCount();
+
+				sb.append("Successfully Executed Query and Resultset is : <br>");
+
+				// print column names
+				for (int i = 1; i <= columnNo; i++) {
+					sb.append(rsmd.getColumnName(i)).append(", ");
 				}
 				sb.append("<br>");
+
+				// print rows
+				while (resultSet.next()) {
+					for (int j = 1; j <= columnNo; j++) {
+						if (j > 1) sb.append(", ");
+						String columnValue = resultSet.getString(j);
+						if (resultSet.wasNull()) columnValue = "";
+						sb.append(columnValue);
+					}
+					sb.append("<br>");
+				}
+
+			} else {
+				// INSERT / UPDATE / DELETE / DDL
+				stmt = connection.createStatement();
+				int count = stmt.executeUpdate(query);
+				sb.append("Query executed successfully. Rows affected: ").append(count);
 			}
 			setSuccessMessage(sb.toString());
 			logger.info(sb.toString());
@@ -72,6 +130,14 @@ public class Oraclequeries extends WebAction {
 			setErrorMessage(errorMessage);
 			logger.warn(errorMessage);
 		} finally {
+			try {
+				if (callableStmt != null) {
+					callableStmt.close();
+				}
+			} catch (SQLException e) {
+				logger.warn("Error closing callable statement: " + e.getMessage() + e);
+			}
+			
 			try {
 				if (stmt != null) {
 					stmt.close();
