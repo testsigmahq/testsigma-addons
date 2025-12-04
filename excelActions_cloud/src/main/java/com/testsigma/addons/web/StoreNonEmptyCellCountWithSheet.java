@@ -8,6 +8,7 @@ import com.testsigma.sdk.annotation.TestData;
 import lombok.Data;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -40,40 +41,40 @@ public class StoreNonEmptyCellCountWithSheet extends WebAction {
 
     @Override
     public com.testsigma.sdk.Result execute() {
-        com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
         logger.info("Initiating execution");
         logger.info("File URL: " + fileUrlData.getValue().toString());
         logger.info("Sheet name or index: " + sheetNameOrIndex.getValue().toString());
 
         try {
-                File excelFile = downloadFileFromUrl(fileUrlData.getValue().toString());
-                logger.info("Opening workbook");
-                FileInputStream inputStream = new FileInputStream(excelFile);
-                XSSFWorkbook workbook = new XSSFWorkbook(inputStream);
-
-            logger.info("Successfully opened workbook");
-            
-            // Get sheet by name or index
-            XSSFSheet sheet = getSheetByNameOrIndex(workbook, sheetNameOrIndex.getValue().toString());
-            if (sheet == null) {
-                setErrorMessage("Sheet not found. Please check the sheet name or index.");
-                return com.testsigma.sdk.Result.FAILED;
+            File excelFile = downloadFileFromUrl(fileUrlData.getValue().toString());
+            logger.info("Opening workbook");
+            try (FileInputStream inputStream = new FileInputStream(excelFile);
+                 XSSFWorkbook workbook = new XSSFWorkbook(inputStream)) {
+                
+                logger.info("Successfully opened workbook");
+                
+                // Get sheet by name or index
+                XSSFSheet sheet = getSheetByNameOrIndex(workbook, sheetNameOrIndex.getValue().toString());
+                if (sheet == null) {
+                    setErrorMessage("Sheet not found. Please check the sheet name or index.");
+                    return com.testsigma.sdk.Result.FAILED;
+                }
+                
+                logger.info("Processing sheet: " + sheet.getSheetName());
+                String countType = testData.getValue().toString();
+                logger.info("Count type: " + countType);
+                int calculatedCount = calculateExcelDataCount(countType, sheet);
+                logger.info("Calculated count: " + calculatedCount);
+                
+                String variableName = runtimeVariableName.getValue().toString();
+                runTimeData.setKey(variableName);
+                runTimeData.setValue(String.valueOf(calculatedCount));
+                logger.info("runtime data: " + runTimeData.getValue());
+                
+                setSuccessMessage("Successfully stored the count of non-empty " + countType + " from sheet '" + 
+                        sheet.getSheetName() + "' to " + variableName + " = " + calculatedCount);
+                return com.testsigma.sdk.Result.SUCCESS;
             }
-            
-            logger.info("Processing sheet: " + sheet.getSheetName());
-            String countType = testData.getValue().toString();
-            logger.info("Count type: " + countType);
-            int calculatedCount = calculateExcelDataCount(countType, sheet);
-            logger.info("Calculated count: " + calculatedCount);
-            
-            String variableName = runtimeVariableName.getValue().toString();
-            runTimeData.setKey(variableName);
-            runTimeData.setValue(String.valueOf(calculatedCount));
-            logger.info("runtime data: " + runTimeData.getValue());
-            
-            setSuccessMessage("Successfully stored the count of non-empty " + countType + " from sheet '" + 
-                    sheet.getSheetName() + "' to " + variableName + " = " + calculatedCount);
-            return result;
         } catch (Exception e) {
             logger.info("Failed to read the excel file: " + ExceptionUtils.getStackTrace(e));
             setErrorMessage("Failed to read the excel file: " + ExceptionUtils.getStackTrace(e));

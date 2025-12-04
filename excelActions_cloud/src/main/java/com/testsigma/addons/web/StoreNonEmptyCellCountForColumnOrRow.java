@@ -43,7 +43,6 @@ public class StoreNonEmptyCellCountForColumnOrRow extends WebAction {
 
     @Override
     public com.testsigma.sdk.Result execute() {
-        com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
         logger.info("Initiating execution");
         logger.info("File URL: " + fileUrlData.getValue().toString());
         logger.info("Sheet name or index: " + sheetNameOrIndex.getValue().toString());
@@ -53,60 +52,61 @@ public class StoreNonEmptyCellCountForColumnOrRow extends WebAction {
         try {
             File excelFile = downloadFileFromUrl(fileUrlData.getValue().toString());
             logger.info("Opening workbook");
-            FileInputStream inputStream = new FileInputStream(excelFile);
-            XSSFWorkbook workbook = new XSSFWorkbook(inputStream);
-
-            logger.info("Successfully opened workbook");
-            
-            // Get sheet by name or index
-            XSSFSheet sheet = getSheetByNameOrIndex(workbook, sheetNameOrIndex.getValue().toString());
-            if (sheet == null) {
-                setErrorMessage("Sheet not found. Please check the sheet name or index.");
-                return com.testsigma.sdk.Result.FAILED;
-            }
-            
-            logger.info("Processing sheet: " + sheet.getSheetName());
-            String nameOrIndexStr = nameOrIndex.getValue().toString().trim();
-            int calculatedCount;
-            
-            if(columnOrRowType.getValue().toString().equalsIgnoreCase("Column")) {
-                // Handle column: can be column number, column name (A, B, AA), or column header name
-                int columnIndex = getColumnIndex(sheet, nameOrIndexStr);
-                if (columnIndex < 0) {
-                    setErrorMessage("Column not found: " + nameOrIndexStr + ". Please provide a valid column number " +
-                            "(1-based), column name (A, B, AA), or column header name.");
+            try (FileInputStream inputStream = new FileInputStream(excelFile);
+                 XSSFWorkbook workbook = new XSSFWorkbook(inputStream)) {
+                
+                logger.info("Successfully opened workbook");
+                
+                // Get sheet by name or index
+                XSSFSheet sheet = getSheetByNameOrIndex(workbook, sheetNameOrIndex.getValue().toString());
+                if (sheet == null) {
+                    setErrorMessage("Sheet not found. Please check the sheet name or index.");
                     return com.testsigma.sdk.Result.FAILED;
                 }
-                logger.info("Using column index: " + columnIndex + " (0-based)");
-                calculatedCount = countNonEmptyCellsInColumn(sheet, columnIndex);
-            } else {
-                // It's a row index
-                try {
-                    int rowIndex = Integer.parseInt(nameOrIndexStr);
-                    if (rowIndex < 0) {
-                        setErrorMessage("Row index must be non-negative. Provided: " + rowIndex);
+                
+                logger.info("Processing sheet: " + sheet.getSheetName());
+                String nameOrIndexStr = nameOrIndex.getValue().toString().trim();
+                int calculatedCount;
+                
+                if(columnOrRowType.getValue().toString().equalsIgnoreCase("Column")) {
+                    // Handle column: can be column number, column name (A, B, AA), or column header name
+                    int columnIndex = getColumnIndex(sheet, nameOrIndexStr);
+                    if (columnIndex < 0) {
+                        setErrorMessage("Column not found: " + nameOrIndexStr + ". Please provide a valid column number " +
+                                "(1-based), column name (A, B, AA), or column header name.");
                         return com.testsigma.sdk.Result.FAILED;
                     }
-                    logger.info("Processing row index: " + rowIndex);
-                    calculatedCount = countNonEmptyCellsInRow(sheet, rowIndex);
-                } catch (NumberFormatException e) {
-                    setErrorMessage("Invalid row index format: " + nameOrIndexStr);
-                    return com.testsigma.sdk.Result.FAILED;
+                    logger.info("Using column index: " + columnIndex + " (0-based)");
+                    calculatedCount = countNonEmptyCellsInColumn(sheet, columnIndex);
+                } else {
+                    // It's a row index
+                    try {
+                        int rowIndex = Integer.parseInt(nameOrIndexStr);
+                        if (rowIndex < 0) {
+                            setErrorMessage("Row index must be non-negative. Provided: " + rowIndex);
+                            return com.testsigma.sdk.Result.FAILED;
+                        }
+                        logger.info("Processing row index: " + rowIndex);
+                        calculatedCount = countNonEmptyCellsInRow(sheet, rowIndex);
+                    } catch (NumberFormatException e) {
+                        setErrorMessage("Invalid row index format: " + nameOrIndexStr);
+                        return com.testsigma.sdk.Result.FAILED;
+                    }
                 }
+                
+                logger.info("Calculated count: " + calculatedCount);
+                String variableName = runtimeVariableName.getValue().toString();
+                runTimeData.setKey(variableName);
+                runTimeData.setValue(String.valueOf(calculatedCount));
+                logger.info("runtime data: " + runTimeData.getValue());
+                
+                String typeStr = columnOrRowType.getValue().toString()
+                        .equalsIgnoreCase("Column") ? "column" : "row";
+                setSuccessMessage("Successfully stored the count of non-empty cells from sheet '" + 
+                        sheet.getSheetName() + "' " + typeStr + " '" + nameOrIndexStr +
+                        "' to " + variableName + " = " + calculatedCount);
+                return com.testsigma.sdk.Result.SUCCESS;
             }
-            
-            logger.info("Calculated count: " + calculatedCount);
-            String variableName = runtimeVariableName.getValue().toString();
-            runTimeData.setKey(variableName);
-            runTimeData.setValue(String.valueOf(calculatedCount));
-            logger.info("runtime data: " + runTimeData.getValue());
-            
-            String typeStr = columnOrRowType.getValue().toString()
-                    .equalsIgnoreCase("Column") ? "column" : "row";
-            setSuccessMessage("Successfully stored the count of non-empty cells from sheet '" + 
-                    sheet.getSheetName() + "' " + typeStr + " '" + nameOrIndexStr +
-                    "' to " + variableName + " = " + calculatedCount);
-            return result;
         } catch (Exception e) {
             logger.info("Failed to read the excel file: " + ExceptionUtils.getStackTrace(e));
             setErrorMessage("Failed to read the excel file: " + ExceptionUtils.getStackTrace(e));
@@ -242,8 +242,7 @@ public class StoreNonEmptyCellCountForColumnOrRow extends WebAction {
         int cellCount = 0;
         Row row = sheet.getRow(rowIndex);
         if (row != null) {
-            for (int j = 0; j < row.getPhysicalNumberOfCells(); j++) {
-                Cell cell = row.getCell(j);
+            for (Cell cell : row) {
                 if (cell != null && !cell.toString().trim().isEmpty()) {
                     cellCount++;
                 }
