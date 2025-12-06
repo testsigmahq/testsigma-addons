@@ -15,7 +15,7 @@ import com.testsigma.addons.web.utilities.ResponseDataUtilities;
 
 
 @Data
-@Action(actionText = "get the payload data and store the content in runtime variable runtime_variable",
+@Action(actionText = "Get the payload data and store the content in runtime variable runtime_variable",
         description = "stores the payload data for the tracked url",
         applicationType = ApplicationType.WEB,
         useCustomScreenshot = false
@@ -23,7 +23,7 @@ import com.testsigma.addons.web.utilities.ResponseDataUtilities;
 
 public class GetPayloadDataForGivenUrl extends WebAction {
 
-    @TestData(reference = "runtim_variable", isRuntimeVariable = true)
+    @TestData(reference = "runtime_variable", isRuntimeVariable = true)
     private com.testsigma.sdk.TestData runtimeVariable;
 
     @RunTimeData

@@ -12,7 +12,7 @@ import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.addons.web.utilities.ResponseDataUtilities;
 
 @Data
-@Action(actionText = "get the response time for the tracked endpoint and store it in runtime variable runtime_variable",
+@Action(actionText = "Get the response time for the tracked endpoint and store it in runtime variable runtime_variable",
         description = "gets the response time of the tracked endpoint",
         applicationType = ApplicationType.WEB)
 public class GetResponseTime extends WebAction {
