@@ -52,20 +52,4 @@ public class FileUtilities {
             throw new Exception(e);
         }
     }
-
-    public static void deleteFile(Long runId) throws Exception {
-        String fileName = getFileName(runId);
-        File file = new File(fileName);
-        try {
-            // Delete the file if it exists
-            if (file.exists()) {
-                FileUtils.forceDelete(file);
-            } else {
-                System.out.println("File does not exist: " + fileName);
-            }
-        } catch (IOException e) {
-            throw new Exception(e);
-        }
-    }
-
 }

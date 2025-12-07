@@ -24,10 +24,7 @@ public class ResponseDataUtilities {
             throw new Exception(e);
         }
     }
-
-    public static void clearResponseDataByRunId(Long runId) throws Exception {
-        FileUtilities.deleteFile(runId);
-    }
+    
 
     private static JsonArray getResponseBodyData(Long runId, Logger logger) throws Exception {
         logger.info("Getting all data for runId: " + runId);
@@ -45,7 +42,7 @@ public class ResponseDataUtilities {
                 return data.getAsJsonArray("responseBody");
             }
         } catch (JsonParseException e) {
-            clearResponseDataByRunId(runId);
+            
             logger.info("Failed to parse data for runId: " + runId + " with exception: " + e.getMessage());
             throw new Exception(e);
         }
@@ -64,7 +61,7 @@ public class ResponseDataUtilities {
 
     public static String getResponseBody(Long runId, Logger logger) throws Exception {
         String responseBody = getResponseBodyData(runId, logger).getAsString();
-        clearResponseDataByRunId(runId);
+        
         return responseBody;
     }
 
@@ -87,7 +84,7 @@ public class ResponseDataUtilities {
                 logger.info("No request headers data found for runId: " + runId);
             }
         } catch (JsonParseException e) {
-            clearResponseDataByRunId(runId);
+            
             logger.info("Failed to parse request headers data for runId: " + runId + " with exception: " + e.getMessage());
             throw new Exception(e);
         }
@@ -133,7 +130,7 @@ public class ResponseDataUtilities {
 
     public static String getRequestHeaders(Long runId, Logger logger) throws Exception {
         String requestHeaders = getRequestHeadersData(runId, logger).getAsString();
-        clearResponseDataByRunId(runId);
+        
         return requestHeaders;
     }
 
@@ -177,12 +174,8 @@ public class ResponseDataUtilities {
         saveAllData(runId, jsonObject, logger);
     }
 
-    public static void clearStatusCodeDataByRunId(Long runId) throws Exception {
-        FileUtilities.deleteFile(runId);
-    }
     public static int getStatusCode(Long runId, Logger logger) throws Exception {
         int statusCode = getStatusCodeData(runId, logger);
-        clearStatusCodeDataByRunId(runId);
         if (statusCode == -1) {
             logger.info("No status code found for runId: " + runId);
             throw new Exception("No status code found for runId: " + runId);
@@ -194,7 +187,7 @@ public class ResponseDataUtilities {
         logger.info("Getting status code for runId: " + runId);
         String encodedData = FileUtilities.readFromFile(runId);
         if (encodedData == null || encodedData.isEmpty()) {
-            logger.info("Status code data is not present for runId: " + runId);
+            logger.info("The file has no data to fetch for the run id: " + runId);
             return -1;
         }
 
@@ -207,7 +200,7 @@ public class ResponseDataUtilities {
                 return statusCode;
             }
         } catch (JsonParseException e) {
-            clearResponseDataByRunId(runId);
+            
             logger.info("Failed to parse status code data for runId: " + runId + " with exception: " + e.getMessage());
             throw new Exception(e);
         }
@@ -231,7 +224,7 @@ public class ResponseDataUtilities {
                 return data.getAsJsonArray("payload");
             }
         } catch (JsonParseException e) {
-            clearResponseDataByRunId(runId);
+            
             logger.info("Failed to parse payload data for runId: " + runId + " with exception: " + e.getMessage());
             throw new Exception(e);
         }
@@ -257,7 +250,7 @@ public class ResponseDataUtilities {
                 return responseTime;
             }
         } catch (JsonParseException e) {
-            clearResponseDataByRunId(runId);
+            
             logger.info("Failed to parse response time data for runId: " + runId + " with exception: " + e.getMessage());   
             throw new Exception(e);
         }

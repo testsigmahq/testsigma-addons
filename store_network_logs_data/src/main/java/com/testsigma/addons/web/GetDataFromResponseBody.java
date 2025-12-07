@@ -52,6 +52,7 @@ public class GetDataFromResponseBody extends WebAction {
             String responseBody;
             try {
                 responseBody = getResponseBody(testCaseResult.getId(), logger);
+                logger.info("Response body: "+ responseBody);
             } catch (IllegalStateException e) {
                 throw new Exception("Failed to retrieve response body. The API response from the preceding step might be missing or empty.", e);
             }

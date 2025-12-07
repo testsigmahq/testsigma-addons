@@ -15,7 +15,7 @@ import static com.testsigma.addons.web.utilities.ResponseDataUtilities.getSpecif
 
 
 @Data
-@Action(actionText = "get value of the request header from the attribute header_key  " +
+@Action(actionText = "Get value of the request header from the attribute header_key  " +
         "and store the value in runtime variable variable_name",
         description = "Extracts header value from network request and stores it in runtime variable, please make " +
                 "sure that the request type is POST or PUT.",

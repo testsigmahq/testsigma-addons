@@ -6,30 +6,33 @@ import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
 import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
+import com.testsigma.sdk.annotation.Element;
 import com.testsigma.sdk.annotation.TestCaseResult;
 import com.testsigma.sdk.annotation.TestData;
 import lombok.Data;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.devtools.DevTools;
 import org.openqa.selenium.devtools.HasDevTools;
 import org.openqa.selenium.devtools.v137.network.Network;
 import org.openqa.selenium.devtools.v137.network.model.RequestId;
 import org.openqa.selenium.remote.Augmenter;
 
-
 import java.util.Optional;
 
 import static com.testsigma.addons.web.utilities.ResponseDataUtilities.saveAllNetworkData;
 
 @Data
-@Action(actionText = "Add Network Listener to find the response for the request url url_variable" +
-        " and the request method method_value",
-        description = "Add Network Listener to find the response for the given request url and given request method",
+@Action(actionText = "Add Network Listener for url url_variable and method method_value then perform element click element-locator",
+        description = "Adds Network Listener for url and method then perform element click action",
         applicationType = ApplicationType.WEB)
-public class StartTracking extends WebAction {
+public class StartTrackingAndClickOnElement extends WebAction {
 
     @TestData(reference = "url_variable")
     private com.testsigma.sdk.TestData urlVariable;
+
+    @Element(reference = "element-locator")
+    private com.testsigma.sdk.Element element;
 
     @TestData(reference = "method_value")
     private com.testsigma.sdk.TestData methodValue;
@@ -49,7 +52,7 @@ public class StartTracking extends WebAction {
             // Initialize DevTools and create a session
             logger.info("Initializing DevTools...");
             DevTools devTool;
-            
+
             // Try to get DevTools from the driver
             if (driver instanceof HasDevTools) {
                 devTool = ((HasDevTools) driver).getDevTools();
@@ -97,7 +100,7 @@ public class StartTracking extends WebAction {
                     logger.info("Matching request found with URL: " + requestUrl + " and method: " + requestMethod);
                     requestIds[0] = request.getRequestId();
                     requestStartTimes[0] = System.currentTimeMillis();
-                    
+
                     // Capture request payload
                     try {
                         Optional<String> payloadOptional = request.getRequest().getPostData();
@@ -107,7 +110,7 @@ public class StartTracking extends WebAction {
                         logger.warn("Could not capture payload: " + e.getMessage());
                         capturedPayloads[0] = "";
                     }
-                    
+
                     // Capture request headers from the request event and format them properly
                     StringBuilder headersBuilder = new StringBuilder();
                     logger.info("Capturing headers for request: " + request.getRequestId());
@@ -141,21 +144,21 @@ public class StartTracking extends WebAction {
             devTool.addListener(Network.responseReceived(), response -> {
                 String responseUrl = response.getResponse().getUrl();
                 // logger.info("Intercepted response for URL: " + responseUrl);
-                
+
                 if (responseUrl.contains(urlVariable.getValue().toString()) &&
                         requestIds[0] != null && requestIds[0].toString().equals(response.getRequestId().toString())) {
                     logger.info("Matching response found for URL: " + responseUrl);
-                    
+
                     // Get response data outside try block
                     String responseBody = null;
                     int status = response.getResponse().getStatus();
-                    
+
                     logger.info("Response status: " + status);
-                    
+
                     response.getResponse().getHeaders().forEach((key, value) -> {
                         logger.info("Response Header - " + key + ": " + value);
                     });
-                    
+
                     // Try to get response body, but handle gracefully if not available
                     try {
                         responseBody = devTool.send(Network.getResponseBody(requestIds[0])).getBody();
@@ -164,18 +167,18 @@ public class StartTracking extends WebAction {
                         logger.warn("Could not retrieve response body: " + e.getMessage());
                         responseBody = null;
                     }
-                    
+
                     // Check if we have all required data before saving
                     String requestHeaders = capturedRequestHeaders[0] != null ? capturedRequestHeaders[0] : "";
                     String payload = capturedPayloads[0] != null ? capturedPayloads[0] : "";
-                    
+
                     // Calculate response time
                     long responseTime = 0;
                     if (requestStartTimes[0] > 0) {
                         responseTime = System.currentTimeMillis() - requestStartTimes[0];
                         logger.info("Response time: " + responseTime + "ms");
                     }
-                    
+
                     if (requestHeaders != null && !requestHeaders.isEmpty() && status > 0) {
                         logger.info("Storing network data...");
                         logger.info("Request headers to store: " + requestHeaders);
@@ -211,6 +214,11 @@ public class StartTracking extends WebAction {
                     }
                 }
             });
+
+            WebElement element1 = element.getElement();
+            element1.click();
+            logger.info("Clicked on element successfully");
+            Thread.sleep(15000);
 
         } catch (Exception e) {
             // Log the exception details and set the error message

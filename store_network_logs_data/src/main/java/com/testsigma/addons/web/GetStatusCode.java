@@ -12,7 +12,7 @@ import lombok.Data;
 import static com.testsigma.addons.web.utilities.ResponseDataUtilities.getStatusCodeData;
 
 @Data
-@Action(actionText = "get the status code of the stored URL and store it in runtime variable status_code",
+@Action(actionText = "Get the status code of the stored URL and store it in runtime variable status_code",
         description = "This action retrieves the status code of the stored URL.",
         applicationType = com.testsigma.sdk.ApplicationType.WEB)
 public class GetStatusCode extends WebAction {
