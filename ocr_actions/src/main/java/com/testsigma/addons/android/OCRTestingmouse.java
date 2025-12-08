@@ -1,16 +1,16 @@
 package com.testsigma.addons.android;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.io.*;
 import java.time.Duration;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.openqa.selenium.By;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.interactions.PointerInput;
+import org.openqa.selenium.interactions.Sequence;
 
 import com.testsigma.sdk.AndroidAction;
 import com.testsigma.sdk.ApplicationType;
@@ -21,13 +21,7 @@ import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.OCR;
 import com.testsigma.sdk.annotation.TestData;
 
-import io.appium.java_client.PerformsTouchActions;
-import io.appium.java_client.TouchAction;
 import io.appium.java_client.android.AndroidDriver;
-import io.appium.java_client.ios.IOSDriver;
-import io.appium.java_client.touch.TapOptions;
-import io.appium.java_client.touch.WaitOptions;
-import io.appium.java_client.touch.offset.PointOption;
 import lombok.Data;
 
 @Data
@@ -109,12 +103,16 @@ public class OCRTestingmouse extends AndroidAction {
 		logger.info("Clicking on X coordinate: " + x + "\n");
 		logger.info("Clicking on Y coordinate: " + y + "\n");
 		
-		TouchAction action = new TouchAction((PerformsTouchActions) (AndroidDriver)this.driver);
+		// Using W3C Actions API instead of deprecated TouchAction
+		PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
+		Sequence tap = new Sequence(finger, 1);
 		logger.info("Pressing X coordinate: " + x + "\n");
-		PointOption point = PointOption.point(x, y);
 		logger.info("Pressing Y coordinate: " + y + "\n");
-        // Perform the move and tap action
-        action.moveTo(point).tap(point).perform();
+		// Perform the move and tap action
+		tap.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), x, y));
+		tap.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
+		tap.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
+		((AndroidDriver) this.driver).perform(Arrays.asList(tap));
 		logger.info("Successfully pressed X and y coordinate: " + x + "\n" + y + "\n");
 	}
 }
