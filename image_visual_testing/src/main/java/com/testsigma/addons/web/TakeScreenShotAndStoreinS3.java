@@ -1,12 +1,11 @@
-package com.testsigma.addons.android;
+package com.testsigma.addons.web;
 
-import com.testsigma.sdk.AndroidAction;
 import com.testsigma.sdk.ApplicationType;
+import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.RunTimeData;
 import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.TestStepResult;
-import io.appium.java_client.android.AndroidDriver;
 import lombok.Data;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -19,12 +18,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 @Data
-@Action(actionText = "Take screenshot of the current page and store the saved image file" +
-        " path in runtime variable test-data",
+@Action(actionText = "Take screenshot of the current page and store the saved image file path in runtime variable" +
+        " test-data",
         description = "Takes a screenshot of the current page and stores the file path in a runtime variable",
-        applicationType = ApplicationType.ANDROID,
+        applicationType = ApplicationType.WEB,
         useCustomScreenshot = false)
-public class TakeScreenShotAndStorePathInRuntime extends AndroidAction {
+public class TakeScreenShotAndStoreinS3 extends WebAction {
     @TestData(reference = "test-data", isRuntimeVariable = true)
     private com.testsigma.sdk.TestData testData;
     @RunTimeData
@@ -47,8 +46,7 @@ public class TakeScreenShotAndStorePathInRuntime extends AndroidAction {
             file1 = new File(basePdfDirectoryPath + File.separator + "first_image_" + timeNow + ".png");
             // take screenshot and save it
             logger.info("Taking screenshot of the current page");
-            AndroidDriver androidDriver = (AndroidDriver) this.driver;
-            byte[] screenshot = ((TakesScreenshot) androidDriver).getScreenshotAs(OutputType.BYTES);
+            byte[] screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
             logger.info("Screenshot taken successfully");
             saveBytesArrayToFile(file1.getAbsolutePath(), screenshot);
             logger.info("Screenshot saved at: " + file1.getAbsolutePath());

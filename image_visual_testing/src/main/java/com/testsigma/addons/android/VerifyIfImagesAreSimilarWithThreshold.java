@@ -1,16 +1,19 @@
-package com.testsigma.addons.web;
+package com.testsigma.addons.android;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testsigma.addons.util.Constants;
 import com.testsigma.addons.util.ImageComparisonUtils;
 import com.testsigma.addons.util.ResponseObject;
+import com.testsigma.sdk.AndroidAction;
+import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
 import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.RunTimeData;
 import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.TestStepResult;
+import io.appium.java_client.android.AndroidDriver;
 import lombok.Data;
 import okhttp3.*;
 import org.apache.commons.io.FileUtils;
@@ -27,9 +30,9 @@ import java.util.List;
 @Data
 @Action(actionText = "Verify if image actual-image is similar to base-image that matches upto test-data percentage",
         description = "This action compares two images using visual testing and returns the result.",
-        applicationType = com.testsigma.sdk.ApplicationType.WEB,
+        applicationType = ApplicationType.ANDROID,
         useCustomScreenshot = true)
-public class VerifyIfTwoImagesAreSimilar extends WebAction {
+public class VerifyIfImagesAreSimilarWithThreshold extends AndroidAction {
 
     @TestData(reference = "actual-image")
     private com.testsigma.sdk.TestData image1;
@@ -67,7 +70,8 @@ public class VerifyIfTwoImagesAreSimilar extends WebAction {
         // create a temp file
         try {
             logger.info("initializing image comparison utils");
-            ImageComparisonUtils imageComparisonUtils = new ImageComparisonUtils(driver, logger);
+            AndroidDriver androidDriver = (AndroidDriver) driver;
+            ImageComparisonUtils imageComparisonUtils = new ImageComparisonUtils(androidDriver, logger);
             BufferedImage baseImage = null;
             BufferedImage actualImage = null;
             File file1 = urlToFileConverter("first_image", baseImagePath);
@@ -178,7 +182,8 @@ public class VerifyIfTwoImagesAreSimilar extends WebAction {
     private Result uploadScreenshot(boolean compareResult, File actualDirImage, BufferedImage combined,
                                     File combinedImage, StringBuilder errorMessageBuilder) {
         try {
-            ImageComparisonUtils imageComparisonUtils = new ImageComparisonUtils(driver, logger);
+            AndroidDriver androidDriver = (AndroidDriver) driver;
+            ImageComparisonUtils imageComparisonUtils = new ImageComparisonUtils(androidDriver, logger);
             String s3Url = testStepResult.getScreenshotUrl();
             if (compareResult) {
                 logger.info("images are identical hence uploading the actual image to S3");

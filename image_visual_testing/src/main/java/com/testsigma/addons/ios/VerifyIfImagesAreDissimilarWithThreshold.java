@@ -1,16 +1,18 @@
-package com.testsigma.addons.web;
+package com.testsigma.addons.ios;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testsigma.addons.util.Constants;
 import com.testsigma.addons.util.ImageComparisonUtils;
 import com.testsigma.addons.util.ResponseObject;
+import com.testsigma.sdk.ApplicationType;
+import com.testsigma.sdk.IOSAction;
 import com.testsigma.sdk.Result;
-import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.RunTimeData;
 import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.TestStepResult;
+import io.appium.java_client.ios.IOSDriver;
 import lombok.Data;
 import okhttp3.*;
 import org.apache.commons.io.FileUtils;
@@ -25,11 +27,11 @@ import java.net.URL;
 import java.util.List;
 
 @Data
-@Action(actionText = "Verify if image actual-image is similar to base-image that matches upto test-data percentage",
-        description = "This action compares two images using visual testing and returns the result.",
-        applicationType = com.testsigma.sdk.ApplicationType.WEB,
+@Action(actionText = "Verify if image actual-image is dissimilar to base-image that matches below test-data percentage",
+        description = "This action compares two images using visual testing and verifies they are dissimilar below the specified percentage.",
+        applicationType = ApplicationType.IOS,
         useCustomScreenshot = true)
-public class VerifyIfTwoImagesAreSimilar extends WebAction {
+public class VerifyIfImagesAreDissimilarWithThreshold extends IOSAction {
 
     @TestData(reference = "actual-image")
     private com.testsigma.sdk.TestData image1;
@@ -67,7 +69,8 @@ public class VerifyIfTwoImagesAreSimilar extends WebAction {
         // create a temp file
         try {
             logger.info("initializing image comparison utils");
-            ImageComparisonUtils imageComparisonUtils = new ImageComparisonUtils(driver, logger);
+            IOSDriver iosDriver = (IOSDriver) driver;
+            ImageComparisonUtils imageComparisonUtils = new ImageComparisonUtils(iosDriver, logger);
             BufferedImage baseImage = null;
             BufferedImage actualImage = null;
             File file1 = urlToFileConverter("first_image", baseImagePath);
@@ -83,14 +86,20 @@ public class VerifyIfTwoImagesAreSimilar extends WebAction {
                 logger.info("Diff coordinates are null, initializing to empty list");
                 responseObject.setDiff_coordinates(List.of());
             }
-            if ((percentageSimilarity * 100) >= Double.parseDouble(percentage.getValue().toString())) {
-                logger.info("Images are identical, upto percentage " +
-                        (percentageSimilarity * 100) + "%");
+
+            // For dissimilar verification, we want the similarity to be BELOW the threshold
+            if ((percentageSimilarity * 100) < Double.parseDouble(percentage.getValue().toString())) {
+                logger.info("Images are dissimilar, similarity percentage " +
+                        (percentageSimilarity * 100) + "% is below threshold " +
+                        Double.parseDouble(percentage.getValue().toString()) + "%");
                 uploadScreenshot(true, file2, actualImage, null, errorMessageBuilder);
-                setSuccessMessage("Successfully verified that the base image and actual image match the" +
-                        " expected percentage of similarity: " + (percentageSimilarity * 100) + "%");
+                setSuccessMessage("Successfully verified that the base image and actual image are dissimilar. " +
+                        "Dissimilarity percentage: " + ((100) - percentageSimilarity * 100) + "% (below threshold: " +
+                        Double.parseDouble(percentage.getValue().toString()) + "%)");
                 return Result.SUCCESS;
             }
+
+            // Images are too similar, create combined image to show differences
             combined = imageComparisonUtils.mergeImagesAndHighlightDifferences(baseImage, actualImage,
                     combined, responseObject.getDiff_coordinates());
             logger.info("Combined image created with dimensions: " +
@@ -98,9 +107,10 @@ public class VerifyIfTwoImagesAreSimilar extends WebAction {
             File combinedImage = null;
             combinedImage = File.createTempFile("combined", ".png");
             logger.info("Combined image file created at: " + combinedImage.getAbsolutePath());
-            StringBuilder errorMessage = new StringBuilder("Images are not identical, " +
+            StringBuilder errorMessage = new StringBuilder("Images are too similar, " +
                     "percentage similarity is: " + (percentageSimilarity * 100) + "%, " +
-                    "check step screenshot for visual results");
+                    "which is above or equal to the threshold of " + Double.parseDouble(percentage.getValue().toString()) + "%. " +
+                    "Check step screenshot for visual results");
             return uploadScreenshot(false, file2,
                     combined, combinedImage, errorMessage);
         } catch (IOException e) {
@@ -178,18 +188,19 @@ public class VerifyIfTwoImagesAreSimilar extends WebAction {
     private Result uploadScreenshot(boolean compareResult, File actualDirImage, BufferedImage combined,
                                     File combinedImage, StringBuilder errorMessageBuilder) {
         try {
-            ImageComparisonUtils imageComparisonUtils = new ImageComparisonUtils(driver, logger);
+            IOSDriver iosDriver = (IOSDriver) driver;
+            ImageComparisonUtils imageComparisonUtils = new ImageComparisonUtils(iosDriver, logger);
             String s3Url = testStepResult.getScreenshotUrl();
             if (compareResult) {
-                logger.info("images are identical hence uploading the actual image to S3");
+                logger.info("images are dissimilar hence uploading the actual image to S3");
                 boolean uploadS3Result = imageComparisonUtils.uploadFile(s3Url, actualDirImage.getAbsolutePath());
                 if (!uploadS3Result) {
-                    logger.info("Error occurred while uploading combined image to s3," +
+                    logger.info("Error occurred while uploading actual image to s3," +
                             " screenshot might not be displayed");
                 }
                 logger.info("Upload complete.");
                 setSuccessMessage("Successfully verified that the base image and actual image are " +
-                        "same by visual testing. (Note: Step screenshot contains the first image)");
+                        "dissimilar by visual testing. (Note: Step screenshot contains the actual image)");
             } else {
                 ImageIO.write(combined, "png", combinedImage);
                 boolean uploadS3Result = imageComparisonUtils.uploadFile(s3Url, combinedImage.getAbsolutePath());
@@ -197,7 +208,7 @@ public class VerifyIfTwoImagesAreSimilar extends WebAction {
                     logger.debug("Error occurred while uploading combined image to S3," +
                             " screenshot might not be displayed");
                 }
-//                String message = "Comparison failed because visual testing detected dissimilarities," +
+//                String message = "Comparison failed because visual testing detected too much similarity," +
 //                        " check step screenshot for visual results";
 //                errorMessageBuilder.append(message);
                 setErrorMessage(errorMessageBuilder.toString());

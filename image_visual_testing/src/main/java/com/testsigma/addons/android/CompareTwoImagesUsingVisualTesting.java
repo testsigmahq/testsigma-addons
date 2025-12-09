@@ -15,6 +15,7 @@ import com.testsigma.sdk.annotation.TestStepResult;
 import io.appium.java_client.android.AndroidDriver;
 import lombok.Data;
 import okhttp3.*;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.client.config.RequestConfig;
 
@@ -22,6 +23,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 
 @Data
@@ -67,8 +69,8 @@ public class CompareTwoImagesUsingVisualTesting extends AndroidAction {
             ImageComparisonUtils imageComparisonUtils = new ImageComparisonUtils(androidDriver, logger);
             BufferedImage baseImage = null;
             BufferedImage actualImage = null;
-            File file1 = imageComparisonUtils.urlToFileConverter("first_image", baseImagePath);
-            File file2 = imageComparisonUtils.urlToFileConverter("second_image", actualImagePath);
+            File file1 = urlToFileConverter("first_image", baseImagePath);
+            File file2 = urlToFileConverter("second_image", actualImagePath);
             baseImage = ImageIO.read(file1);
             actualImage = ImageIO.read(file2);
             logger.info("Base image dimensions: " + baseImage.getWidth() + "x" + baseImage.getHeight());
@@ -198,6 +200,34 @@ public class CompareTwoImagesUsingVisualTesting extends AndroidAction {
         }
         logger.info("Successfully uploaded screenshot to S3: " + testStepResult.getScreenshotUrl());
         return Result.SUCCESS;
+    }
+
+    public File urlToFileConverter(String fileName, String url) {
+        try {
+            if (url.startsWith("https://") || url.startsWith("http://")) {
+                logger.info("Given is s3 url ...File name:" + fileName);
+                URL urlObject = new URL(url);
+                String baseName = fileName;
+                String extension = "";
+                int lastDotIndex = fileName.lastIndexOf('.');
+                if (lastDotIndex > 0) {
+                    baseName = fileName.substring(0, lastDotIndex);
+                    extension = fileName.substring(lastDotIndex);
+                }
+                File tempFile = File.createTempFile(baseName, extension);
+                FileUtils.copyURLToFile(urlObject, tempFile);
+                logger.info("Temp file created with name for s3 file" + tempFile.getName()
+                        + " at path " + tempFile.getAbsolutePath());
+                return tempFile;
+            } else {
+                logger.info("Given is local file path..");
+                return new File(url);
+//                return createLocalFileFromDownloadsCopy(url, ".png");
+            }
+        } catch (Exception e) {
+            logger.info("Error while accessing: " + url);
+            throw new RuntimeException("Unable to access the given file, please check the given inputs.");
+        }
     }
 
 }

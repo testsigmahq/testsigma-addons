@@ -1,8 +1,11 @@
-package com.testsigma.addons.web;
+package com.testsigma.addons.ios;
 
 import com.testsigma.addons.util.ImageComparisonUtils;
+import com.testsigma.sdk.ApplicationType;
+import com.testsigma.sdk.IOSAction;
 import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.*;
+import io.appium.java_client.ios.IOSDriver;
 import lombok.Data;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -17,15 +20,17 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.Base64;
 
+
+
 @Data
 @Action(actionText = "Download image from the <img> tag using element element-locator and store the file path of " +
         "saved image in runtime variable variable_name",
         description = "Download image from the <img> tag and store the file path of the saved image" +
                 " in a runtime variable.",
-        applicationType = com.testsigma.sdk.ApplicationType.WEB,
+        applicationType = ApplicationType.IOS,
         useCustomScreenshot = true
 )
-public class DownloadImageFromImgTag extends WebAction {
+public class DownloadImageFromImgTag extends IOSAction {
 
     @Element(reference = "element-locator")
     private com.testsigma.sdk.Element elementLocator;
@@ -43,7 +48,6 @@ public class DownloadImageFromImgTag extends WebAction {
     public com.testsigma.sdk.Result execute() {
         com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
 
-        /*
         try {
             logger.info("initiating execution of DownloadImageFromImgTag action");
 
@@ -54,57 +58,15 @@ public class DownloadImageFromImgTag extends WebAction {
                     + "element_image_" + timeNow + ".png");
 
             WebElement webElement = elementLocator.getElement();
-            // get the src attribute to find the image URL
-            String tagName = webElement.getTagName().toLowerCase();
-            byte[] imageBytes;
-
-            if ("img".equals(tagName)) {
-                // If it's an img tag, get the image source and download it
-                String imageSrc = webElement.getAttribute("src");
-                logger.info("Found img element with src: " + imageSrc);
-                imageBytes = downloadImageFromUrl(imageSrc);
-            } else {
-                // If it's not an img tag, take a screenshot of the element
-                logger.info("Element is not an img tag, taking element screenshot");
-                imageBytes = webElement.getScreenshotAs(OutputType.BYTES);
-            }
-
-            logger.info("Image captured successfully");
-            saveBytesArrayToFile(file1.getAbsolutePath(), imageBytes);
-            logger.info("Image saved at: " + file1.getAbsolutePath());
-
-            runTimeData.setKey(variableName.getValue().toString());
-            runTimeData.setValue(file1.getAbsolutePath());
-            setSuccessMessage("Successfully downloaded the image and stored the file path in runtime variable: "
-                    + variableName.getValue().toString());
-        } catch (NoSuchElementException ne) {
-            logger.info("Element not found: " + ExceptionUtils.getStackTrace(ne));
-            setErrorMessage("Element not found: " + ne.getMessage());
-            result = com.testsigma.sdk.Result.FAILED;
-        }catch (Exception e) {
-            result = com.testsigma.sdk.Result.FAILED;
-            logger.info("Failed to download image: " + ExceptionUtils.getStackTrace(e));
-            setErrorMessage("Failed to download image: " + e.getMessage());
-        }
-        return result;*/
-
-        try {
-            logger.info("initiating execution of DownloadImageFromImgTag action");
-
-            String basePdfDirectoryPath = String.valueOf(Files.createTempDirectory("basePdfDirectory"));
-            logger.info("Base PDF Directory Path: " + basePdfDirectoryPath);
-            String timeNow = String.valueOf(System.currentTimeMillis());
-            File file1 = new File(basePdfDirectoryPath + File.separator
-                    + "element_image_" + timeNow + ".png");
-
-            WebElement webElement = elementLocator.getElement();
-            JavascriptExecutor jsExecutor = (JavascriptExecutor) driver;
+            IOSDriver iosDriver = (IOSDriver) driver;
+            JavascriptExecutor jsExecutor = (JavascriptExecutor) iosDriver;
             String tagName = webElement.getTagName().toLowerCase();
             byte[] imageBytes;
             Dimension elementSize = webElement.getSize();
             if ("img".equals(tagName)) {
                 // First try to get src attribute normally
                 String imageSrc = webElement.getAttribute("src");
+
 
                 // If no src found or element might be in shadow root, try JavaScript approach
                 if (imageSrc == null || imageSrc.isEmpty()) {
@@ -114,7 +76,7 @@ public class DownloadImageFromImgTag extends WebAction {
 
                 if (imageSrc != null && !imageSrc.isEmpty()) {
                     logger.info("Found img element with src: " + imageSrc);
-                    imageBytes = downloadImageFromUrl(imageSrc);
+                    imageBytes = downloadImageFromUrl(iosDriver, imageSrc);
                 } else {
                     logger.info("Could not find image src, taking element screenshot");
                     imageBytes = webElement.getScreenshotAs(OutputType.BYTES);
@@ -126,7 +88,7 @@ public class DownloadImageFromImgTag extends WebAction {
 
                 if (shadowImageSrc != null && !shadowImageSrc.isEmpty()) {
                     logger.info("Found image in shadow root with src: " + shadowImageSrc);
-                    imageBytes = downloadImageFromUrl(shadowImageSrc);
+                    imageBytes = downloadImageFromUrl(iosDriver, shadowImageSrc);
                 } else {
                     logger.info("No shadow root images found, taking element screenshot");
                     imageBytes = webElement.getScreenshotAs(OutputType.BYTES);
@@ -138,7 +100,7 @@ public class DownloadImageFromImgTag extends WebAction {
             logger.info("Image saved at: " + file1.getAbsolutePath());
 
             String s3Url = testStepResult.getScreenshotUrl();
-            ImageComparisonUtils imageComparisonUtils = new ImageComparisonUtils(driver, logger);
+            ImageComparisonUtils imageComparisonUtils = new ImageComparisonUtils(iosDriver, logger);
             logger.info("images are identical hence uploading the actual image to S3");
             boolean uploadS3Result = imageComparisonUtils.uploadFile(s3Url, file1.getAbsolutePath());
             if (!uploadS3Result) {
@@ -203,7 +165,6 @@ public class DownloadImageFromImgTag extends WebAction {
         try {
             String script = """
                         var element = arguments[0];
-                        
                         // Function to recursively search for images in shadow roots
                         function findImageInShadow(el) {
                             if (el.shadowRoot) {
@@ -212,7 +173,6 @@ public class DownloadImageFromImgTag extends WebAction {
                                 if (imgElements.length > 0) {
                                     return imgElements[0].src || imgElements[0].getAttribute('src');
                                 }
-                                
                                 // Look for canvas elements (charts often use canvas)
                                 var canvasElements = el.shadowRoot.querySelectorAll('canvas');
                                 if (canvasElements.length > 0) {
@@ -222,7 +182,6 @@ public class DownloadImageFromImgTag extends WebAction {
                                         console.log('Canvas toDataURL failed:', e);
                                     }
                                 }
-                                
                                 // Look for SVG elements (charts might use SVG)
                                 var svgElements = el.shadowRoot.querySelectorAll('svg');
                                 if (svgElements.length > 0) {
@@ -233,7 +192,6 @@ public class DownloadImageFromImgTag extends WebAction {
                                         console.log('SVG serialization failed:', e);
                                     }
                                 }
-                                
                                 // Recursively search in nested shadow roots
                                 var shadowElements = el.shadowRoot.querySelectorAll('*');
                                 for (var i = 0; i < shadowElements.length; i++) {
@@ -243,7 +201,6 @@ public class DownloadImageFromImgTag extends WebAction {
                             }
                             return null;
                         }
-                        
                         return findImageInShadow(element);
                     """;
 
@@ -255,7 +212,7 @@ public class DownloadImageFromImgTag extends WebAction {
         }
     }
 
-    private byte[] downloadImageFromUrl(String imageUrl) throws IOException {
+    private byte[] downloadImageFromUrl(IOSDriver iosDriver, String imageUrl) throws IOException {
         try {
             // Handle relative URLs
             if (imageUrl.startsWith("data:")) {
@@ -264,11 +221,11 @@ public class DownloadImageFromImgTag extends WebAction {
             } else if (imageUrl.startsWith("//")) {
                 imageUrl = "https:" + imageUrl;
             } else if (imageUrl.startsWith("/")) {
-                String currentUrl = driver.getCurrentUrl();
+                String currentUrl = iosDriver.getCurrentUrl();
                 URL url = new URL(currentUrl);
                 imageUrl = url.getProtocol() + "://" + url.getHost() + imageUrl;
             } else if (!imageUrl.startsWith("http")) {
-                String currentUrl = driver.getCurrentUrl();
+                String currentUrl = iosDriver.getCurrentUrl();
                 URL url = new URL(currentUrl);
                 String baseUrl = url.getProtocol() + "://" + url.getHost() + url.getPath();
                 if (!baseUrl.endsWith("/")) {
@@ -286,6 +243,7 @@ public class DownloadImageFromImgTag extends WebAction {
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(30000);
             connection.setReadTimeout(30000);
+
 
             try {
                 try (InputStream inputStream = connection.getInputStream();
