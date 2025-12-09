@@ -21,7 +21,7 @@ import java.nio.file.Files;
 @Data
 @Action(actionText = "Take screenshot of the current page and store the saved image file" +
         " path in runtime variable test-data",
-        description = "validates options count in a select drop-down",
+        description = "Takes a screenshot of the current page and stores the file path in a runtime variable",
         applicationType = ApplicationType.ANDROID,
         useCustomScreenshot = false)
 public class TakeScreenShotAndStorePathInRuntime extends AndroidAction {

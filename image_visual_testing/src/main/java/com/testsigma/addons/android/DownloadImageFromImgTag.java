@@ -8,10 +8,7 @@ import io.appium.java_client.android.AndroidDriver;
 import lombok.Data;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.openqa.selenium.Dimension;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.OutputType;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -21,7 +18,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.Base64;
-import java.util.NoSuchElementException;
 
 @Data
 @Action(actionText = "Download image from the <img> tag using element element-locator and store the file path of " +
@@ -248,14 +244,19 @@ public class DownloadImageFromImgTag extends AndroidAction {
             connection.setConnectTimeout(30000);
             connection.setReadTimeout(30000);
 
-            try (InputStream inputStream = connection.getInputStream();
-                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-                while ((bytesRead = inputStream.read(buffer)) != -1) {
-                    outputStream.write(buffer, 0, bytesRead);
+
+            try {
+                try (InputStream inputStream = connection.getInputStream();
+                     ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        outputStream.write(buffer, 0, bytesRead);
+                    }
+                    return outputStream.toByteArray();
                 }
-                return outputStream.toByteArray();
+            } finally {
+                connection.disconnect();
             }
         } catch (Exception e) {
             logger.warn("Failed to download image from URL: " + imageUrl + ", error: " + e.getMessage());

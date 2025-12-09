@@ -1,17 +1,12 @@
 package com.testsigma.addons.web;
 
-
 import com.testsigma.addons.util.ImageComparisonUtils;
 import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.*;
 import lombok.Data;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.openqa.selenium.Dimension;
-import org.openqa.selenium.JavascriptExecutor;
-
-import org.openqa.selenium.OutputType;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -20,23 +15,16 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
-
 import java.util.Base64;
 
-import java.util.NoSuchElementException;
-
 @Data
-@Action(actionText = "download image from the <img> tag using element element-locator and store the file path of " +
+@Action(actionText = "Download image from the <img> tag using element element-locator and store the file path of " +
         "saved image in runtime variable variable_name",
         description = "Download image from the <img> tag and store the file path of the saved image" +
                 " in a runtime variable.",
-
         applicationType = com.testsigma.sdk.ApplicationType.WEB,
         useCustomScreenshot = true
 )
-
-        applicationType = com.testsigma.sdk.ApplicationType.WEB
-        )
 public class DownloadImageFromImgTag extends WebAction {
 
     @Element(reference = "element-locator")
@@ -48,19 +36,57 @@ public class DownloadImageFromImgTag extends WebAction {
     @RunTimeData
     private com.testsigma.sdk.RunTimeData runTimeData;
 
-
     @TestStepResult
     private com.testsigma.sdk.TestStepResult testStepResult;
 
     @Override
     public com.testsigma.sdk.Result execute() {
         com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
-        
 
-    @Override
-    public com.testsigma.sdk.Result execute() {
-        com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
+        /*
+        try {
+            logger.info("initiating execution of DownloadImageFromImgTag action");
 
+            String basePdfDirectoryPath = String.valueOf(Files.createTempDirectory("basePdfDirectory"));
+            logger.info("Base PDF Directory Path: " + basePdfDirectoryPath);
+            String timeNow = String.valueOf(System.currentTimeMillis());
+            File file1 = new File(basePdfDirectoryPath + File.separator
+                    + "element_image_" + timeNow + ".png");
+
+            WebElement webElement = elementLocator.getElement();
+            // get the src attribute to find the image URL
+            String tagName = webElement.getTagName().toLowerCase();
+            byte[] imageBytes;
+
+            if ("img".equals(tagName)) {
+                // If it's an img tag, get the image source and download it
+                String imageSrc = webElement.getAttribute("src");
+                logger.info("Found img element with src: " + imageSrc);
+                imageBytes = downloadImageFromUrl(imageSrc);
+            } else {
+                // If it's not an img tag, take a screenshot of the element
+                logger.info("Element is not an img tag, taking element screenshot");
+                imageBytes = webElement.getScreenshotAs(OutputType.BYTES);
+            }
+
+            logger.info("Image captured successfully");
+            saveBytesArrayToFile(file1.getAbsolutePath(), imageBytes);
+            logger.info("Image saved at: " + file1.getAbsolutePath());
+
+            runTimeData.setKey(variableName.getValue().toString());
+            runTimeData.setValue(file1.getAbsolutePath());
+            setSuccessMessage("Successfully downloaded the image and stored the file path in runtime variable: "
+                    + variableName.getValue().toString());
+        } catch (NoSuchElementException ne) {
+            logger.info("Element not found: " + ExceptionUtils.getStackTrace(ne));
+            setErrorMessage("Element not found: " + ne.getMessage());
+            result = com.testsigma.sdk.Result.FAILED;
+        }catch (Exception e) {
+            result = com.testsigma.sdk.Result.FAILED;
+            logger.info("Failed to download image: " + ExceptionUtils.getStackTrace(e));
+            setErrorMessage("Failed to download image: " + e.getMessage());
+        }
+        return result;*/
 
         try {
             logger.info("initiating execution of DownloadImageFromImgTag action");
@@ -72,7 +98,6 @@ public class DownloadImageFromImgTag extends WebAction {
                     + "element_image_" + timeNow + ".png");
 
             WebElement webElement = elementLocator.getElement();
-
             JavascriptExecutor jsExecutor = (JavascriptExecutor) driver;
             String tagName = webElement.getTagName().toLowerCase();
             byte[] imageBytes;
@@ -126,20 +151,18 @@ public class DownloadImageFromImgTag extends WebAction {
             setSuccessMessage("Successfully downloaded the image with dimensions " + elementSize.getWidth() + "x"
                     + elementSize.getHeight() + " and stored the file path in runtime variable: " +
                     variableName.getValue().toString());
-
         } catch (NoSuchElementException ne) {
             logger.info("Element not found: " + ExceptionUtils.getStackTrace(ne));
             setErrorMessage("Element not found: " + ne.getMessage());
             result = com.testsigma.sdk.Result.FAILED;
-
         } catch (Exception e) {
-
             result = com.testsigma.sdk.Result.FAILED;
             logger.info("Failed to download image: " + ExceptionUtils.getStackTrace(e));
             setErrorMessage("Failed to download image: " + e.getMessage());
         }
         return result;
     }
+
 
     public void saveBytesArrayToFile(String filePath, byte[] imageBytes) {
         try {
@@ -152,7 +175,6 @@ public class DownloadImageFromImgTag extends WebAction {
             throw new RuntimeException("Failed to save image: " + e.getMessage());
         }
     }
-
 
     // Helper method to get src from shadow root
     private String getSrcFromShadowRoot(JavascriptExecutor jsExecutor, WebElement element) {
@@ -240,7 +262,6 @@ public class DownloadImageFromImgTag extends WebAction {
                 // Handle data URLs (canvas/SVG)
                 return handleDataUrl(imageUrl);
             } else if (imageUrl.startsWith("//")) {
-
                 imageUrl = "https:" + imageUrl;
             } else if (imageUrl.startsWith("/")) {
                 String currentUrl = driver.getCurrentUrl();
@@ -255,9 +276,36 @@ public class DownloadImageFromImgTag extends WebAction {
                 }
                 imageUrl = baseUrl + imageUrl;
             }
+
+
+            logger.info("Downloading image from URL: " + imageUrl);
+
+            // Download the image
+            URL url = new URL(imageUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(30000);
+            connection.setReadTimeout(30000);
+
+            try {
+                try (InputStream inputStream = connection.getInputStream();
+                     ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        outputStream.write(buffer, 0, bytesRead);
+                    }
+                    return outputStream.toByteArray();
+                }
+            } finally {
+                connection.disconnect();
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to download image from URL: " + imageUrl + ", error: " + e.getMessage());
+            logger.info("error : " + ExceptionUtils.getStackTrace(e));
+            throw new RuntimeException("Failed to download image: " + e.getMessage());
+        }
     }
-
-
 
     private static byte[] handleDataUrl(String dataUrl) throws Exception {
         try {
@@ -274,4 +322,5 @@ public class DownloadImageFromImgTag extends WebAction {
             throw e;
         }
     }
+
 }
