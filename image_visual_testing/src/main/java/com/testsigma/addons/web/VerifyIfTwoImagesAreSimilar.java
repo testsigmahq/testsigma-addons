@@ -13,12 +13,15 @@ import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.TestStepResult;
 import lombok.Data;
 import okhttp3.*;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.http.client.config.RequestConfig;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 
 @Data
@@ -42,7 +45,11 @@ public class VerifyIfTwoImagesAreSimilar extends WebAction {
 
     @RunTimeData
     private com.testsigma.sdk.RunTimeData runTimeData;
-
+    RequestConfig config = RequestConfig.custom()
+            .setSocketTimeout(10 * 60 * 1000)
+            .setConnectionRequestTimeout(60 * 1000)
+            .setConnectTimeout(60 * 1000)
+            .build();
     ObjectMapper mapper = new ObjectMapper();
     ResponseObject responseObject = new ResponseObject();
 
@@ -63,8 +70,8 @@ public class VerifyIfTwoImagesAreSimilar extends WebAction {
             ImageComparisonUtils imageComparisonUtils = new ImageComparisonUtils(driver, logger);
             BufferedImage baseImage = null;
             BufferedImage actualImage = null;
-            File file1 = imageComparisonUtils.urlToFileConverter("first_image", baseImagePath);
-            File file2 = imageComparisonUtils.urlToFileConverter("second_image", actualImagePath);
+            File file1 = urlToFileConverter("first_image", baseImagePath);
+            File file2 = urlToFileConverter("second_image", actualImagePath);
             logger.info("Base image file path: " + file1.getAbsolutePath());
             baseImage = ImageIO.read(file1);
             actualImage = ImageIO.read(file2);
@@ -91,10 +98,14 @@ public class VerifyIfTwoImagesAreSimilar extends WebAction {
             File combinedImage = null;
             combinedImage = File.createTempFile("combined", ".png");
             logger.info("Combined image file created at: " + combinedImage.getAbsolutePath());
+            StringBuilder errorMessage = new StringBuilder("Images are not identical, " +
+                    "percentage similarity is: " + (percentageSimilarity * 100) + "%, " +
+                    "check step screenshot for visual results");
             return uploadScreenshot(false, file2,
-                    combined, combinedImage, errorMessageBuilder);
+                    combined, combinedImage, errorMessage);
         } catch (IOException e) {
-            logger.info("Failed to process images: " + ExceptionUtils.getStackTrace(e));
+            logger.info("image not found ");
+            logger.info(ExceptionUtils.getStackTrace(e));
             throw new RuntimeException(e);
         }
     }
@@ -152,8 +163,8 @@ public class VerifyIfTwoImagesAreSimilar extends WebAction {
                     throw new RuntimeException("Visual testing failed with no response body");
                 }
             } else {
-                setErrorMessage("Visual testing failed with HTTP " + response.code() + ": " + response.message());
-                              throw new RuntimeException("Visual testing failed with HTTP " + response.code());
+                setErrorMessage("Visual testing failed  error occurred internally");
+                throw new RuntimeException("Visual testing failed with internal server error");
             }
         } catch (IOException e) {
 
@@ -186,10 +197,10 @@ public class VerifyIfTwoImagesAreSimilar extends WebAction {
                     logger.debug("Error occurred while uploading combined image to S3," +
                             " screenshot might not be displayed");
                 }
-                String message = "Comparison failed because visual testing detected dissimilarities," +
-                        " check step screenshot for visual results";
-                errorMessageBuilder.append(message);
-                setErrorMessage(message);
+//                String message = "Comparison failed because visual testing detected dissimilarities," +
+//                        " check step screenshot for visual results";
+//                errorMessageBuilder.append(message);
+                setErrorMessage(errorMessageBuilder.toString());
                 return Result.FAILED;
             }
 
@@ -203,5 +214,34 @@ public class VerifyIfTwoImagesAreSimilar extends WebAction {
         logger.info("Successfully uploaded screenshot to S3: " + testStepResult.getScreenshotUrl());
         return Result.SUCCESS;
     }
+
+    public File urlToFileConverter(String fileName, String url) {
+        try {
+            if (url.startsWith("https://") || url.startsWith("http://")) {
+                logger.info("Given is s3 url ...File name:" + fileName);
+                URL urlObject = new URL(url);
+                String baseName = fileName;
+                String extension = "";
+                int lastDotIndex = fileName.lastIndexOf('.');
+                if (lastDotIndex > 0) {
+                    baseName = fileName.substring(0, lastDotIndex);
+                    extension = fileName.substring(lastDotIndex);
+                }
+                File tempFile = File.createTempFile(baseName, extension);
+                FileUtils.copyURLToFile(urlObject, tempFile);
+                logger.info("Temp file created with name for s3 file" + tempFile.getName()
+                        + " at path " + tempFile.getAbsolutePath());
+                return tempFile;
+            } else {
+                logger.info("Given is local file path..");
+                return new File(url);
+//                return createLocalFileFromDownloadsCopy(url, ".png");
+            }
+        } catch (Exception e) {
+            logger.info("Error while accessing: " + url);
+            throw new RuntimeException("Unable to access the given file, please check the given inputs.");
+        }
+    }
+
 
 }

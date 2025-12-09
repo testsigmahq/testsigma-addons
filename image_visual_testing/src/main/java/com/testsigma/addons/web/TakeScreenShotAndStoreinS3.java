@@ -1,13 +1,11 @@
-package com.testsigma.addons.ios;
+package com.testsigma.addons.web;
 
 import com.testsigma.sdk.ApplicationType;
-import com.testsigma.sdk.IOSAction;
 import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.RunTimeData;
 import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.TestStepResult;
-import io.appium.java_client.ios.IOSDriver;
 import lombok.Data;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -23,9 +21,9 @@ import java.nio.file.Files;
 @Action(actionText = "Take screenshot of the current page and store the saved image file path in runtime variable" +
         " test-data",
         description = "validates options count in a select drop-down",
-        applicationType = ApplicationType.IOS,
+        applicationType = ApplicationType.WEB,
         useCustomScreenshot = false)
-public class TakeScreenShotAndStorePathInRuntime extends IOSAction {
+public class TakeScreenShotAndStoreinS3 extends WebAction {
     @TestData(reference = "test-data", isRuntimeVariable = true)
     private com.testsigma.sdk.TestData testData;
     @RunTimeData
@@ -48,8 +46,7 @@ public class TakeScreenShotAndStorePathInRuntime extends IOSAction {
             file1 = new File(basePdfDirectoryPath + File.separator + "first_image_" + timeNow + ".png");
             // take screenshot and save it
             logger.info("Taking screenshot of the current page");
-            IOSDriver iosDriver = (IOSDriver) this.driver;
-            byte[] screenshot = ((TakesScreenshot) iosDriver).getScreenshotAs(OutputType.BYTES);
+            byte[] screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
             logger.info("Screenshot taken successfully");
             saveBytesArrayToFile(file1.getAbsolutePath(), screenshot);
             logger.info("Screenshot saved at: " + file1.getAbsolutePath());

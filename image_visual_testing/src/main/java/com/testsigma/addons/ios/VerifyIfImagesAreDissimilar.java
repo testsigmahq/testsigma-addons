@@ -88,7 +88,7 @@ public class VerifyIfImagesAreDissimilar extends IOSAction {
                         (percentageSimilarity * 100) + "%");
                 uploadScreenshot(true, file2, actualImage, null, errorMessageBuilder);
                 setSuccessMessage("Successfully verified that the base image and actual image are dissimilar. " +
-                        "Similarity percentage: " + (percentageSimilarity * 100) + "%");
+                        "Similarity percentage: " + ((100) - percentageSimilarity * 100) + "%");
                 return Result.SUCCESS;
             }
             

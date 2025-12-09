@@ -13,6 +13,7 @@ import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.TestStepResult;
 import lombok.Data;
 import okhttp3.*;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.client.config.RequestConfig;
 
@@ -20,10 +21,11 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 
 @Data
-@Action(actionText = "Verify if  Two Images actual-image and base-image are similar",
+@Action(actionText = "Verify if Two Images actual-image and base-image are similar",
         description = "This action compares two images using visual testing and returns the result.",
         applicationType = com.testsigma.sdk.ApplicationType.WEB,
         useCustomScreenshot = true)
@@ -40,6 +42,7 @@ public class CompareTwoImagesUsingVisualTesting extends WebAction {
 
     @RunTimeData
     private com.testsigma.sdk.RunTimeData runTimeData;
+
     RequestConfig config = RequestConfig.custom()
             .setSocketTimeout(10 * 60 * 1000)
             .setConnectionRequestTimeout(60 * 1000)
@@ -66,8 +69,10 @@ public class CompareTwoImagesUsingVisualTesting extends WebAction {
             ImageComparisonUtils imageComparisonUtils = new ImageComparisonUtils(driver, logger);
             BufferedImage baseImage = null;
             BufferedImage actualImage = null;
-            File file1 = imageComparisonUtils.urlToFileConverter("first_image", baseImagePath);
-            File file2 = imageComparisonUtils.urlToFileConverter("second_image", actualImagePath);
+            File file1 = urlToFileConverter("first_image", baseImagePath);
+            File file2 = urlToFileConverter("second_image", actualImagePath);
+//            File file1 = new File(baseImagePath);
+//            File file2 = new File(actualImagePath);
             logger.info("Base image file path: " + file1.getAbsolutePath());
             baseImage = ImageIO.read(file1);
             actualImage = ImageIO.read(file2);
@@ -81,6 +86,7 @@ public class CompareTwoImagesUsingVisualTesting extends WebAction {
             }
             if(status) {
                 logger.info("Images are identical, no differences found.");
+                uploadScreenshot(true, file2, actualImage, null, errorMessageBuilder);
                 setSuccessMessage("Successfully verified that the base image and actual image are same by visual testing.");
                 return Result.SUCCESS;
             }
@@ -153,6 +159,8 @@ public class CompareTwoImagesUsingVisualTesting extends WebAction {
                     throw new RuntimeException("Visual testing failed with no response body");
                 }
             } else {
+                logger.info("Response is not successful, status code: " + response.code());
+                logger.info("Error message: " + response.message());
                 setErrorMessage("Visual testing failed  error occurred internally");
                 throw new RuntimeException("Visual testing failed with internal server error");
             }
@@ -204,5 +212,34 @@ public class CompareTwoImagesUsingVisualTesting extends WebAction {
         logger.info("Successfully uploaded screenshot to S3: " + testStepResult.getScreenshotUrl());
         return Result.SUCCESS;
     }
+
+    public File urlToFileConverter(String fileName, String url) {
+        try {
+            if (url.startsWith("https://") || url.startsWith("http://")) {
+                logger.info("Given is s3 url ...File name:" + fileName);
+                URL urlObject = new URL(url);
+                String baseName = fileName;
+                String extension = "";
+                int lastDotIndex = fileName.lastIndexOf('.');
+                if (lastDotIndex > 0) {
+                    baseName = fileName.substring(0, lastDotIndex);
+                    extension = fileName.substring(lastDotIndex);
+                }
+                File tempFile = File.createTempFile(baseName, extension);
+                FileUtils.copyURLToFile(urlObject, tempFile);
+                logger.info("Temp file created with name for s3 file" + tempFile.getName()
+                        + " at path " + tempFile.getAbsolutePath());
+                return tempFile;
+            } else {
+                logger.info("Given is local file path..");
+                return new File(url);
+//                return createLocalFileFromDownloadsCopy(url, ".png");
+            }
+        } catch (Exception e) {
+            logger.info("Error while accessing: " + url);
+            throw new RuntimeException("Unable to access the given file, please check the given inputs.");
+        }
+    }
+
 
 }

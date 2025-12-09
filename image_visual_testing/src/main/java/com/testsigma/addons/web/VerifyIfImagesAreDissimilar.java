@@ -80,17 +80,17 @@ public class VerifyIfImagesAreDissimilar extends WebAction {
                 logger.info("Diff coordinates are null, initializing to empty list");
                 responseObject.setDiff_coordinates(List.of());
             }
-            
+
             // Check if images are dissimilar (similarity < 100%)
             if ((percentageSimilarity * 100) < 100.0) {
                 logger.info("Images are dissimilar, similarity percentage " +
                         (percentageSimilarity * 100) + "%");
                 uploadScreenshot(true, file2, actualImage, null, errorMessageBuilder);
                 setSuccessMessage("Successfully verified that the base image and actual image are dissimilar. " +
-                        "Similarity percentage: " + (percentageSimilarity * 100) + "%");
+                        "Dissimilarity percentage: " + ((100) - percentageSimilarity * 100) + "%");
                 return Result.SUCCESS;
             }
-            
+
             // Images are identical (100% similar), create combined image to show differences
             combined = imageComparisonUtils.mergeImagesAndHighlightDifferences(baseImage, actualImage,
                     combined, responseObject.getDiff_coordinates());

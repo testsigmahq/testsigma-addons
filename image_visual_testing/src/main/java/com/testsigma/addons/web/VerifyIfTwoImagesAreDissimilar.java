@@ -83,19 +83,19 @@ public class VerifyIfTwoImagesAreDissimilar extends WebAction {
                 logger.info("Diff coordinates are null, initializing to empty list");
                 responseObject.setDiff_coordinates(List.of());
             }
-            
+
             // For dissimilar verification, we want the similarity to be BELOW the threshold
             if ((percentageSimilarity * 100) < Double.parseDouble(percentage.getValue().toString())) {
                 logger.info("Images are dissimilar, similarity percentage " +
-                        (percentageSimilarity * 100) + "% is below threshold " + 
+                        (percentageSimilarity * 100) + "% is below threshold " +
                         Double.parseDouble(percentage.getValue().toString()) + "%");
                 uploadScreenshot(true, file2, actualImage, null, errorMessageBuilder);
                 setSuccessMessage("Successfully verified that the base image and actual image are dissimilar. " +
-                        "Similarity percentage: " + (percentageSimilarity * 100) + "% (below threshold: " + 
+                        "Dissimilarity percentage: " + ((100) - percentageSimilarity * 100) + "% (below threshold: " +
                         Double.parseDouble(percentage.getValue().toString()) + "%)");
                 return Result.SUCCESS;
             }
-            
+
             // Images are too similar, create combined image to show differences
             combined = imageComparisonUtils.mergeImagesAndHighlightDifferences(baseImage, actualImage,
                     combined, responseObject.getDiff_coordinates());
@@ -250,5 +250,5 @@ public class VerifyIfTwoImagesAreDissimilar extends WebAction {
         }
     }
 
-    
+
 }
