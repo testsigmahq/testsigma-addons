@@ -5,11 +5,8 @@ import java.util.List;
 import java.io.*;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.openqa.selenium.By;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.interactions.Actions;
 
 import com.testsigma.sdk.AndroidAction;
 import com.testsigma.sdk.ApplicationType;
@@ -21,10 +18,7 @@ import com.testsigma.sdk.annotation.OCR;
 import com.testsigma.sdk.annotation.RunTimeData;
 import com.testsigma.sdk.annotation.TestData;
 
-import io.appium.java_client.PerformsTouchActions;
-import io.appium.java_client.TouchAction;
 import io.appium.java_client.android.AndroidDriver;
-import io.appium.java_client.touch.offset.PointOption;
 import lombok.Data;
 
 @Data
