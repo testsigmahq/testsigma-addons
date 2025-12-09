@@ -21,7 +21,6 @@ import org.openqa.selenium.NoSuchElementException;
 @Action(actionText = "Execute PostgreSQL Query on the Connection DB_Connection_URL",
 description = "This action executes given query against the connection provided and prints the no. of affected/fetched rows.",
 applicationType = ApplicationType.WEB)
-
 public class PostgreSQLqueries extends WebAction {
 
 	@TestData(reference = "Query")
