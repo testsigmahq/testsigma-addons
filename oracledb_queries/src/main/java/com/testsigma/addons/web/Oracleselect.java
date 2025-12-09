@@ -35,6 +35,7 @@ public class Oracleselect extends WebAction {
 	public com.testsigma.sdk.Result execute() throws NoSuchElementException {
 		Result result = Result.SUCCESS;
 		logger.info("Initiating execution");
+		logger.info("Select Query: " + testData1.getValue().toString());
 		DatabaseUtil databaseUtil = new DatabaseUtil();
 		Connection connection = null;
 		Statement stmt = null;
@@ -72,7 +73,9 @@ public class Oracleselect extends WebAction {
 				 }
 				 sb.append("<br>");
 			}
-			setSuccessMessage("Successfully Executed Select Query and Resultset is : " +sb.toString());
+			sb.append(runTimeData.getKey()+"= "+runTimeData.getValue()+"<br>");
+			setSuccessMessage("Successfully Executed Select Query and Resultset is : " +sb.toString()+"<br>");
+
 			logger.info("Successfully Executed Select Query and Resultset is : " +sb.toString());
 		}
 		catch (Exception e){
