@@ -3,7 +3,6 @@ package com.testsigma.addons.android;
 import com.testsigma.addons.postgresql.util.DatabaseUtil;
 import com.testsigma.sdk.AndroidAction;
 import com.testsigma.sdk.ApplicationType;
-import com.testsigma.sdk.IOSAction;
 import com.testsigma.sdk.Result;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
@@ -16,46 +15,45 @@ import java.sql.Statement;
 
 @Data
 @Action(
-        actionText = "Create Procedure Query on the Connection PG_DB_Connection_URL",
+        actionText = "Create PostgreSQL Procedure Query on the Connection PG_DB_Connection_URL",
         description = "Executes the given PostgreSQL query and creates the procedure",
         applicationType = ApplicationType.ANDROID
 )
 public class PostgresCreateProcedure extends AndroidAction {
 
     @TestData(reference = "Query")
-    private com.testsigma.sdk.TestData testData1;
+    private com.testsigma.sdk.TestData queryData;
 
     @TestData(reference = "PG_DB_Connection_URL")
-    private com.testsigma.sdk.TestData testData2;
+    private com.testsigma.sdk.TestData dbUrlData;
 
     @Override
     public Result execute() throws NoSuchElementException {
-        Result result = Result.SUCCESS;
         logger.info("Starting PostgreSQL procedure creation...");
 
-        DatabaseUtil databaseUtil = new DatabaseUtil();
-
         try {
-            String query = testData1.getValue().toString();
-            String dbURL = testData2.getValue().toString();
+            String query = queryData.getValue().toString().trim();
+            String dbURL = dbUrlData.getValue().toString().trim();
+            logger.info("query: " + query);
+            logger.info("dbURL: " + dbURL);
 
-            logger.info("Connecting to PostgreSQL DB...");
-            Connection connection = databaseUtil.getConnection(dbURL);
+            DatabaseUtil databaseUtil = new DatabaseUtil();
 
-            Statement stmt = connection.createStatement();
-            stmt.execute(query);
+            try (Connection connection = databaseUtil.getConnection(dbURL);
+                 Statement statement = connection.createStatement()) {
 
-            setSuccessMessage("PostgreSQL procedure created successfully: " + query);
-            logger.info("PostgreSQL procedure created successfully: " + query);
+                statement.execute(query);
+                logger.info("PostgreSQL procedure query executed successfully");
+            }
 
-            stmt.close();
-            connection.close();
+            setSuccessMessage("PostgreSQL procedure created successfully.");
+            logger.info("PostgreSQL procedure created successfully.");
+            return Result.SUCCESS;
 
         } catch (Exception e) {
-            setErrorMessage("Exception Occurred: " + ExceptionUtils.getMessage(e));
-            logger.warn("Exception Occurred: " + ExceptionUtils.getStackTrace(e));
-            result = Result.FAILED;
+            setErrorMessage("Failed to create PostgreSQL procedure: " + ExceptionUtils.getMessage(e));
+            logger.warn("PostgreSQL procedure creation failed: " + ExceptionUtils.getStackTrace(e));
+            return Result.FAILED;
         }
-        return result;
     }
 }

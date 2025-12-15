@@ -1,56 +1,59 @@
 package com.testsigma.addons.mobileweb;
 
 import com.testsigma.addons.postgresql.util.DatabaseUtil;
+import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
-import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import lombok.Data;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.openqa.selenium.NoSuchElementException;
 
+import java.sql.CallableStatement;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 
 @Data
-@Action(actionText = "Call PostgreSQL Stored Procedure Query on the Connection PG_DB_Connection_URL", description = "Executes a PostgreSQL CALL query", applicationType = ApplicationType.MOBILE_WEB)
+@Action(
+        actionText = "Call PostgreSQL Stored Procedure Query on the Connection PG_DB_Connection_URL",
+        description = "Executes a PostgreSQL CALL procedure query",
+        applicationType = ApplicationType.MOBILE_WEB
+)
 public class PostgresCallProcedure extends WebAction {
 
     @TestData(reference = "Query")
-    private com.testsigma.sdk.TestData testData1;
+    private com.testsigma.sdk.TestData procedureQueryData;
 
     @TestData(reference = "PG_DB_Connection_URL")
-    private com.testsigma.sdk.TestData testData2;
+    private com.testsigma.sdk.TestData dbUrlData;
 
     @Override
     public Result execute() throws NoSuchElementException {
-        Result result = Result.SUCCESS;
-        logger.info("Executing PostgreSQL CALL....");
-
-        DatabaseUtil databaseUtil = new DatabaseUtil();
+        logger.info("Starting PostgreSQL procedure execution...");
 
         try {
+            String callQuery = procedureQueryData.getValue().toString().trim();
+            String dbURL = dbUrlData.getValue().toString().trim();
+            logger.info("Database URL: " + dbURL);
+            logger.info("Call Query: " + callQuery);
 
-            String query = testData1.getValue().toString().trim();
-            String dbURL = testData2.getValue().toString();
+            DatabaseUtil databaseUtil = new DatabaseUtil();
 
-            Connection connection = databaseUtil.getConnection(dbURL);
+            try (Connection connection = databaseUtil.getConnection(dbURL);
+                 CallableStatement callableStatement = connection.prepareCall(callQuery)) {
 
-            PreparedStatement stmt = connection.prepareStatement(query);
+                callableStatement.execute();
+                logger.info("Successfully executed Procedure Query");
+            }
 
-            boolean hasResultSet = stmt.execute();
-
-            setSuccessMessage("Query executed successfully");
-            stmt.close();
-            connection.close();
+            setSuccessMessage("PostgreSQL procedure executed successfully.");
+            logger.info("PostgreSQL procedure executed successfully.");
+            return Result.SUCCESS;
 
         } catch (Exception e) {
-            setErrorMessage("Exception Occurred: " + ExceptionUtils.getMessage(e));
-            logger.warn("Exception Occurred: " + ExceptionUtils.getStackTrace(e));
-            result = Result.FAILED;
+            setErrorMessage("Failed to execute PostgreSQL procedure: " + ExceptionUtils.getMessage(e));
+            logger.warn("PostgreSQL procedure execution failed: " + ExceptionUtils.getStackTrace(e));
+            return Result.FAILED;
         }
-
-        return result;
     }
 }
