@@ -40,6 +40,7 @@ public class PostgreSQLqueries extends AndroidAction {
 		logger.info("Executing the Query");
 		logger.info("Connection URL:" + databaseUtil.maskConnectionUrl(connectionUrl));
 
+
 		try (Connection connection = databaseUtil.getConnection(connectionUrl);
 			 Statement stmt = connection.createStatement();
 			 ResultSet resultSet = stmt.executeQuery(query)) {
