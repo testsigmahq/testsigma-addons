@@ -23,9 +23,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 @Data
-@Action(actionText = "Write row number and column number into CSV file with testdata where absolutepath is test_data and store filepath in runtime variable variable-name (It supports file from upload section)",
-        description = "Write a particular row and column into CSV file where absolutepath. Can accept local file paths or URLs for the CSV file. Stores the file path in a runtime variable.It supports file from upload section.",
-        applicationType = ApplicationType.WEB)
+@Action(actionText = "Write row number and column number into CSV file with testdata where absolutepath is test_data and store filepath in runtime variable variable-name (It supports file from upload section)", description = "Write a particular row and column into CSV file where absolutepath. Can accept local file paths or URLs for the CSV file. Stores the file path in a runtime variable.It supports file from upload section.", applicationType = ApplicationType.WEB)
 public class WriteCsvFileandStorePath extends WebAction {
 
     @TestData(reference = "row")
@@ -96,13 +94,14 @@ public class WriteCsvFileandStorePath extends WebAction {
                 }
                 targetRowData[columnIndex] = replace;
 
-                writer = new CSVWriter(new FileWriter(tempCsvFile), ',', CSVWriter.NO_QUOTE_CHARACTER, CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
+                writer = new CSVWriter(new FileWriter(tempCsvFile), ',', CSVWriter.NO_QUOTE_CHARACTER,
+                        CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
                 writer.writeAll(data);
                 writer.flush();
             } catch (IOException | CsvException e) { // Catch both exceptions
                 result = com.testsigma.sdk.Result.FAILED;
                 setErrorMessage("Error processing CSV file: " + e.getMessage());
-                logger.warn("Error processing CSV file: " + e);  // Use logger.error for exceptions
+                logger.warn("Error processing CSV file: " + e); // Use logger.error for exceptions
                 return result;
             } finally {
                 if (csvReader != null) {
@@ -123,7 +122,7 @@ public class WriteCsvFileandStorePath extends WebAction {
             // Copy the temp file back to the original file
             try {
                 Files.copy(tempCsvFile.toPath(), csvFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                logger.info("Successfully copied content to original file"+csvFile.getAbsolutePath());
+                logger.info("Successfully copied content to original file" + csvFile.getAbsolutePath());
             } catch (IOException ex) {
                 logger.warn("Error copying data from temp file to original file" + ex);
                 setErrorMessage("Failed to copy data from temp file to original file: " + ex.getMessage());
@@ -134,21 +133,13 @@ public class WriteCsvFileandStorePath extends WebAction {
             runTimeData.setKey(variableName.getValue().toString());
             runTimeData.setValue(csvFile.getAbsolutePath()); // Store absolute path of the new file
 
-            setSuccessMessage("Data is updated successfully in the CSV file. Updated data is " + replace + ". File path stored in runtime variable: " + variableName.getValue().toString() + " = " + csvFile.getAbsolutePath());
+            setSuccessMessage("Data is updated successfully in the CSV file. Updated data is " + replace
+                    + ". File path stored in runtime variable: " + variableName.getValue().toString() + " = "
+                    + csvFile.getAbsolutePath());
         } catch (Exception e) {
             result = com.testsigma.sdk.Result.FAILED;
             setErrorMessage("Operation Failed: " + e.getMessage());
             logger.warn("Error during CSV processing: " + e.getMessage() + e);
-        } finally {
-            //Clean up temp file
-            if (tempCsvFile != null && tempCsvFile.exists()) {
-                try {
-                    Files.delete(tempCsvFile.toPath());
-                    logger.info("Deleted temporary file: " + tempCsvFile.getAbsolutePath());
-                } catch (IOException e) {
-                    logger.warn("Failed to delete temporary file: " + tempCsvFile.getAbsolutePath() + e);
-                }
-            }
         }
 
         return result;
@@ -160,7 +151,8 @@ public class WriteCsvFileandStorePath extends WebAction {
             String originalFileName = FilenameUtils.getName(new URL(pathOrUrl).getPath());
             // Generate a unique file name by appending a timestamp
             String uniqueFileName = "temp_" + System.currentTimeMillis() + "_" + originalFileName;
-            logger.info("Given is a URL... Original file name: " + originalFileName + ", Unique file name: " + uniqueFileName);
+            logger.info("Given is a URL... Original file name: " + originalFileName + ", Unique file name: "
+                    + uniqueFileName);
 
             // Create the full path for the temporary file
             String filePath = String.format("%s%s%s", FileUtils.getTempDirectoryPath(), File.separator, uniqueFileName);
