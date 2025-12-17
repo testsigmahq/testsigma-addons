@@ -23,22 +23,22 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 @Data
-@Action(actionText = "Write row number and column number into CSV file with testdata where absolutepath is test_data and store filepath in runtime variable variable-name (It supports file from upload section)",
-        description = "Write a particular row and column into CSV file where absolutepath. Can accept local file paths or URLs for the CSV file. Stores the file path in a runtime variable.It supports file from upload section.",
+@Action(actionText = "clear cell value from CSV file test_data where row is row-number and column column-number" +
+        " and store filepath in runtime variable variable-name (It supports file from upload section)",
+        description = "Deletes content from a particular cell in CSV file using 1-based indexing for row " +
+                "and column numbers. Can accept local file paths or URLs for the CSV file." +
+                " Stores the file path in a runtime variable. It supports file from upload section.",
         applicationType = ApplicationType.WEB)
-public class WriteCsvFileandStorePath extends WebAction {
+public class DeleteRowContentFromCsvAndStorePath extends WebAction {
 
-    @TestData(reference = "row")
-    private com.testsigma.sdk.TestData row;
+    @TestData(reference = "row-number")
+    private com.testsigma.sdk.TestData rowNumber;
 
-    @TestData(reference = "column")
-    private com.testsigma.sdk.TestData column;
+    @TestData(reference = "column-number")
+    private com.testsigma.sdk.TestData columnNumber;
 
     @TestData(reference = "test_data")
     private com.testsigma.sdk.TestData filePath;
-
-    @TestData(reference = "testdata")
-    private com.testsigma.sdk.TestData testData;
 
     @TestData(reference = "variable-name", isRuntimeVariable = true)
     private com.testsigma.sdk.TestData variableName;
@@ -53,13 +53,12 @@ public class WriteCsvFileandStorePath extends WebAction {
         com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
 
         String filePathString = filePath.getValue().toString();
-        String replace = testData.getValue().toString();
-        
+
         int targetRow;
         int targetColumn;
         try {
-            targetRow = Integer.parseInt(row.getValue().toString());
-            targetColumn = Integer.parseInt(column.getValue().toString());
+            targetRow = Integer.parseInt(rowNumber.getValue().toString());
+            targetColumn = Integer.parseInt(columnNumber.getValue().toString());
         } catch (NumberFormatException e) {
             setErrorMessage("Row number and Column number must be valid integers.");
             return com.testsigma.sdk.Result.FAILED;
@@ -103,26 +102,33 @@ public class WriteCsvFileandStorePath extends WebAction {
                 int rowIndex = targetRow - 1;
                 int columnIndex = targetColumn - 1;
 
-                while (data.size() <= rowIndex) {
-                    data.add(new String[Math.max(columnIndex + 1, 0)]);
-                }
-                String[] targetRowData = data.get(rowIndex);
-                if (targetRowData.length <= columnIndex) {
-                    String[] newRow = new String[columnIndex + 1];
-                    System.arraycopy(targetRowData, 0, newRow, 0, targetRowData.length);
-                    data.set(rowIndex, newRow);
-                    targetRowData = newRow;
-                }
-                targetRowData[columnIndex] = replace;
+                // Check row bounds using 0-based index
+                if (rowIndex < data.size()) {
+                    logger.info("Accessing row " + originalRow);
+                    String[] row = data.get(rowIndex);
 
-                writer = new CSVWriter(new FileWriter(tempCsvFile), ',', CSVWriter.NO_QUOTE_CHARACTER,
-                        CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
-                writer.writeAll(data);
-                writer.flush();
-            } catch (IOException | CsvException e) { // Catch both exceptions
+                    // Check column bounds using 0-based index
+                    if (columnIndex < row.length) {
+                        row[columnIndex] = "";
+
+                        writer = new CSVWriter(new FileWriter(tempCsvFile), ',', CSVWriter.NO_QUOTE_CHARACTER,
+                                CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
+                        writer.writeAll(data);
+                        writer.flush();
+
+                        logger.info("Content deleted from row " + originalRow + " and column " + originalColumn);
+                    } else {
+                        setErrorMessage("Column number " + originalColumn + " is out of bounds. Max columns: " + row.length);
+                        return com.testsigma.sdk.Result.FAILED;
+                    }
+                } else {
+                    setErrorMessage("Row number " + originalRow + " is out of bounds. Max rows: " + data.size());
+                    return com.testsigma.sdk.Result.FAILED;
+                }
+            } catch (IOException | CsvException e) {
                 result = com.testsigma.sdk.Result.FAILED;
                 setErrorMessage("Error processing CSV file: " + e.getMessage());
-                logger.warn("Error processing CSV file: " + e); // Use logger.error for exceptions
+                logger.warn("Error processing CSV file: " + e);
                 return result;
             } finally {
                 if (csvReader != null) {
@@ -140,23 +146,24 @@ public class WriteCsvFileandStorePath extends WebAction {
                     }
                 }
             }
+
             // Copy the temp file back to the original file
             try {
                 Files.copy(tempCsvFile.toPath(), csvFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                logger.info("Successfully copied content to original file" + csvFile.getAbsolutePath());
+                logger.info("Successfully copied content to original file: " + csvFile.getAbsolutePath());
             } catch (IOException ex) {
-                logger.warn("Error copying data from temp file to original file" + ex);
+                logger.warn("Error copying data from temp file to original file: " + ex);
                 setErrorMessage("Failed to copy data from temp file to original file: " + ex.getMessage());
                 return com.testsigma.sdk.Result.FAILED;
             }
 
-            // Store the path of the new updated file
+            // Store the path of the updated file
             runTimeData.setKey(variableName.getValue().toString());
-            runTimeData.setValue(csvFile.getAbsolutePath()); // Store absolute path of the new file
+            runTimeData.setValue(csvFile.getAbsolutePath());
 
-            setSuccessMessage("Data updated successfully at row " + originalRow + ", column " + originalColumn 
-                    + " with value: " + replace + ". File path stored in runtime variable: " 
-                    + variableName.getValue().toString() + " = " + csvFile.getAbsolutePath());
+            setSuccessMessage("Content deleted from row " + originalRow + ", column " + originalColumn
+                    + ". File path stored in runtime variable: " + variableName.getValue().toString()
+                    + " = " + csvFile.getAbsolutePath());
         } catch (Exception e) {
             result = com.testsigma.sdk.Result.FAILED;
             setErrorMessage("Operation Failed: " + e.getMessage());
@@ -180,7 +187,7 @@ public class WriteCsvFileandStorePath extends WebAction {
             File tempFile = new File(filePath);
 
             // Download the file from the URL to the temporary location
-            FileUtils.copyURLToFile(new URL(pathOrUrl), tempFile, 10000, 10000); // Adding timeouts
+            FileUtils.copyURLToFile(new URL(pathOrUrl), tempFile, 10000, 10000);
             logger.info("Temp file created for URL file: " + uniqueFileName + " at path " + filePath);
 
             return tempFile;
@@ -190,3 +197,4 @@ public class WriteCsvFileandStorePath extends WebAction {
         }
     }
 }
+
