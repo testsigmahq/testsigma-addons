@@ -9,12 +9,13 @@ import lombok.Data;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.devtools.Command;
 import org.openqa.selenium.devtools.DevTools;
 import org.openqa.selenium.devtools.HasDevTools;
-import org.openqa.selenium.devtools.v137.emulation.Emulation;
 import org.openqa.selenium.remote.Augmenter;
 
-import java.util.Optional;
+import java.util.HashMap;
+import java.util.Map;
 
 @Data
 @Action(
@@ -77,20 +78,17 @@ public class MockGeoLocationAction extends WebAction {
       devTool.createSessionIfThereIsNotOne();
       logger.info("DevTools session successfully created.");
 
-      devTool.send(Emulation.setGeolocationOverride(
-              Optional.of(latitude),
-              Optional.of(longitude),
-              Optional.of(accuracy),
-              Optional.empty(), // altitude
-              Optional.empty(), // heading
-              Optional.empty(), // speed
-              Optional.empty()  // satelliteCount
-      ));
+      Map<String, Object> coordinates = new HashMap<>();
+      coordinates.put("latitude", latitude);
+      coordinates.put("longitude", longitude);
+      coordinates.put("accuracy", accuracy);
+
+      devTool.send(new Command<>("Emulation.setGeolocationOverride", coordinates));
 
       logger.info("Geolocation override applied successfully.");
     } catch (Exception e) {
       logger.warn("Failed to override geolocation. Error: " + ExceptionUtils.getStackTrace(e));
-      setErrorMessage("Failed to override geolocation. Error: " + ExceptionUtils.getStackTrace(e));
+      setErrorMessage("Failed to override geolocation. Error: " + ExceptionUtils.getMessage(e));
       result = Result.FAILED;
     }
 
