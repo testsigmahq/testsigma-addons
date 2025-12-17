@@ -7,7 +7,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 public class TestVerifyThereAreNoWarningsOnConsole {
     private ActionRunner runner;
@@ -18,7 +18,7 @@ public class TestVerifyThereAreNoWarningsOnConsole {
         System.setProperty("webdriver.chrome.driver", "src/main/resources/chromedriver");
         driver = new ChromeDriver();
         driver.manage().deleteAllCookies();
-        driver.manage().timeouts().implicitlyWait(20, TimeUnit.SECONDS);
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(20));
         runner = new ActionRunner(driver); //Initialize NLP runner
         driver.get("https://examples.testsigma.com/signup");
     }
