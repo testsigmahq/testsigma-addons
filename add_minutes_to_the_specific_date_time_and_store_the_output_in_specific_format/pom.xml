@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.testsigma.addons</groupId>
     <artifactId>add_minutes_to_the_specific_date_time_and_store_the_output_in_specific_format</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.3</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -17,7 +17,7 @@
         <junit.jupiter.version>5.8.0-M1</junit.jupiter.version>
         <testsigma.addon.maven.plugin>1.0.0</testsigma.addon.maven.plugin>
         <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
-        <lombok.version>1.18.20</lombok.version>
+        <lombok.version>1.18.30</lombok.version>
 
     </properties>
 
@@ -60,6 +60,11 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
             <version>2.13.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.17.0</version>
         </dependency>
 
     </dependencies>

@@ -6,6 +6,7 @@ import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.RunTimeData;
 import lombok.Data;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.openqa.selenium.NoSuchElementException;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -76,8 +77,8 @@ public class AddMinutesToDateTime extends WebAction {
 
     } catch (Exception e) {
       result = com.testsigma.sdk.Result.FAILED;
-      setErrorMessage("An unexpected error occurred: " + e.getMessage());
-      logger.warn("Exception during execution: " + e);
+      setErrorMessage("An unexpected error occurred: " + ExceptionUtils.getMessage(e));
+      logger.warn("Exception during execution: " + ExceptionUtils.getStackTrace(e));
     }
     return result;
   }
