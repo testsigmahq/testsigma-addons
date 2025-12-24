@@ -24,7 +24,7 @@ public class Oracleselect extends WebAction {
 	private com.testsigma.sdk.TestData testData1;
 	@TestData(reference = "DB_Connection_URL")
 	private com.testsigma.sdk.TestData testData2;
-	@TestData(reference = "variable-name")
+	@TestData(reference = "variable-name",isRuntimeVariable=true)
 	private com.testsigma.sdk.TestData testData3;
 	@RunTimeData
 	private com.testsigma.sdk.RunTimeData runTimeData;
