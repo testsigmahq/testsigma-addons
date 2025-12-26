@@ -18,7 +18,8 @@ import java.net.URL;
 import java.nio.file.Paths;
 
 @Data
-@Action(actionText = "Write the data datavalue into the Excelfile excel-path with Cell value rowNo,columnNo, sheet-index and store the path in runtime variable variable-name(supports upload section)",
+@Action(actionText = "Write the data datavalue into the Excelfile excel-path with Cell value rowNo,columnNo," +
+        " sheet-index and store the path in runtime variable variable-name (supports upload section)",
         description = "Read the cell value from the Excel file ",
         applicationType = ApplicationType.WEB)
 public class WriteCellvalueWithSheetFilepath extends WebAction {
@@ -93,7 +94,11 @@ public class WriteCellvalueWithSheetFilepath extends WebAction {
                 workbook.write(fileOut);
                 runTimeData.setKey(variableName.getValue().toString());
                 runTimeData.setValue(excelFile.getAbsolutePath());
-                logger.info("Data written successfully to Excel file.File path: " + excelFile.getAbsolutePath());
+                String successMsg = "Successfully wrote value '" + data + "' to cell [Row: " + rowIndex + 
+                        ", Column: " + columnIndex + "] in Sheet index: " + sheetIndex + 
+                        ".<br>File path: " + excelFile.getAbsolutePath();
+                logger.info(successMsg.replace("<br>", " "));
+                setSuccessMessage(successMsg);
             } catch (IOException e) {
                 String errorMessage = ExceptionUtils.getStackTrace(e);
                 result = com.testsigma.sdk.Result.FAILED;
