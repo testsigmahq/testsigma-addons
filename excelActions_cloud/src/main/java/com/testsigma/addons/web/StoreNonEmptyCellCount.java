@@ -19,7 +19,7 @@ import java.net.URL;
 
 @Data
 @Action(actionText = "Store the count of test-data from the excel file file-url into runtime variable runtime-variable",
-        description = "Read the data from latest excel file",
+        description = "stores the count of non-empty cells, rows, or columns from the excel file into a runtime variable",
         applicationType = ApplicationType.WEB,
         useCustomScreenshot = false)
 public class StoreNonEmptyCellCount extends WebAction {
