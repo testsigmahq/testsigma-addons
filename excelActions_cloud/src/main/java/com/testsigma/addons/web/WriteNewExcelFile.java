@@ -68,7 +68,10 @@ public class WriteNewExcelFile extends WebAction {
 			runTimeData.setValue(Integer.toString(newRowNumber));
 			runTimeData.setKey(testData.getValue().toString());
 
-			setSuccessMessage("Data added to the CSV file successfully. New row number: " + newRowNumber);
+			String successMsg = "Successfully wrote value '" + dataValues + "' to new row " + newRowNumber + 
+					" in Sheet index: 0.<br>File path: " + downloadedExcelFile.getAbsolutePath();
+			logger.info(successMsg.replace("<br>", " "));
+			setSuccessMessage(successMsg);
 
 		}catch (Exception e) {
 			result = com.testsigma.sdk.Result.FAILED;

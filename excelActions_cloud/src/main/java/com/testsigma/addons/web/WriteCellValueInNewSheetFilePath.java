@@ -18,11 +18,10 @@ import java.net.URL;
 import java.nio.file.Paths;
 
 @Data
-@Action(actionText = "Write the data datavalue into the Excelfile excel-path with Cell value rowNo,columnNo," +
-        " sheet-index and store the path in runtime variable variable-name (supports upload section)",
-        description = "Read the cell value from the Excel file ",
+@Action(actionText = "Write the data data-value into the Excelfile excel-path with Cell value rowNo,columnNo in new sheet name sheet-name and store the path in runtime variable variable-name(supports upload section)",
+        description = "Write the given data value into a specified row and column of a sheet if it exists, or create a new sheet in the Excel file and store the updated file path in a runtime variable",
         applicationType = ApplicationType.WEB)
-public class WriteCellvalueWithSheetFilepath extends WebAction {
+public class WriteCellValueInNewSheetFilePath extends WebAction {
 
     @TestData(reference = "excel-path")
     private com.testsigma.sdk.TestData excelPath;
@@ -33,10 +32,10 @@ public class WriteCellvalueWithSheetFilepath extends WebAction {
     @TestData(reference = "columnNo")
     private com.testsigma.sdk.TestData testData2;
 
-    @TestData(reference = "datavalue")
+    @TestData(reference = "data-value")
     private com.testsigma.sdk.TestData testData3;
 
-    @TestData(reference = "sheet-index")
+    @TestData(reference = "sheet-name")
     private com.testsigma.sdk.TestData testData4;
 
     @TestData(reference = "variable-name", isRuntimeVariable = true)
@@ -55,7 +54,7 @@ public class WriteCellvalueWithSheetFilepath extends WebAction {
         String filePath = excelPath.getValue().toString();
         int rowIndex = Integer.parseInt(testData1.getValue().toString());;
         int columnIndex = Integer.parseInt(testData2.getValue().toString());;
-        int sheetIndex = Integer.parseInt(testData4.getValue().toString());;
+        String newsheetName = testData4.getValue().toString();
 
         String data = testData3.getValue().toString();
 
@@ -73,17 +72,20 @@ public class WriteCellvalueWithSheetFilepath extends WebAction {
                 return  result;
             }
         } else {
-           excelFile = new File(filePath);
-           logger.info("Inside else");
-           logger.info("Downloaded excel file  at: " + excelFile.getAbsolutePath());
+            excelFile = new File(filePath);
+            logger.info("Inside else");
+            logger.info("Downloaded excel file  at: " + excelFile.getAbsolutePath());
         }
 
         try (FileInputStream fis = new FileInputStream(excelFile);
              Workbook workbook = new XSSFWorkbook(fis)) {
-            Sheet sheet = workbook.getSheetAt(sheetIndex);
-            Row row = sheet.getRow(rowIndex);
+            Sheet newSheet = workbook.getSheet(newsheetName);
+            if (newSheet == null) {
+                newSheet = workbook.createSheet(newsheetName);
+            }
+            Row row = newSheet.getRow(rowIndex);
             if (row == null) {
-                row = sheet.createRow(rowIndex);
+                row = newSheet.createRow(rowIndex);
             }
             Cell cell = row.getCell(columnIndex);
             if (cell == null) {
@@ -92,25 +94,25 @@ public class WriteCellvalueWithSheetFilepath extends WebAction {
             cell.setCellValue(data);
             try (FileOutputStream fileOut = new FileOutputStream(excelFile)) {
                 workbook.write(fileOut);
-                runTimeData.setKey(variableName.getValue().toString());
-                runTimeData.setValue(excelFile.getAbsolutePath());
-                String successMsg = "Successfully wrote value '" + data + "' to cell [Row: " + rowIndex + 
-                        ", Column: " + columnIndex + "] in Sheet index: " + sheetIndex + 
-                        ".<br>File path: " + excelFile.getAbsolutePath();
-                logger.info(successMsg.replace("<br>", " "));
-                setSuccessMessage(successMsg);
             } catch (IOException e) {
                 String errorMessage = ExceptionUtils.getStackTrace(e);
                 result = com.testsigma.sdk.Result.FAILED;
                 setErrorMessage(errorMessage);
                 logger.warn(errorMessage);
             }
+
+            runTimeData.setKey(variableName.getValue().toString());
+            runTimeData.setValue(excelFile.getAbsolutePath());
+            logger.info("Data written successfully to Excel file.File path: " + excelFile.getAbsolutePath());
         } catch (IOException e) {
             String errorMessage = ExceptionUtils.getStackTrace(e);
             result = com.testsigma.sdk.Result.FAILED;
             setErrorMessage(errorMessage);
             logger.warn(errorMessage);
         }
+
+        setSuccessMessage("Data written successfully to Excel file.File path: " + excelFile.getAbsolutePath());
+
         return result;
     }
 
