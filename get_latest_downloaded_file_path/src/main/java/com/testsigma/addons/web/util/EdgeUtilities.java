@@ -11,6 +11,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.io.File;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -25,8 +26,15 @@ public class EdgeUtilities extends BaseUtilities {
         String originalWindowHandle = driver.getWindowHandle();
         File downloadedFile = null;
         try {
-            driver.switchTo().newWindow(WindowType.TAB);
-            driver.get("edge://downloads");
+            // Create a new tab with JS
+            ((JavascriptExecutor) driver).executeScript("window.open('about:blank','_blank');");
+
+            // Switch to the new tab
+            List<String> tabs = new ArrayList<>(driver.getWindowHandles());
+            driver.switchTo().window(tabs.get(tabs.size() - 1));
+
+            // Go to edge://downloads/
+            driver.get("edge://downloads/");
 
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(60));
             wait.until((ExpectedCondition<Boolean>) driver -> isFileDownloaded());

@@ -6,6 +6,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WindowType;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -19,8 +20,16 @@ public class ChromeUtilities extends BaseUtilities {
     public File copyFileFromDownloads() throws Exception {
         String originalWindowHandle = driver.getWindowHandle();
         try {
-            driver.switchTo().newWindow(WindowType.TAB);
+            // Create a new tab with JS
+            ((JavascriptExecutor) driver).executeScript("window.open('about:blank','_blank');");
+
+            // Switch to the new tab
+            List<String> tabs = new ArrayList<>(driver.getWindowHandles());
+            driver.switchTo().window(tabs.get(tabs.size() - 1));
+
+            // Go to chrome://downloads/
             driver.get("chrome://downloads/");
+
 
             if (!isFileDownloaded()) {
                 throw new RuntimeException("File is still downloading.");
