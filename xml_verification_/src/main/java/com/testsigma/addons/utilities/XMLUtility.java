@@ -36,13 +36,13 @@ public class XMLUtility {
 
     public File urlToFileConverter(String url) throws IOException, Exception {
         logger.info("url: " + url);
-        if (url.startsWith("https://")) {
-            logger.info("Given is s3 url ...File name:");
+        if (url.startsWith("http://") || url.startsWith("https://")) {
+            logger.info("Given is HTTP/HTTPS url ...File name:");
             URL urlObject = new URL(url);
             File tempFile = File.createTempFile("tempXMLFile_", "." + "xml");
             logger.info("created temporary file: " + tempFile.getAbsolutePath());
             FileUtils.copyURLToFile(urlObject, tempFile);
-            logger.info("Temp file created with name for s3 file" + tempFile.getName()
+            logger.info("Temp file created with name for HTTP/HTTPS file" + tempFile.getName()
                     + " at path " + tempFile.getAbsolutePath());
             return tempFile;
         } else {
