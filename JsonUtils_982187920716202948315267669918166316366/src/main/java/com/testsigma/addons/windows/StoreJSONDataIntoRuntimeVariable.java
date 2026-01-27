@@ -1,20 +1,23 @@
-package com.testsigma.addons.web;
+package com.testsigma.addons.windows;
 
 import com.testsigma.addons.utils.JSONUtilities;
 import com.testsigma.sdk.WebAction;
+import com.testsigma.sdk.WindowsAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.RunTimeData;
 import com.testsigma.sdk.annotation.TestData;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 @Data
+@EqualsAndHashCode(callSuper = false)
 @Action(
         actionText = "Fetch the data from the json file file-path and store it in the runtime variable variable-name",
         description = "This action stores JSON data into a runtime variable.",
-        applicationType = com.testsigma.sdk.ApplicationType.WEB
+        applicationType = com.testsigma.sdk.ApplicationType.WINDOWS
 )
-public class StoreJSONDataIntoRuntimeVariable extends WebAction {
+public class StoreJSONDataIntoRuntimeVariable extends WindowsAction {
 
     @TestData(reference = "file-path")
     private com.testsigma.sdk.TestData filePath;
@@ -65,3 +68,4 @@ public class StoreJSONDataIntoRuntimeVariable extends WebAction {
         }
     }
 }
+
