@@ -1,4 +1,4 @@
-package com.testsigma.addons.web;
+package com.testsigma.addons.webif;
 
 import lombok.Data;
 

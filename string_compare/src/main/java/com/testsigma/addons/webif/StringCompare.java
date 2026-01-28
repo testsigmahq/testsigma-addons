@@ -1,6 +1,7 @@
-package com.testsigma.addons.web;
+package com.testsigma.addons.webif;
 
 import com.testsigma.sdk.ApplicationType;
+import com.testsigma.sdk.StepActionType;
 import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
@@ -11,12 +12,13 @@ import org.openqa.selenium.NoSuchElementException;
 @Data
 @Action(actionText = "Verify if string1 selectable-list with string2",
         description = "Verify if both the string equals/contains with and without ignore-case",
-        applicationType = ApplicationType.WEB)
+        applicationType = ApplicationType.WEB,
+        actionType = StepActionType.IF_CONDITION)
 public class StringCompare extends WebAction {
 
-    @TestData(reference = "string1" )
+    @TestData(reference = "string1")
     private com.testsigma.sdk.TestData Actual_Value;
-    @TestData(reference = "string2" )
+    @TestData(reference = "string2")
     private com.testsigma.sdk.TestData Expected_Value;
     @TestData(reference = "selectable-list", allowedValues = {"equals","equals ignore-case","contains","contains ignore-case"})
     private com.testsigma.sdk.TestData Compared_Value;
