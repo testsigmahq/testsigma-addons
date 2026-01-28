@@ -1,20 +1,22 @@
-package com.testsigma.addons.web;
+package com.testsigma.addons.ios;
 
 import com.testsigma.addons.utils.JSONUtilities;
-import com.testsigma.sdk.ApplicationType;
-import com.testsigma.sdk.WebAction;
-import com.testsigma.sdk.annotation.Action;
-import com.testsigma.sdk.annotation.TestData;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.testsigma.sdk.ApplicationType;
+import com.testsigma.sdk.IOSAction;
+import com.testsigma.sdk.annotation.Action;
+import com.testsigma.sdk.annotation.TestData;
+import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.util.List;
 
+@EqualsAndHashCode(callSuper = false)
 @Action(actionText = "Verify if the json string json-string with json path json-path is in order-type order",
         description = "Verifies if a JSON array is sorted in the specified order based on the given JSON path",
-        applicationType = ApplicationType.WEB)
-public class VerifyJsonOrder extends WebAction {
+        applicationType = ApplicationType.IOS)
+public class VerifyJsonOrder extends IOSAction {
 
     @TestData(reference = "json-string")
     private com.testsigma.sdk.TestData jsonString;

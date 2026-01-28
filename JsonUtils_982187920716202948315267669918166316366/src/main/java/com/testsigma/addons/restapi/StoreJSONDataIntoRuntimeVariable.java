@@ -1,6 +1,8 @@
-package com.testsigma.addons.web;
+package com.testsigma.addons.restapi;
 
 import com.testsigma.addons.utils.JSONUtilities;
+import com.testsigma.sdk.ApplicationType;
+import com.testsigma.sdk.RestApiAction;
 import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.RunTimeData;
@@ -12,9 +14,9 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 @Action(
         actionText = "Fetch the data from the json file file-path and store it in the runtime variable variable-name",
         description = "This action stores JSON data into a runtime variable.",
-        applicationType = com.testsigma.sdk.ApplicationType.WEB
+        applicationType = ApplicationType.REST_API
 )
-public class StoreJSONDataIntoRuntimeVariable extends WebAction {
+public class StoreJSONDataIntoRuntimeVariable extends RestApiAction {
 
     @TestData(reference = "file-path")
     private com.testsigma.sdk.TestData filePath;
@@ -58,7 +60,7 @@ public class StoreJSONDataIntoRuntimeVariable extends WebAction {
                 return com.testsigma.sdk.Result.FAILED;
             }
         } catch (Exception e) {
-            String errorMsg = "Failed to store JSON data into runtime variable: " + ExceptionUtils.getMessage(e);
+            String errorMsg = "Failed to store JSON data into runtime variable: " + e.getMessage();
             logger.warn("Error details: " + ExceptionUtils.getStackTrace(e));
             setErrorMessage(errorMsg);
             return com.testsigma.sdk.Result.FAILED;

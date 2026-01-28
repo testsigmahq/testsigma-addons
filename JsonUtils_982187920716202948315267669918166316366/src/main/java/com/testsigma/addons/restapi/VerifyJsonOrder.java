@@ -1,20 +1,20 @@
-package com.testsigma.addons.web;
+package com.testsigma.addons.restapi;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testsigma.addons.utils.JSONUtilities;
 import com.testsigma.sdk.ApplicationType;
+import com.testsigma.sdk.RestApiAction;
 import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.util.List;
 
 @Action(actionText = "Verify if the json string json-string with json path json-path is in order-type order",
         description = "Verifies if a JSON array is sorted in the specified order based on the given JSON path",
-        applicationType = ApplicationType.WEB)
-public class VerifyJsonOrder extends WebAction {
+        applicationType = ApplicationType.REST_API)
+public class VerifyJsonOrder extends RestApiAction {
 
     @TestData(reference = "json-string")
     private com.testsigma.sdk.TestData jsonString;
@@ -75,9 +75,9 @@ public class VerifyJsonOrder extends WebAction {
             }
 
         } catch (Exception e) {
-            String errorMsg = "Error verifying JSON order: " + ExceptionUtils.getMessage(e);
+            String errorMsg = "Error verifying JSON order: " + e.getMessage();
             setErrorMessage(errorMsg);
-            logger.warn("Error details: " + ExceptionUtils.getStackTrace(e));
+            logger.warn("Error details: " + e.getMessage());
             return com.testsigma.sdk.Result.FAILED;
         }
     }
