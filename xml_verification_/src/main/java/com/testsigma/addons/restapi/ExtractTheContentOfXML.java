@@ -17,6 +17,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 @Data
 @Action(actionText = "Xml: Extract and store the content in the runtime-variable for XML filepath",
@@ -40,15 +42,23 @@ public class ExtractTheContentOfXML extends RestApiAction {
         Result result = Result.SUCCESS;
 
         try {
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(new URI(filepath.getValue().toString()))
-                    .build();
+            String filePathStr = filepath.getValue().toString();
+            String xmlContent;
 
-            HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+            // Check if the path is an HTTP/HTTPS URL
+            if (filePathStr.startsWith("http://") || filePathStr.startsWith("https://")) {
+                // Use HttpClient for HTTP/HTTPS URLs
+                HttpClient client = HttpClient.newHttpClient();
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(new URI(filePathStr))
+                        .build();
 
-            String xmlContent = new String(response.body().readAllBytes(), StandardCharsets.UTF_8);
-
+                HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+                xmlContent = new String(response.body().readAllBytes(), StandardCharsets.UTF_8);
+            } else {
+                // Use Files API for local file paths and UNC paths
+                xmlContent = Files.readString(Paths.get(filePathStr), StandardCharsets.UTF_8);
+            }
 
             logger.info("Extracted XML Content: " + xmlContent);
             runTimeData.setValue(xmlContent);
