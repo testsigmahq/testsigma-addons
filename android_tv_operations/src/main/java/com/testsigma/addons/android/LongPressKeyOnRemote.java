@@ -23,7 +23,9 @@ public class LongPressKeyOnRemote extends AndroidAction {
             reference = "key-value",
             allowedValues =
                     {
-                            "Ok"
+                            "Ok","Up","Down","Left","Right",
+                            "Rewind","Forward","Ch+","Ch-",
+                            "Volume-Up","Volume-Down"
                     }
     )
     private com.testsigma.sdk.TestData key;

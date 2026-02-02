@@ -3,7 +3,7 @@ package com.testsigma.addons.android;
 import io.appium.java_client.android.nativekey.AndroidKey;
 
 public class KeyUtil {
-    
+
     public static AndroidKey getKey(String value) {
         AndroidKey androidKey;
         switch (value) {
@@ -130,5 +130,57 @@ public class KeyUtil {
         }
 
         return androidKey;
+    }
+
+    /**
+     * Returns Android KeyEvent keycode (int) for the given key name.
+     * Use with pressKeyCode(keycode) for reliable key injection on Android TV
+     * (works for Down, Menu and other keys where pressKey(KeyEvent) may fail).
+     * Keycodes match android.view.KeyEvent constants.
+     */
+    public static int getKeyCode(String value) {
+        switch (value) {
+            case "Up": return 19;           // KEYCODE_DPAD_UP
+            case "Down": return 20;          // KEYCODE_DPAD_DOWN
+            case "Left": return 21;          // KEYCODE_DPAD_LEFT
+            case "Right": return 22;         // KEYCODE_DPAD_RIGHT
+            case "Ok": return 23;            // KEYCODE_DPAD_CENTER
+            case "Guide": return 172;        // KEYCODE_TV_GUIDE
+            case "Tv-contents-menu": return 256; // KEYCODE_TV_CONTENTS_MENU
+            case "Menu": return 82;          // KEYCODE_MENU
+            case "Info": return 165;         // KEYCODE_INFO
+            case "Ch+": return 166;          // KEYCODE_CHANNEL_UP
+            case "Ch-": return 167;          // KEYCODE_CHANNEL_DOWN
+            case "Back": return 4;           // KEYCODE_BACK
+            case "NUM_0": return 7;          // KEYCODE_0
+            case "NUM_1": return 8;          // KEYCODE_1
+            case "NUM_2": return 9;          // KEYCODE_2
+            case "NUM_3": return 10;         // KEYCODE_3
+            case "NUM_4": return 11;         // KEYCODE_4
+            case "NUM_5": return 12;         // KEYCODE_5
+            case "NUM_6": return 13;        // KEYCODE_6
+            case "NUM_7": return 14;        // KEYCODE_7
+            case "NUM_8": return 15;        // KEYCODE_8
+            case "NUM_9": return 16;        // KEYCODE_9
+            case "Volume-Up": return 24;     // KEYCODE_VOLUME_UP
+            case "Volume-Down": return 25;  // KEYCODE_VOLUME_DOWN
+            case "PlayPause": return 85;    // KEYCODE_MEDIA_PLAY_PAUSE
+            case "Rewind": return 89;       // KEYCODE_MEDIA_REWIND
+            case "Forward": return 90;      // KEYCODE_MEDIA_FAST_FORWARD
+            case "Home": return 3;          // KEYCODE_HOME
+            case "Power": return 26;        // KEYCODE_POWER
+            case "App-switch": return 187;  // KEYCODE_APP_SWITCH
+            case "Soft-left": return 1;     // KEYCODE_SOFT_LEFT
+            case "Soft-right": return 2;    // KEYCODE_SOFT_RIGHT
+            case "Navigate-previous": return 122; // KEYCODE_NAVIGATE_PREVIOUS
+            case "Navigate-next": return 123;     // KEYCODE_NAVIGATE_NEXT
+            case "Navigate-in": return 124;      // KEYCODE_NAVIGATE_IN
+            case "Navigate-out": return 125;     // KEYCODE_NAVIGATE_OUT
+            case "Stem-1-Netflix": return 301;   // KEYCODE_STEM_1
+            case "Stem-2": return 302;           // KEYCODE_STEM_2
+            case "Stem-3": return 303;           // KEYCODE_STEM_3
+            default:
+                throw new IllegalArgumentException("Invalid key value");
+        }
     }
 }

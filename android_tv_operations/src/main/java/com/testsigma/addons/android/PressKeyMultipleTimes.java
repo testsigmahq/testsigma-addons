@@ -5,10 +5,11 @@ import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
+import io.appium.java_client.CommandExecutionHelper;
 import io.appium.java_client.android.AndroidDriver;
-import io.appium.java_client.android.nativekey.AndroidKey;
-import io.appium.java_client.android.nativekey.KeyEvent;
 import lombok.Data;
+
+import java.util.Map;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.openqa.selenium.NoSuchElementException;
 
@@ -44,13 +45,13 @@ public class PressKeyMultipleTimes extends AndroidAction {
         Result result = Result.SUCCESS;
         try {
             logger.info("Initiating execution");
-            AndroidDriver androidDriver = (AndroidDriver)this.driver;
+            AndroidDriver androidDriver = (AndroidDriver) this.driver;
             int noOfTimes = Integer.parseInt(testData.getValue().toString());
             int waitTime = Integer.parseInt(testData1.getValue().toString()) * 1000;
             logger.info("Wait time:" + waitTime + "milliseconds");
-            AndroidKey androidKey = KeyUtil.getKey(key.getValue().toString());
+            int keycode = KeyUtil.getKeyCode(key.getValue().toString());
             for (int i = 0; i < noOfTimes; i++) {
-                androidDriver.pressKey(new KeyEvent(androidKey));
+                CommandExecutionHelper.executeScript(androidDriver, "mobile: pressKey", Map.of("keycode", keycode));
                 logger.info("Press key event done");
                 Thread.sleep(waitTime);
             }
