@@ -183,4 +183,49 @@ public class KeyUtil {
                 throw new IllegalArgumentException("Invalid key value");
         }
     }
+
+    public static String getKeyName(int keycode) {
+        switch (keycode) {
+            case 19:  return "Up";
+            case 20:  return "Down";
+            case 21:  return "Left";
+            case 22:  return "Right";
+            case 23:  return "Ok";
+            case 172: return "Guide";
+            case 256: return "Tv-contents-menu";
+            case 82:  return "Menu";
+            case 165: return "Info";
+            case 166: return "Ch+";
+            case 167: return "Ch-";
+            case 4:   return "Back";
+            case 7:   return "NUM_0";
+            case 8:   return "NUM_1";
+            case 9:   return "NUM_2";
+            case 10:  return "NUM_3";
+            case 11:  return "NUM_4";
+            case 12:  return "NUM_5";
+            case 13:  return "NUM_6";
+            case 14:  return "NUM_7";
+            case 15:  return "NUM_8";
+            case 16:  return "NUM_9";
+            case 24:  return "Volume-Up";
+            case 25:  return "Volume-Down";
+            case 85:  return "PlayPause";
+            case 89:  return "Rewind";
+            case 90:  return "Forward";
+            case 3:   return "Home";
+            case 26:  return "Power";
+            case 187: return "App-switch";
+            case 1:   return "Soft-left";
+            case 2:   return "Soft-right";
+            case 122: return "Navigate-previous";
+            case 123: return "Navigate-next";
+            case 124: return "Navigate-in";
+            case 125: return "Navigate-out";
+            case 301: return "Stem-1-Netflix";
+            case 302: return "Stem-2";
+            case 303: return "Stem-3";
+            default:  return "keycode_" + keycode;
+        }
+    }
 }
