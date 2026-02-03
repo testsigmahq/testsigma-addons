@@ -50,8 +50,9 @@ public class PressKeyMultipleTimes extends AndroidAction {
             int waitTime = Integer.parseInt(testData1.getValue().toString()) * 1000;
             logger.info("Wait time:" + waitTime + "milliseconds");
             int keycode = KeyUtil.getKeyCode(key.getValue().toString());
+            logger.info("Key code is: " + keycode);
             for (int i = 0; i < noOfTimes; i++) {
-                CommandExecutionHelper.executeScript(androidDriver, "mobile: pressKey", Map.of("keycode", keycode));
+                PressKeycodeHelper.pressKeyTvRemote(androidDriver, keycode);
                 logger.info("Press key event done");
                 Thread.sleep(waitTime);
             }

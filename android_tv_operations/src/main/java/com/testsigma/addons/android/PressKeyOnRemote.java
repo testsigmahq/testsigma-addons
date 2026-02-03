@@ -41,7 +41,8 @@ public class PressKeyOnRemote extends AndroidAction {
             logger.info("Initiating execution");
             AndroidDriver androidDriver = (AndroidDriver) this.driver;
             int keycode = KeyUtil.getKeyCode(key.getValue().toString());
-            CommandExecutionHelper.executeScript(androidDriver, "mobile: pressKey", Map.of("keycode", keycode));
+            logger.info("Key code is: " + keycode);
+            PressKeycodeHelper.pressKeyTvRemote(androidDriver, keycode);
             setSuccessMessage("Pressed the key successfully");
         } catch (IllegalArgumentException e) {
             logger.info("Invalid key value");
