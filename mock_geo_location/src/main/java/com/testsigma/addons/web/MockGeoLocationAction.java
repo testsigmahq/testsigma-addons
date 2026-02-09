@@ -9,13 +9,12 @@ import lombok.Data;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.devtools.Command;
 import org.openqa.selenium.devtools.DevTools;
 import org.openqa.selenium.devtools.HasDevTools;
+import org.openqa.selenium.devtools.v141.emulation.Emulation;
 import org.openqa.selenium.remote.Augmenter;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Optional;
 
 @Data
 @Action(
@@ -69,7 +68,7 @@ public class MockGeoLocationAction extends WebAction {
 
       // Enhance the driver to support DevTools
       logger.info("Augmenting driver to support DevTools...");
-      WebDriver driver1 = driver;
+      WebDriver driver1 = this.driver;
       driver1 = new Augmenter().augment(driver1);
 
       // Initialize DevTools and create a session
@@ -78,12 +77,17 @@ public class MockGeoLocationAction extends WebAction {
       devTool.createSessionIfThereIsNotOne();
       logger.info("DevTools session successfully created.");
 
-      Map<String, Object> coordinates = new HashMap<>();
-      coordinates.put("latitude", latitude);
-      coordinates.put("longitude", longitude);
-      coordinates.put("accuracy", accuracy);
-
-      devTool.send(new Command<>("Emulation.setGeolocationOverride", coordinates));
+      devTool.send(
+              Emulation.setGeolocationOverride(
+                      Optional.of(latitude),
+                      Optional.of(longitude),
+                      Optional.of(accuracy),
+                      Optional.empty(),
+                      Optional.empty(),
+                      Optional.empty(),
+                      Optional.empty()
+              )
+      );
 
       logger.info("Geolocation override applied successfully.");
     } catch (Exception e) {
