@@ -131,9 +131,7 @@ public class SendTestSuiteResultsToJiraHook extends Hook {
             for (int i = 0; i < failedSuites.size(); i++) {
                 JsonObject suiteResult = failedSuites.get(i).getAsJsonObject();
                 log("Processing suite " + (i + 1) + " of " + failedSuites.size());
-                if (suiteResult.has("result") && !"FAILURE".equalsIgnoreCase(suiteResult.get("result").getAsString())) {
-                    continue;
-                }
+
                 try {
                     boolean isTicketCreated = createJiraTicketForSuite(suiteResult, jUrl, jUser, jToken, jProject,
                             reportingId, jIssueType);

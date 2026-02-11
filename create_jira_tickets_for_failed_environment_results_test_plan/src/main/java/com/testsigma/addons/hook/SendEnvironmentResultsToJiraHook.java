@@ -131,9 +131,6 @@ public class SendEnvironmentResultsToJiraHook extends Hook {
             for (int i = 0; i < failedEnvs.size(); i++) {
                 JsonObject envResult = failedEnvs.get(i).getAsJsonObject();
                 log("Processing environment " + (i + 1) + " of " + failedEnvs.size());
-                if (envResult.has("result") && !"FAILURE".equalsIgnoreCase(envResult.get("result").getAsString())) {
-                    continue;
-                }
                 try {
                     boolean isTicketCreated = createJiraTicketForEnvironment(envResult, jUrl, jUser, jToken, jProject,
                             reportingId, jIssueType);

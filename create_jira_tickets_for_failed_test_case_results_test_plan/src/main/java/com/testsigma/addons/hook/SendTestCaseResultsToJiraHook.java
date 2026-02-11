@@ -131,9 +131,6 @@ public class SendTestCaseResultsToJiraHook extends Hook {
             for (int i = 0; i < failedTestCases.size(); i++) {
                 JsonObject testCase = failedTestCases.get(i).getAsJsonObject();
                 log("Processing test case " + (i + 1) + " of " + failedTestCases.size());
-                if (testCase.has("result") && !"FAILURE".equalsIgnoreCase(testCase.get("result").getAsString())) {
-                    continue;
-                }
                 try {
                     boolean isTicketCreated = createJiraTicket(testCase, jUrl, jUser, jToken, jProject, reportingId,
                             jIssueType);
@@ -268,16 +265,8 @@ public class SendTestCaseResultsToJiraHook extends Hook {
 
             log("  Items in current page: " + currentPageData.size());
 
-            JsonArray failedInPage = new JsonArray();
-            for (JsonElement element : currentPageData) {
-                JsonObject testCase = element.getAsJsonObject();
-                if (testCase.has("result") && "FAILURE".equalsIgnoreCase(testCase.get("result").getAsString())) {
-                    failedInPage.add(testCase);
-                }
-            }
-            log("  Failed cases in current page: " + failedInPage.size());
-
-            allFailed.addAll(failedInPage);
+            allFailed.addAll(currentPageData);
+            log("  Failed cases in current page: " + currentPageData.size());
 
             if (currentPageData.size() == 0) {
                 hasMore = false;
