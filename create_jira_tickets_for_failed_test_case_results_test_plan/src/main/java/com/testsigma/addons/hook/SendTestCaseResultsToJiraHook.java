@@ -135,7 +135,9 @@ public class SendTestCaseResultsToJiraHook extends Hook {
                     continue;
                 }
                 try {
-                    if (createJiraTicket(testCase, jUrl, jUser, jToken, jProject, reportingId, jIssueType)) {
+                    boolean isTicketCreated = createJiraTicket(testCase, jUrl, jUser, jToken, jProject, reportingId,
+                            jIssueType);
+                    if (isTicketCreated) {
                         ticketsCreated++;
                     } else {
                         duplicatesSkipped++;
@@ -146,7 +148,8 @@ public class SendTestCaseResultsToJiraHook extends Hook {
                     if (e.getCause() != null && e.getCause().getMessage() != null) {
                         msg = msg + " Cause: " + e.getCause().getMessage();
                     }
-                    errorMessages.add((msg != null ? msg : e.getClass().getSimpleName()) + "\n" + ExceptionUtils.getStackTrace(e));
+                    errorMessages.add((msg != null ? msg : e.getClass().getSimpleName()) + "\n"
+                            + ExceptionUtils.getStackTrace(e));
                     log("ERROR creating ticket: " + msg);
                     log("Stack trace: " + ExceptionUtils.getStackTrace(e));
                 }
@@ -162,16 +165,19 @@ public class SendTestCaseResultsToJiraHook extends Hook {
 
             if (errors > 0 && ticketsCreated == 0) {
                 String errDetail = errorMessages.isEmpty() ? "" : " First error: " + errorMessages.get(0);
-                setErrorMessage("Jira ticket creation failed for all " + failedTestCases.size() + " failed test case(s). Errors: " + errors + "." + errDetail);
+                setErrorMessage("Jira ticket creation failed for all " + failedTestCases.size()
+                        + " failed test case(s). Errors: " + errors + "." + errDetail);
                 return Result.FAILED;
             }
             if (errors > 0 && ticketsCreated > 0) {
                 String errDetail = errorMessages.isEmpty() ? "" : " First error: " + errorMessages.get(0);
-                setErrorMessage("Only " + ticketsCreated + " Jira ticket(s) created. " + errors + " ticket(s) failed to create." + errDetail);
+                setErrorMessage("Only " + ticketsCreated + " Jira ticket(s) created. " + errors
+                        + " ticket(s) failed to create." + errDetail);
                 return Result.FAILED;
             }
             if (ticketsCreated == 0) {
-                setErrorMessage("No Jira tickets were created for " + failedTestCases.size() + " failed test case(s). All were skipped as duplicates. Verify Jira project key, issue type, and that no open ticket with the same summary already exists.");
+                setErrorMessage("No Jira tickets were created for " + failedTestCases.size()
+                        + " failed test case(s). All were skipped as duplicates. Verify Jira project key, issue type, and that no open ticket with the same summary already exists.");
                 return Result.FAILED;
             }
             String message = "Created " + ticketsCreated + " Jira ticket(s) for failed test cases.";
@@ -240,8 +246,10 @@ public class SendTestCaseResultsToJiraHook extends Hook {
             if (response.statusCode() != 200) {
                 String body = response.body();
                 String apiMsg = parseApiErrorResponse(body);
-                String detail = apiMsg != null ? apiMsg : (body != null && body.length() > 300 ? body.substring(0, 300) + "..." : body);
-                throw new Exception("Testsigma API error: failed to fetch test case results. Status " + response.statusCode() + ". " + detail);
+                String detail = apiMsg != null ? apiMsg
+                        : (body != null && body.length() > 300 ? body.substring(0, 300) + "..." : body);
+                throw new Exception("Testsigma API error: failed to fetch test case results. Status "
+                        + response.statusCode() + ". " + detail);
             }
 
             JsonObject jsonResponse = JsonParser.parseString(response.body()).getAsJsonObject();
@@ -425,7 +433,9 @@ public class SendTestCaseResultsToJiraHook extends Hook {
             String body = response.body();
             String jiraError = parseJiraErrorResponse(body);
             String errorMsg = "Jira API returned " + response.statusCode()
-                    + (jiraError != null ? ". " + jiraError : ". Response: " + (body != null && body.length() > 200 ? body.substring(0, 200) + "..." : body));
+                    + (jiraError != null ? ". " + jiraError
+                            : ". Response: "
+                                    + (body != null && body.length() > 200 ? body.substring(0, 200) + "..." : body));
             log("Jira API error: " + errorMsg);
             throw new Exception(errorMsg);
         }
@@ -436,12 +446,16 @@ public class SendTestCaseResultsToJiraHook extends Hook {
     }
 
     private String parseApiErrorResponse(String body) {
-        if (body == null || body.isBlank()) return null;
+        if (body == null || body.isBlank())
+            return null;
         try {
             JsonObject json = JsonParser.parseString(body).getAsJsonObject();
-            if (json.has("message")) return json.get("message").getAsString();
-            if (json.has("error")) return json.get("error").getAsString();
-            if (json.has("error_description")) return json.get("error_description").getAsString();
+            if (json.has("message"))
+                return json.get("message").getAsString();
+            if (json.has("error"))
+                return json.get("error").getAsString();
+            if (json.has("error_description"))
+                return json.get("error_description").getAsString();
             return null;
         } catch (Exception e) {
             return null;
@@ -449,19 +463,22 @@ public class SendTestCaseResultsToJiraHook extends Hook {
     }
 
     private String parseJiraErrorResponse(String body) {
-        if (body == null || body.isBlank()) return null;
+        if (body == null || body.isBlank())
+            return null;
         try {
             JsonObject json = JsonParser.parseString(body).getAsJsonObject();
             StringBuilder sb = new StringBuilder();
             if (json.has("errorMessages") && json.get("errorMessages").isJsonArray()) {
                 for (JsonElement e : json.getAsJsonArray("errorMessages")) {
-                    if (sb.length() > 0) sb.append("; ");
+                    if (sb.length() > 0)
+                        sb.append("; ");
                     sb.append(e.getAsString());
                 }
             }
             if (json.has("errors") && json.get("errors").isJsonObject()) {
                 for (Map.Entry<String, JsonElement> entry : json.getAsJsonObject("errors").entrySet()) {
-                    if (sb.length() > 0) sb.append("; ");
+                    if (sb.length() > 0)
+                        sb.append("; ");
                     sb.append(entry.getKey()).append(": ").append(entry.getValue().getAsString());
                 }
             }
@@ -480,7 +497,8 @@ public class SendTestCaseResultsToJiraHook extends Hook {
                     + URLEncoder.encode(jql, StandardCharsets.UTF_8) + "&maxResults=1";
 
             String authString = username + ":" + apiToken;
-            String authHeader = "Basic " + Base64.getEncoder().encodeToString(authString.getBytes(StandardCharsets.UTF_8));
+            String authHeader = "Basic "
+                    + Base64.getEncoder().encodeToString(authString.getBytes(StandardCharsets.UTF_8));
 
             HttpClient client = HttpClient.newBuilder().build();
             HttpRequest request = HttpRequest.newBuilder()
@@ -519,7 +537,8 @@ public class SendTestCaseResultsToJiraHook extends Hook {
         try {
             String projectUrl = jiraUrl + "/rest/api/3/project/" + projectKey;
             String authString = username + ":" + apiToken;
-            String authHeader = "Basic " + Base64.getEncoder().encodeToString(authString.getBytes(StandardCharsets.UTF_8));
+            String authHeader = "Basic "
+                    + Base64.getEncoder().encodeToString(authString.getBytes(StandardCharsets.UTF_8));
             HttpClient client = HttpClient.newBuilder().build();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(projectUrl))
@@ -536,8 +555,10 @@ public class SendTestCaseResultsToJiraHook extends Hook {
                         JsonObject it = element.getAsJsonObject();
                         if (it.has("name") && "Bug".equalsIgnoreCase(it.get("name").getAsString())) {
                             Map<String, Object> r = new HashMap<>();
-                            if (it.has("id")) r.put("id", it.get("id").getAsString());
-                            else r.put("name", "Bug");
+                            if (it.has("id"))
+                                r.put("id", it.get("id").getAsString());
+                            else
+                                r.put("name", "Bug");
                             return r;
                         }
                     }
@@ -545,16 +566,20 @@ public class SendTestCaseResultsToJiraHook extends Hook {
                         JsonObject it = element.getAsJsonObject();
                         if (it.has("name") && "Task".equalsIgnoreCase(it.get("name").getAsString())) {
                             Map<String, Object> r = new HashMap<>();
-                            if (it.has("id")) r.put("id", it.get("id").getAsString());
-                            else r.put("name", "Task");
+                            if (it.has("id"))
+                                r.put("id", it.get("id").getAsString());
+                            else
+                                r.put("name", "Task");
                             return r;
                         }
                     }
                     if (issueTypes.size() > 0) {
                         JsonObject first = issueTypes.get(0).getAsJsonObject();
                         Map<String, Object> r = new HashMap<>();
-                        if (first.has("id")) r.put("id", first.get("id").getAsString());
-                        else if (first.has("name")) r.put("name", first.get("name").getAsString());
+                        if (first.has("id"))
+                            r.put("id", first.get("id").getAsString());
+                        else if (first.has("name"))
+                            r.put("name", first.get("name").getAsString());
                         return r;
                     }
                 }
