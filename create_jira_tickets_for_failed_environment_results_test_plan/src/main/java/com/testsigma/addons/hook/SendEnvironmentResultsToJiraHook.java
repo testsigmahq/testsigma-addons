@@ -26,6 +26,8 @@ import java.util.Map;
 public class SendEnvironmentResultsToJiraHook extends Hook {
 
     private static final String TESTSIGMA_API_BASE_URL = "https://app.testsigma.com/api/v1";
+    /** Jira summary field max length; exceeding it causes API 400. */
+    private static final int JIRA_SUMMARY_MAX_LENGTH = 255;
 
     @TestData(reference = "{JIRA URL}")
     private com.testsigma.sdk.TestData jiraUrl;
@@ -204,6 +206,15 @@ public class SendEnvironmentResultsToJiraHook extends Hook {
         logger.info(message);
     }
 
+    /** Truncates the given string to Jira summary max length (255) to avoid API 400 errors. */
+    private static String truncateForJiraSummary(String summary) {
+        if (summary == null)
+            return "";
+        return summary.length() <= JIRA_SUMMARY_MAX_LENGTH
+                ? summary
+                : summary.substring(0, JIRA_SUMMARY_MAX_LENGTH);
+    }
+
     private JsonArray fetchFailedEnvironmentResults(Long runId, String apiToken) throws Exception {
         JsonArray allFailed = new JsonArray();
         int page = 0;
@@ -343,7 +354,7 @@ public class SendEnvironmentResultsToJiraHook extends Hook {
             environmentResultId = envResult.get("id").getAsLong();
         }
 
-        String summary = "[Testsigma] Environment Failure: " + environmentName;
+        String summary = truncateForJiraSummary("[Testsigma] Environment Failure: " + environmentName);
 
         if (issueAlreadyExists(jiraUrl, username, apiToken, projectKey, summary)) {
             log("Duplicate ticket found. Skipping creation.");
@@ -498,60 +509,94 @@ public class SendEnvironmentResultsToJiraHook extends Hook {
             return result;
         }
         try {
-            String projectUrl = jiraUrl + "/rest/api/3/project/" + projectKey;
+            // Use supported createmeta issuetypes endpoint (old /rest/api/3/issue/createmeta was deprecated June 2024)
+            String createmetaUrl = jiraUrl + "/rest/api/3/issue/createmeta/" + projectKey + "/issuetypes";
             String authString = username + ":" + apiToken;
             String authHeader = "Basic "
                     + Base64.getEncoder().encodeToString(authString.getBytes(StandardCharsets.UTF_8));
             HttpClient client = HttpClient.newBuilder().build();
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(projectUrl))
+                    .uri(URI.create(createmetaUrl))
                     .header("Authorization", authHeader)
                     .header("Accept", "application/json")
                     .GET()
                     .build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
-                JsonObject projectJson = JsonParser.parseString(response.body()).getAsJsonObject();
-                if (projectJson.has("issueTypes") && projectJson.get("issueTypes").isJsonArray()) {
-                    JsonArray issueTypes = projectJson.getAsJsonArray("issueTypes");
-                    for (JsonElement element : issueTypes) {
-                        JsonObject it = element.getAsJsonObject();
-                        if (it.has("name") && "Bug".equalsIgnoreCase(it.get("name").getAsString())) {
-                            Map<String, Object> r = new HashMap<>();
-                            if (it.has("id"))
-                                r.put("id", it.get("id").getAsString());
-                            else
-                                r.put("name", "Bug");
-                            return r;
-                        }
-                    }
-                    for (JsonElement element : issueTypes) {
-                        JsonObject it = element.getAsJsonObject();
-                        if (it.has("name") && "Task".equalsIgnoreCase(it.get("name").getAsString())) {
-                            Map<String, Object> r = new HashMap<>();
-                            if (it.has("id"))
-                                r.put("id", it.get("id").getAsString());
-                            else
-                                r.put("name", "Task");
-                            return r;
-                        }
-                    }
-                    if (issueTypes.size() > 0) {
-                        JsonObject first = issueTypes.get(0).getAsJsonObject();
-                        Map<String, Object> r = new HashMap<>();
-                        if (first.has("id"))
-                            r.put("id", first.get("id").getAsString());
-                        else if (first.has("name"))
-                            r.put("name", first.get("name").getAsString());
-                        return r;
-                    }
+                JsonArray issueTypes = parseIssueTypesArray(response.body());
+                if (issueTypes != null && issueTypes.size() > 0) {
+                    Map<String, Object> preferred = pickPreferredIssueType(issueTypes, "Bug");
+                    if (preferred != null)
+                        return preferred;
+                    preferred = pickPreferredIssueType(issueTypes, "Task");
+                    if (preferred != null)
+                        return preferred;
+                    JsonObject first = issueTypes.get(0).getAsJsonObject();
+                    Map<String, Object> r = new HashMap<>();
+                    if (first.has("id"))
+                        r.put("id", issueTypeIdToString(first.get("id")));
+                    else if (first.has("name"))
+                        r.put("name", first.get("name").getAsString());
+                    return r;
                 }
             }
         } catch (Exception e) {
             logger.warn("getIssueType: " + e.getMessage());
         }
+        // Fallback: hardcoded "Bug" default when lookup fails or is unavailable
         Map<String, Object> result = new HashMap<>();
-        result.put("name", "Task");
+        result.put("name", "Bug");
         return result;
+    }
+
+    /**
+     * Parses the response from GET /rest/api/3/issue/createmeta/{projectIdOrKey}/issuetypes.
+     * Response may be a direct array or an object with "values" or "issueTypes".
+     */
+    private JsonArray parseIssueTypesArray(String responseBody) {
+        if (responseBody == null || responseBody.isBlank())
+            return null;
+        try {
+            JsonElement root = JsonParser.parseString(responseBody);
+            if (root.isJsonArray())
+                return root.getAsJsonArray();
+            if (root.isJsonObject()) {
+                JsonObject obj = root.getAsJsonObject();
+                if (obj.has("values") && obj.get("values").isJsonArray())
+                    return obj.getAsJsonArray("values");
+                if (obj.has("issueTypes") && obj.get("issueTypes").isJsonArray())
+                    return obj.getAsJsonArray("issueTypes");
+            }
+        } catch (Exception e) {
+            logger.warn("parseIssueTypesArray: " + e.getMessage());
+        }
+        return null;
+    }
+
+    private Map<String, Object> pickPreferredIssueType(JsonArray issueTypes, String preferredName) {
+        for (JsonElement element : issueTypes) {
+            JsonObject it = element.getAsJsonObject();
+            if (it.has("name") && preferredName.equalsIgnoreCase(it.get("name").getAsString())) {
+                Map<String, Object> r = new HashMap<>();
+                if (it.has("id"))
+                    r.put("id", issueTypeIdToString(it.get("id")));
+                else
+                    r.put("name", preferredName);
+                return r;
+            }
+        }
+        return null;
+    }
+
+    /** Issue type id may be string or number in Jira API response. */
+    private String issueTypeIdToString(JsonElement idElement) {
+        if (idElement == null || idElement.isJsonNull())
+            return null;
+        if (idElement.isJsonPrimitive()) {
+            if (idElement.getAsJsonPrimitive().isNumber())
+                return String.valueOf(idElement.getAsLong());
+            return idElement.getAsString();
+        }
+        return idElement.toString();
     }
 }

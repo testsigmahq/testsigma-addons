@@ -375,6 +375,9 @@ public class SendTestSuiteResultsToJiraHook extends Hook {
         }
 
         String summary = "[Testsigma] Suite Failure: " + suiteName;
+        if (summary.length() > 255) {
+            summary = summary.substring(0, 255);
+        }
 
         if (issueAlreadyExists(jiraUrl, username, apiToken, projectKey, summary)) {
             log("Duplicate ticket found. Skipping creation.");
@@ -529,61 +532,85 @@ public class SendTestSuiteResultsToJiraHook extends Hook {
             }
             return result;
         }
+        JsonArray issueTypes = fetchIssueTypesFromCreatemeta(jiraUrl, username, apiToken, projectKey);
+        if (issueTypes != null) {
+            Map<String, Object> preferred = pickPreferredIssueType(issueTypes, "Bug");
+            if (preferred != null)
+                return preferred;
+            preferred = pickPreferredIssueType(issueTypes, "Task");
+            if (preferred != null)
+                return preferred;
+            if (issueTypes.size() > 0) {
+                JsonObject first = issueTypes.get(0).getAsJsonObject();
+                Map<String, Object> r = new HashMap<>();
+                if (first.has("id"))
+                    r.put("id", first.get("id").getAsString());
+                else if (first.has("name"))
+                    r.put("name", first.get("name").getAsString());
+                else
+                    r.put("name", "Bug");
+                return r;
+            }
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("name", "Bug");
+        return result;
+    }
+
+    /**
+     * Fetches available issue types for the project using the supported endpoint
+     * /rest/api/3/issue/createmeta/{projectIdOrKey}/issuetypes (the root createmeta
+     * was deprecated and removed from Jira Cloud as of June 3, 2024).
+     */
+    private JsonArray fetchIssueTypesFromCreatemeta(String jiraUrl, String username, String apiToken,
+            String projectKey) {
         try {
-            String projectUrl = jiraUrl + "/rest/api/3/project/" + projectKey;
+            String url = jiraUrl + "/rest/api/3/issue/createmeta/" + projectKey + "/issuetypes";
             String authString = username + ":" + apiToken;
             String authHeader = "Basic "
                     + Base64.getEncoder().encodeToString(authString.getBytes(StandardCharsets.UTF_8));
             HttpClient client = HttpClient.newBuilder().build();
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(projectUrl))
+                    .uri(URI.create(url))
                     .header("Authorization", authHeader)
                     .header("Accept", "application/json")
                     .GET()
                     .build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() == 200) {
-                JsonObject projectJson = JsonParser.parseString(response.body()).getAsJsonObject();
-                if (projectJson.has("issueTypes") && projectJson.get("issueTypes").isJsonArray()) {
-                    JsonArray issueTypes = projectJson.getAsJsonArray("issueTypes");
-                    for (JsonElement element : issueTypes) {
-                        JsonObject it = element.getAsJsonObject();
-                        if (it.has("name") && "Bug".equalsIgnoreCase(it.get("name").getAsString())) {
-                            Map<String, Object> r = new HashMap<>();
-                            if (it.has("id"))
-                                r.put("id", it.get("id").getAsString());
-                            else
-                                r.put("name", "Bug");
-                            return r;
-                        }
-                    }
-                    for (JsonElement element : issueTypes) {
-                        JsonObject it = element.getAsJsonObject();
-                        if (it.has("name") && "Task".equalsIgnoreCase(it.get("name").getAsString())) {
-                            Map<String, Object> r = new HashMap<>();
-                            if (it.has("id"))
-                                r.put("id", it.get("id").getAsString());
-                            else
-                                r.put("name", "Task");
-                            return r;
-                        }
-                    }
-                    if (issueTypes.size() > 0) {
-                        JsonObject first = issueTypes.get(0).getAsJsonObject();
-                        Map<String, Object> r = new HashMap<>();
-                        if (first.has("id"))
-                            r.put("id", first.get("id").getAsString());
-                        else if (first.has("name"))
-                            r.put("name", first.get("name").getAsString());
-                        return r;
-                    }
-                }
+            if (response.statusCode() != 200) {
+                logger.warn("getIssueType: createmeta issuetypes returned " + response.statusCode());
+                return null;
             }
+            String body = response.body();
+            if (body == null || body.isBlank())
+                return null;
+            JsonElement parsed = JsonParser.parseString(body);
+            if (parsed.isJsonArray())
+                return parsed.getAsJsonArray();
+            if (parsed.isJsonObject() && parsed.getAsJsonObject().has("values")
+                    && parsed.getAsJsonObject().get("values").isJsonArray())
+                return parsed.getAsJsonObject().getAsJsonArray("values");
+            return null;
         } catch (Exception e) {
             logger.warn("getIssueType: " + e.getMessage());
+            return null;
         }
-        Map<String, Object> result = new HashMap<>();
-        result.put("name", "Task");
-        return result;
+    }
+
+    private Map<String, Object> pickPreferredIssueType(JsonArray issueTypes, String preferredName) {
+        for (JsonElement element : issueTypes) {
+            JsonObject it = element.getAsJsonObject();
+            if (it.has("name") && preferredName.equalsIgnoreCase(it.get("name").getAsString())) {
+                Map<String, Object> r = new HashMap<>();
+                if (it.has("id")) {
+                    JsonElement idEl = it.get("id");
+                    r.put("id", idEl.isJsonPrimitive() ? idEl.getAsString() : idEl.toString());
+                } else {
+                    r.put("name", preferredName);
+                }
+                return r;
+            }
+        }
+        return null;
     }
 }

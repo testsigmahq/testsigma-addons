@@ -26,6 +26,8 @@ import java.util.Map;
 public class SendTestCaseResultsToJiraHook extends Hook {
 
     private static final String TESTSIGMA_API_BASE_URL = "https://app.testsigma.com/api/v1";
+    /** Jira enforces a 255-character limit on the summary field. */
+    private static final int JIRA_SUMMARY_MAX_LENGTH = 255;
 
     @TestData(reference = "{JIRA URL}")
     private com.testsigma.sdk.TestData jiraUrl;
@@ -367,7 +369,7 @@ public class SendTestCaseResultsToJiraHook extends Hook {
             testDataSetName = testCaseResult.get("testDataSetName").getAsString();
         }
 
-        String summary = "[Testsigma] Failure: " + testCaseName;
+        String summary = truncateSummary("[Testsigma] Failure: " + testCaseName);
 
         if (issueAlreadyExists(jiraUrl, username, apiToken, projectKey, summary)) {
             log("Duplicate ticket found. Skipping creation.");
@@ -475,6 +477,13 @@ public class SendTestCaseResultsToJiraHook extends Hook {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    /** Truncates summary to Jira's 255-character limit to avoid API 400 errors. */
+    private static String truncateSummary(String summary) {
+        if (summary == null) return "";
+        if (summary.length() <= JIRA_SUMMARY_MAX_LENGTH) return summary;
+        return summary.substring(0, JIRA_SUMMARY_MAX_LENGTH - 3) + "...";
     }
 
     private boolean issueAlreadyExists(String jiraUrl, String username, String apiToken, String projectKey,
@@ -590,8 +599,9 @@ public class SendTestCaseResultsToJiraHook extends Hook {
 
     private Map<String, Object> getIssueTypesFromCreatemeta(String jiraUrl, String username, String apiToken,
             String projectKey) throws Exception {
-        String metaUrl = jiraUrl + "/rest/api/3/issue/createmeta?projectKeys=" + projectKey
-                + "&expand=projects.issuetypes.fields";
+        // Use non-deprecated endpoint: /rest/api/3/issue/createmeta/{projectIdOrKey}/issuetypes
+        // (legacy /rest/api/3/issue/createmeta was removed from Jira Cloud as of June 3, 2024)
+        String metaUrl = jiraUrl + "/rest/api/3/issue/createmeta/" + projectKey + "/issuetypes";
         String authString = username + ":" + apiToken;
         String authHeader = "Basic " + Base64.getEncoder().encodeToString(authString.getBytes(StandardCharsets.UTF_8));
 
@@ -606,42 +616,46 @@ public class SendTestCaseResultsToJiraHook extends Hook {
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() == 200) {
-            JsonObject json = JsonParser.parseString(response.body()).getAsJsonObject();
-            if (json.has("projects") && json.get("projects").isJsonArray()) {
-                JsonArray projects = json.getAsJsonArray("projects");
-                if (projects.size() > 0) {
-                    JsonObject project = projects.get(0).getAsJsonObject();
-                    if (project.has("issuetypes") && project.get("issuetypes").isJsonArray()) {
-                        JsonArray issueTypes = project.getAsJsonArray("issuetypes");
-                        Map<String, String> availableTypes = new HashMap<>();
-                        for (JsonElement element : issueTypes) {
-                            JsonObject type = element.getAsJsonObject();
-                            String name = type.get("name").getAsString();
-                            String id = type.get("id").getAsString();
-                            availableTypes.put(name, id);
-                        }
-                        if (availableTypes.containsKey("Bug")) {
-                            Map<String, Object> r = new HashMap<>();
-                            r.put("id", availableTypes.get("Bug"));
-                            return r;
-                        }
-                        if (availableTypes.containsKey("Task")) {
-                            Map<String, Object> r = new HashMap<>();
-                            r.put("id", availableTypes.get("Task"));
-                            return r;
-                        }
-                        if (issueTypes.size() > 0) {
-                            JsonObject first = issueTypes.get(0).getAsJsonObject();
-                            Map<String, Object> r = new HashMap<>();
-                            r.put("id", first.get("id").getAsString());
-                            return r;
-                        }
+            JsonElement root = JsonParser.parseString(response.body());
+            JsonArray issueTypes = null;
+            if (root.isJsonArray()) {
+                issueTypes = root.getAsJsonArray();
+            } else if (root.isJsonObject()) {
+                JsonObject obj = root.getAsJsonObject();
+                if (obj.has("values") && obj.get("values").isJsonArray()) {
+                    issueTypes = obj.getAsJsonArray("values");
+                }
+            }
+            if (issueTypes != null && issueTypes.size() > 0) {
+                Map<String, String> availableTypes = new HashMap<>();
+                for (JsonElement element : issueTypes) {
+                    JsonObject type = element.getAsJsonObject();
+                    if (type.has("name") && type.has("id")) {
+                        String name = type.get("name").getAsString();
+                        String id = type.get("id").getAsString();
+                        availableTypes.put(name, id);
                     }
+                }
+                if (availableTypes.containsKey("Bug")) {
+                    Map<String, Object> r = new HashMap<>();
+                    r.put("id", availableTypes.get("Bug"));
+                    return r;
+                }
+                if (availableTypes.containsKey("Task")) {
+                    Map<String, Object> r = new HashMap<>();
+                    r.put("id", availableTypes.get("Task"));
+                    return r;
+                }
+                JsonObject first = issueTypes.get(0).getAsJsonObject();
+                if (first.has("id")) {
+                    Map<String, Object> r = new HashMap<>();
+                    r.put("id", first.get("id").getAsString());
+                    return r;
                 }
             }
         }
         Map<String, Object> result = new HashMap<>();
-        result.put("name", "Bug");
+        result.put("name", "Task");
         return result;
     }
 }
