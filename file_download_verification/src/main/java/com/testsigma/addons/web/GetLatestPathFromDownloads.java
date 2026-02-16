@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 
 
 @Data
-@Action(actionText = "get the path of the latest file with the name filename from downloads-directory" +
+@Action(actionText = "Get the path of the latest file with the name filename from downloads-directory" +
         "(on the local machine) and store it in the runtime variable filepath.",
         description = "Finds the most recent file with the specified name on the local " +
                 "machine and saves its path to the filepath variable.",
