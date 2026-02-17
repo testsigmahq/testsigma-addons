@@ -18,7 +18,7 @@ import java.util.NoSuchElementException;
         applicationType = ApplicationType.WEB,
         useCustomScreenshot = false
 )
-public class SwipeWithInElementOffset extends WebAction {
+public class SwipeWithInElement extends WebAction {
 
     @TestData(reference = "direction",
             allowedValues = {

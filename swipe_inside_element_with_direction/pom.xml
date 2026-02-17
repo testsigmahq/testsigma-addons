@@ -5,8 +5,8 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.testsigma.addons</groupId>
-    <artifactId>swipe_within_element_with_offset</artifactId>
-    <version>1.0.5</version>
+    <artifactId>swipe_inside_element_with_direction</artifactId>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -64,7 +64,7 @@
 
     </dependencies>
     <build>
-        <finalName>swipe_within_element_with_offset</finalName>
+        <finalName>swipe_inside_element_with_direction</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
