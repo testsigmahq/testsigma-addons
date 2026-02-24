@@ -33,8 +33,8 @@ import java.util.*;
 @TestPlanHook(name = "Send Test Plan Results to Email", type = HookType.AFTER)
 public class SendTestPlanResultsToEmail extends Hook {
 
-    private static final String TESTSIGMA_API_BASE_URL = "https://app.testsigma.com/api/v1";
-    private static final String TESTSIGMA_APP_BASE_URL = "https://app.testsigma.com";
+    private static final String TESTSIGMA_API_BASE_URL = "https://app-in.testsigma.com/api/v1";
+    private static final String TESTSIGMA_APP_BASE_URL = "https://app-in.testsigma.com";
     private static final int API_TIMEOUT_SEC = 30;
     private static final int PAGE_SIZE = 100;
 
@@ -240,6 +240,7 @@ public class SendTestPlanResultsToEmail extends Hook {
     /**
      * Extracts plan counts from test_case_results content item path:
      * content[].environmentResult.executionResult.testPlanResultMetric
+     * Uses only consolidated plan counts (consolidatedPlanTotalCount, etc.).
      */
     private Map<String, Integer> getPlanCountsFromTestCaseResultContent(JsonObject contentItem) {
         if (contentItem == null) return null;
@@ -249,14 +250,22 @@ public class SendTestPlanResultsToEmail extends Hook {
         JsonObject execResult = envResult.getAsJsonObject("executionResult");
         if (!execResult.has("testPlanResultMetric") || !execResult.get("testPlanResultMetric").isJsonObject()) return null;
         JsonObject metric = execResult.getAsJsonObject("testPlanResultMetric");
+        return getCountsFromTestPlanResultMetric(metric);
+    }
+
+    /**
+     * Builds counts map from testPlanResultMetric using only consolidated plan fields.
+     */
+    private Map<String, Integer> getCountsFromTestPlanResultMetric(JsonObject metric) {
+        if (metric == null) return null;
         Map<String, Integer> counts = new LinkedHashMap<>();
-        counts.put("total", getInt(metric, "totalCount", null, 0));
-        counts.put("passed", getInt(metric, "passedCount", null, 0));
-        counts.put("failure", getInt(metric, "failedCount", null, 0));
-        counts.put("stopped", getInt(metric, "stoppedCount", null, 0));
-        counts.put("not_executed", getInt(metric, "notExecutedCount", null, 0));
-        counts.put("queued", getInt(metric, "queuedCount", null, 0));
-        counts.put("running", getInt(metric, "runningCount", null, 0));
+        counts.put("total", getInt(metric, "consolidatedPlanTotalCount", null, 0));
+        counts.put("passed", getInt(metric, "consolidatedPlanPassedCount", null, 0));
+        counts.put("failure", getInt(metric, "consolidatedPlanFailedCount", null, 0));
+        counts.put("stopped", getInt(metric, "consolidatedPlanStoppedCount", null, 0));
+        counts.put("not_executed", getInt(metric, "consolidatedPlanNotExecutedCount", null, 0));
+        counts.put("queued", getInt(metric, "consolidatedPlanQueuedCount", null, 0));
+        counts.put("running", getInt(metric, "consolidatedPlanRunningCount", null, 0));
         return counts;
     }
 
@@ -411,15 +420,7 @@ public class SendTestPlanResultsToEmail extends Hook {
             }
         }
         if (metric == null) return null;
-        Map<String, Integer> counts = new LinkedHashMap<>();
-        counts.put("total", getInt(metric, "totalCount", null, 0));
-        counts.put("passed", getInt(metric, "passedCount", null, 0));
-        counts.put("failure", getInt(metric, "failedCount", null, 0));
-        counts.put("stopped", getInt(metric, "stoppedCount", null, 0));
-        counts.put("not_executed", getInt(metric, "notExecutedCount", null, 0));
-        counts.put("queued", getInt(metric, "queuedCount", null, 0));
-        counts.put("running", getInt(metric, "runningCount", null, 0));
-        return counts;
+        return getCountsFromTestPlanResultMetric(metric);
     }
 
     private int getInt(JsonObject obj, String primaryKey, String fallbackKey, int defaultValue) {
