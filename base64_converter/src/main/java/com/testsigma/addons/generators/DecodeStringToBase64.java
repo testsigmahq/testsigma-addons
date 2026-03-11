@@ -1,15 +1,14 @@
 package com.testsigma.addons.generators;
 
 import com.testsigma.sdk.TestDataFunction;
-import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.TestData;
 import com.testsigma.sdk.annotation.TestDataFunctionParameter;
 import lombok.Data;
 import java.util.Base64;
 
 @Data
-@com.testsigma.sdk.annotation.TestDataFunction(displayName = "Decode the string test-data to base64",
-        description = "Decodes the string test-data to base64")
+@com.testsigma.sdk.annotation.TestDataFunction(displayName = "Decode the input string to base64",
+        description = "Decodes the input string to base64")
 public class DecodeStringToBase64 extends TestDataFunction {
 
   @TestDataFunctionParameter (reference = "string")
