@@ -16,9 +16,24 @@ public class DecodeStringToBase64 extends TestDataFunction {
 
   @Override
   public TestData generate() throws Exception {
-    // Try use of run time data
     logger.info("Initiating execution");
-    String decodedString = new String(Base64.getDecoder().decode(string.getValue().toString()));
+    String input = string.getValue().toString();
+    String decodedString;
+    boolean hasUrlSafeChars = input.contains("-") || input.contains("_");
+    boolean hasStandardChars = input.contains("+") || input.contains("/");
+
+    if (hasUrlSafeChars && !hasStandardChars) {
+      logger.info("Detected URL-safe Base64 encoding, using URL decoder");
+      decodedString = new String(Base64.getUrlDecoder().decode(input));
+    } else {
+      try {
+        decodedString = new String(Base64.getDecoder().decode(input));
+      } catch (IllegalArgumentException ex) {
+        logger.info("Standard Base64 decoding failed, falling back to URL-safe decoder");
+        decodedString = new String(Base64.getUrlDecoder().decode(input));
+      }
+    }
+
     TestData testData = new TestData(decodedString);
     return testData;
   }

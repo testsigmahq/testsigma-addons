@@ -33,7 +33,23 @@ public class DecodeStringToBase64 extends AndroidAction {
 		logger.info("Initiating execution");
 		com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
 		try {
-			String decodedString = new String(Base64.getDecoder().decode(testData1.getValue().toString()));
+			String input = testData1.getValue().toString();
+			String decodedString;
+			boolean hasUrlSafeChars = input.contains("-") || input.contains("_");
+			boolean hasStandardChars = input.contains("+") || input.contains("/");
+
+			if (hasUrlSafeChars && !hasStandardChars) {
+				logger.info("Detected URL-safe Base64 encoding, using URL decoder");
+				decodedString = new String(Base64.getUrlDecoder().decode(input));
+			} else {
+				try {
+					decodedString = new String(Base64.getDecoder().decode(input));
+				} catch (IllegalArgumentException ex) {
+					logger.info("Standard Base64 decoding failed, falling back to URL-safe decoder");
+					decodedString = new String(Base64.getUrlDecoder().decode(input));
+				}
+			}
+
 			logger.info("Decoded string is: " + decodedString);
 			logger.info("Variable name is: " + testData2.getValue().toString());
 			runTimeData.setKey(testData2.getValue().toString());
