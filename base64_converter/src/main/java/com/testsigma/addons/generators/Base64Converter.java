@@ -8,8 +8,8 @@ import lombok.Data;
 import java.util.Base64;
 
 @Data
-@com.testsigma.sdk.annotation.TestDataFunction(displayName = "Convert the string test-data to base64",
-        description = "Converts the string test-data to base64")
+@com.testsigma.sdk.annotation.TestDataFunction(displayName = "Convert the input string to base64",
+        description = "Converts the input string to base64")
 public class Base64Converter extends TestDataFunction {
 
   @TestDataFunctionParameter (reference = "string")
