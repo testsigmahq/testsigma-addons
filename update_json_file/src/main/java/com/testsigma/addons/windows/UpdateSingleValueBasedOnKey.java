@@ -137,12 +137,14 @@ public class UpdateSingleValueBasedOnKey extends WebAction {
                 JsonNode value = jsonObject.get(key);
                 logger.info("  Checking key: " + key + ", Value: " + value.toString());
                 if (key.equals(attributeName)) {
-                    if (value != null && value.asText().equals(attributeValue)) {
+                    if (value != null && value.isValueNode() && value.asText().equals(attributeValue)) {
                         logger.info("  Found attribute: " + attributeName + " with value " + attributeValue);
                         updateNestedKey(jsonObject, keyToUpdate, newValue);
                         return true; // Stop after finding and updating
                     }
-                } else {
+                }
+
+                if (value != null && value.isContainerNode()) {
                     found = findAndUpdate(value, attributeName, attributeValue, keyToUpdate, newValue,found);
                     if (found) {
                         return true; // stop if found from child node
