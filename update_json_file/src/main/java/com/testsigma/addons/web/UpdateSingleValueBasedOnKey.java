@@ -11,6 +11,7 @@ import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.RunTimeData;
 import com.testsigma.sdk.annotation.TestData;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.io.*;
@@ -21,6 +22,7 @@ import java.nio.file.Paths;
 import java.util.Iterator;
 
 @Data
+@EqualsAndHashCode(callSuper = false)
 @Action(actionText = "JSON: Update the JSON file at File-Path by finding Key-Name with Key-Value, updating Key-To-Update to New-Value, and storing the file path in variable-name",
         description = "Updates a JSON file by finding an object with a specific key and value and then updates another key-value pair within the same object. Supports local file paths and URL paths. Stores file path in runtime variable",
         applicationType = ApplicationType.WEB,
@@ -137,12 +139,14 @@ public class UpdateSingleValueBasedOnKey extends WebAction {
                 JsonNode value = jsonObject.get(key);
                 logger.info("  Checking key: " + key + ", Value: " + value.toString());
                 if (key.equals(attributeName)) {
-                    if (value != null && value.asText().equals(attributeValue)) {
+                    if (value != null && value.isValueNode() && value.asText().equals(attributeValue)) {
                         logger.info("  Found attribute: " + attributeName + " with value " + attributeValue);
                         updateNestedKey(jsonObject, keyToUpdate, newValue);
                         return true; // Stop after finding and updating
                     }
-                } else {
+                }
+
+                if (value != null && value.isContainerNode()) {
                     found = findAndUpdate(value, attributeName, attributeValue, keyToUpdate, newValue,found);
                     if (found) {
                         return true; // stop if found from child node
@@ -163,21 +167,32 @@ public class UpdateSingleValueBasedOnKey extends WebAction {
     }
 
 
-    private void updateNestedKey(ObjectNode jsonObject, String keyToUpdate, String newValue) {
-        Iterator<String> keys = jsonObject.fieldNames();
-        while (keys.hasNext()) {
-            String key = keys.next();
-            JsonNode value = jsonObject.get(key);
-            if (key.equals(keyToUpdate)) {
-                logger.info("  Updating key " + keyToUpdate + " to " + newValue);
-                jsonObject.put(keyToUpdate, newValue);
-                return; // stop once found and updated
+    private boolean updateNestedKey(JsonNode json, String keyToUpdate, String newValue) {
+        if (json.isObject()) {
+            ObjectNode jsonObject = (ObjectNode) json;
+            Iterator<String> keys = jsonObject.fieldNames();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                JsonNode value = jsonObject.get(key);
+                if (key.equals(keyToUpdate)) {
+                    logger.info("  Updating key " + keyToUpdate + " to " + newValue);
+                    jsonObject.put(keyToUpdate, newValue);
+                    return true; // stop once found and updated
+                }
+
+                if (value != null && value.isContainerNode() && updateNestedKey(value, keyToUpdate, newValue)) {
+                    return true;
+                }
             }
-            else if(value.isObject()){
-                updateNestedKey((ObjectNode) value,keyToUpdate,newValue);
+        } else if (json.isArray()) {
+            ArrayNode jsonArray = (ArrayNode) json;
+            for (JsonNode jsonNode : jsonArray) {
+                if (updateNestedKey(jsonNode, keyToUpdate, newValue)) {
+                    return true;
+                }
             }
         }
-
+        return false;
     }
 
     private File downloadFile(String fileUrl) throws IOException {
