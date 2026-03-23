@@ -1,8 +1,9 @@
-package com.testsigma.addons.web;
+package com.testsigma.addons.desktop;
 
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
 import com.testsigma.sdk.WebAction;
+import com.testsigma.sdk.WindowsAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.RunTimeData;
 import com.testsigma.sdk.annotation.TestData;
@@ -17,9 +18,9 @@ import java.util.regex.Pattern;
 @Action(
         actionText = "Extract data matching regex and store to a variable, Regex: regex-pattern, Occurrence: occurrence-value, Input String: Input-Data, Store Variable Variable-Name",
         description = "Extracts the value matching the given regex from input data with the occurrence and stores it into the given runtime variable",
-        applicationType = ApplicationType.WEB
+        applicationType = ApplicationType.WINDOWS
 )
-public class StoreMatchingRegexValueInAVariableOccurrence extends WebAction {
+public class StoreMatchingRegexValueInAVariableOccurrence extends WindowsAction {
 
     @TestData(reference = "Input-Data")
     private com.testsigma.sdk.TestData testData;
