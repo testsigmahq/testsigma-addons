@@ -1,4 +1,4 @@
-package com.testsigma.addons.web;
+package com.testsigma.addons.mobile_web;
 
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
@@ -15,20 +15,17 @@ import java.util.regex.Pattern;
 
 @Data
 @Action(
-        actionText = "Extract data matching regex and store to a variable, Regex: regex-pattern, Occurrence: occurrence-value, Input String: Input-Data, Store Variable Variable-Name",
-        description = "Extracts the value matching the given regex from input data with the occurrence and stores it into the given runtime variable",
-        applicationType = ApplicationType.WEB
+        actionText = "Count matches for regex regex-pattern in Input-Data and store the count in runtime variable Variable-Name",
+        description = "Counts the number of matches for the given regex in the input data and stores the count into the given runtime variable",
+        applicationType = ApplicationType.MOBILE_WEB
 )
-public class StoreMatchingRegexValueInAVariableOccurrence extends WebAction {
+public class StoreMatchingRegexCountValue extends WebAction {
 
     @TestData(reference = "Input-Data")
     private com.testsigma.sdk.TestData testData;
 
     @TestData(reference = "regex-pattern")
     private com.testsigma.sdk.TestData regex;
-
-    @TestData(reference = "occurrence-value")
-    private com.testsigma.sdk.TestData occurrence;
 
     @TestData(reference = "Variable-Name", isRuntimeVariable = true)
     private com.testsigma.sdk.TestData runTimeVar;
@@ -43,7 +40,6 @@ public class StoreMatchingRegexValueInAVariableOccurrence extends WebAction {
         String inputData = testData.getValue().toString();
         String regexValue = regex.getValue().toString();
         String varName = runTimeVar.getValue().toString();
-        int occurrenceValue = Integer.parseInt(occurrence.getValue().toString());
 
         logger.info("Input data : " + inputData);
         logger.info("Regex : " + regexValue);
@@ -52,36 +48,23 @@ public class StoreMatchingRegexValueInAVariableOccurrence extends WebAction {
         try {
             Pattern pattern = Pattern.compile(regexValue);
             Matcher matcher = pattern.matcher(inputData);
-
-            String matchedString = null;
             int matchCount = 0;
 
             while (matcher.find()) {
                 matchCount++;
-                if (matchCount == occurrenceValue) {
-                    matchedString = matcher.group();
-                    logger.info("Matched value found : " + matchedString);
-                    break;
-                }
-            }
-
-            if (matchedString == null) {
-                setErrorMessage("Matching value with given regex is not found in input data");
-                return Result.FAILED;
             }
 
             runTimeData.setKey(varName);
-            runTimeData.setValue(matchedString);
-            System.out.println("Matched string : " + matchedString);
+            runTimeData.setValue(String.valueOf(matchCount));
 
-            setSuccessMessage("Successfully stored matched value '" + matchedString +
-                    "' into variable '" + varName + "'");
+            setSuccessMessage("Regex '" + regexValue + "' matched " + matchCount +
+                    " times and stored in variable '" + varName + "'");
 
             return Result.SUCCESS;
 
         } catch (Exception e) {
             logger.warn("Exception occurred " + ExceptionUtils.getStackTrace(e));
-            setErrorMessage("Failed to extract regex match : " + ExceptionUtils.getMessage(e));
+            setErrorMessage("Failed to count regex matches: " + ExceptionUtils.getMessage(e));
             return Result.FAILED;
         }
     }
