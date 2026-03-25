@@ -70,6 +70,7 @@ public class WaitUntilImagePresent extends WindowsAdvancedAction {
             long endTime = startTime + timeoutMs;
 
             while (System.currentTimeMillis() < endTime) {
+
                 logger.info("Polling attempt - checking for image on screen");
 
                 Robot robot = new Robot();

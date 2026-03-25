@@ -1,7 +1,7 @@
 package com.testsigma.addons.windowsAdvanced;
 
-import com.testsigma.addons.windowsAdvanced.utils.ScreenshotUtils;
-import com.testsigma.addons.windowsAdvanced.utils.KeyboardUtils;
+import com.testsigma.addons.util.ScreenshotUtils;
+import com.testsigma.addons.util.KeyboardUtils;
 import com.testsigma.sdk.Result;
 import com.testsigma.sdk.WindowsAdvancedAction;
 import com.testsigma.sdk.annotation.Action;
@@ -17,7 +17,7 @@ import java.awt.*;
         description = "This action allows you to press two modifier keys together with a specific key on the keyboard. " +
                 "This works only for local executions",
         applicationType = com.testsigma.sdk.ApplicationType.WINDOWS_ADVANCED,
-        displayName = "PressTwoModifierKeysWithSpecificKey",
+        displayName = "Press two Modifier Keys with a basic Key",
         useCustomScreenshot = true)
 public class PressTwoModifierKeysWithBasicKey extends WindowsAdvancedAction {
 

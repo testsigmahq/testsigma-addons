@@ -19,7 +19,7 @@ import java.util.List;
 @Action(actionText = "AI: Extract the data and store in a variable Query-to-extract-data Variable-Name",
         description = "Store data from screen based on the query",
         applicationType = ApplicationType.WINDOWS_ADVANCED,
-        displayName = "AI: Extract the data and store in a variable",
+        displayName = "Extract the data and store in a variable",
         useCustomScreenshot = true)
 public class ExtractDataFromScreen extends WindowsAdvancedAction {
 
