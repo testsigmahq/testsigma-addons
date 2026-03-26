@@ -15,7 +15,7 @@ import org.openqa.selenium.NoSuchElementException;
 @Action(actionText = "Generate TOTP using secretkey and store it into a runtime variable testdata",
         description = "Generates time based OTP using google authenticator",
         applicationType = ApplicationType.WEB)
-public class GoogleAuthGenerator extends WebAction {
+public class AuthCodeGenerator extends WebAction {
 
     @TestData(reference = "secretkey")
     private com.testsigma.sdk.TestData secret;

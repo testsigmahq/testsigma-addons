@@ -1,6 +1,5 @@
 package com.testsigma.addons.mobileweb;
 
-import com.testsigma.addons.web.GoogleAuthGenerator;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.RunTimeData;
@@ -14,7 +13,7 @@ import org.openqa.selenium.NoSuchElementException;
 @Action(actionText = "Generate TOTP using secretkey and store it into a runtime variable testdata",
         description = "Generates time based OTP using google authenticator",
         applicationType = ApplicationType.MOBILE_WEB)
-public class AuthCodeGenerator extends GoogleAuthGenerator {
+public class AuthCodeGenerator extends com.testsigma.addons.web.AuthCodeGenerator {
 
     @TestData(reference = "secretkey")
     private com.testsigma.sdk.TestData secret;

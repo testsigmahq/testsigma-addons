@@ -2,7 +2,6 @@ package com.testsigma.addons.windows;
 
 
 import com.testsigma.sdk.ApplicationType;
-import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.WindowsAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.RunTimeData;
@@ -16,7 +15,7 @@ import org.openqa.selenium.NoSuchElementException;
 @Action(actionText = "Generate TOTP using secretkey and store it into a runtime variable testdata",
         description = "Generates time based OTP using google authenticator",
         applicationType = ApplicationType.WINDOWS)
-public class GoogleAuthGenerator extends WindowsAction {
+public class AuthCodeGenerator extends WindowsAction {
 
     @TestData(reference = "secretkey")
     private com.testsigma.sdk.TestData secret;
