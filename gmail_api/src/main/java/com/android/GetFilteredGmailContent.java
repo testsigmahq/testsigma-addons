@@ -10,19 +10,32 @@ import lombok.Data;
 import utils.GmailUtils;
 
 import javax.mail.*;
+import javax.mail.search.SearchTerm;
 
 @Data
-@Action(actionText = "Get complete email content from Gmail using EmailID and Password and store it in a runtime variable var1",
-        description = "Get complete email content from Gmail using EmailID and Password and store it in a runtime variable var1",
+@Action(actionText = "Get email content from Gmail using EmailID and Password " +
+        "filtered by filter-criteria with value filter-value and store it in a runtime variable var1",
+        description = "Get email content from Gmail filtered by From address, To address, or Subject " +
+                "and store it in a runtime variable",
         applicationType = ApplicationType.ANDROID)
-public class GetGmailContent extends AndroidAction {
+public class GetFilteredGmailContent extends AndroidAction {
 
     @TestData(reference = "EmailID")
     private com.testsigma.sdk.TestData EmailID;
+
     @TestData(reference = "Password")
     private com.testsigma.sdk.TestData Password;
+
+    @TestData(reference = "filter-criteria",
+            allowedValues = {"From", "To", "Subject"})
+    private com.testsigma.sdk.TestData filterCriteria;
+
+    @TestData(reference = "filter-value")
+    private com.testsigma.sdk.TestData filterValue;
+
     @TestData(reference = "var1", isRuntimeVariable = true)
     private com.testsigma.sdk.TestData var1;
+
     @RunTimeData
     private com.testsigma.sdk.RunTimeData runTimeData;
 
@@ -31,7 +44,11 @@ public class GetGmailContent extends AndroidAction {
         logger.info("Initiating execution");
         String username = GmailUtils.sanitizeUsername(EmailID.getValue().toString());
         String password = GmailUtils.sanitizePassword(Password.getValue().toString());
+        String criteria = filterCriteria.getValue().toString().trim();
+        String value = filterValue.getValue().toString().trim();
+
         logger.info("username: " + username);
+        logger.info("Filter criteria: " + criteria + ", value: " + value);
 
         Store store = null;
         Folder inbox = null;
@@ -39,22 +56,26 @@ public class GetGmailContent extends AndroidAction {
             store = GmailUtils.connectToGmail(username, password, logger);
             inbox = store.getFolder("INBOX");
             inbox.open(Folder.READ_ONLY);
-            Message[] messages = inbox.getMessages();
-            logger.info("messages: " + messages.length);
+
+            SearchTerm searchTerm = GmailUtils.buildSearchTerm(criteria, value);
+            Message[] messages = inbox.search(searchTerm);
+            logger.info("Found " + messages.length + " messages matching filter: " + criteria + " = " + value);
 
             if (messages.length == 0) {
-                setErrorMessage("No emails found in the INBOX for '" + username + "'. The mailbox is empty.");
+                setErrorMessage("No emails found in INBOX matching " + criteria + ": '" + value +
+                        "'. Please verify the filter criteria and value are correct.");
                 return Result.FAILED;
             }
 
             Message latestMessage = messages[messages.length - 1];
-            logger.info("latestMessage subject: " + latestMessage.getSubject());
+            logger.info("Subject: " + latestMessage.getSubject());
 
             String fullMessage = GmailUtils.extractContent(latestMessage.getContent());
 
             if (fullMessage == null || fullMessage.trim().isEmpty()) {
-                setErrorMessage("Latest email (Subject: " + latestMessage.getSubject() +
-                        ") was found but the email body is empty or could not be read.");
+                setErrorMessage("Email matching " + criteria + ": '" + value +
+                        "' was found (Subject: " + latestMessage.getSubject() +
+                        ") but the email body is empty or could not be read.");
                 return Result.FAILED;
             }
 
@@ -63,13 +84,17 @@ public class GetGmailContent extends AndroidAction {
             runTimeData.setValue(fullMessage);
             runTimeData.setKey(var1.getValue().toString());
             setSuccessMessage("Email content stored in runtime variable: " + var1.getValue().toString() +
-                    " and value: " + fullMessage);
+                    " (filtered by " + criteria + ": " + value + ")");
             return Result.SUCCESS;
 
         } catch (AuthenticationFailedException e) {
             setErrorMessage("Gmail authentication failed for '" + username +
                     "'. Please verify: 1) App password is valid 2) 2-Step Verification is ON 3) IMAP is enabled in Gmail settings. Error: " + e.getMessage());
             logger.warn("Authentication failed: " + e.getMessage());
+            return Result.FAILED;
+        } catch (IllegalArgumentException e) {
+            setErrorMessage(e.getMessage());
+            logger.warn(e.getMessage());
             return Result.FAILED;
         } catch (Exception e) {
             setErrorMessage("Failed to retrieve email content. Error: " + e.getMessage());
