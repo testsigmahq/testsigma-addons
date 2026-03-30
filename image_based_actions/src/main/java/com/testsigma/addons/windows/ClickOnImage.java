@@ -59,6 +59,7 @@ public class ClickOnImage extends WindowsAction {
             logger.info("Height of image: " + height);
 
             File baseImageFile = new File(path);
+            logger.info("Base image file: " + baseImageFile.getAbsolutePath());
             String url = testStepResult.getScreenshotUrl();
             logger.info("Amazon s3 url in which we are storing base image"+url);
             ocr.uploadFile(url, baseImageFile);
