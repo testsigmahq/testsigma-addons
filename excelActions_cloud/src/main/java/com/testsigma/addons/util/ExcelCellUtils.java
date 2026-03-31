@@ -3,7 +3,7 @@ package com.testsigma.addons.util;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.ss.usermodel.Sheet;
 
 /**
  * Utility class for common Excel cell operations
@@ -18,7 +18,7 @@ public class ExcelCellUtils {
      * @param colIdx The column index (0-based)
      * @return The cell value as a String
      */
-    public static String getCellValueAsString(XSSFSheet sheet, int rowIdx, int colIdx) {
+    public static String getCellValueAsString(Sheet sheet, int rowIdx, int colIdx) {
         Row row = sheet.getRow(rowIdx);
         if (row == null) {
             return "[EMPTY ROW]";
