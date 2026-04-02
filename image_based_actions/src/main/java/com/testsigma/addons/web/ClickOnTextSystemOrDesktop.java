@@ -11,7 +11,7 @@ import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.chromium.ChromiumDriver;
 import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.safari.SafariDriver;;
+import org.openqa.selenium.safari.SafariDriver;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -22,10 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Data
-@Action(actionText = "Click on text testdata on system/desktop window",
-        description = "Click on the text using the text coordinates in system/desktop window",
-        applicationType = ApplicationType.WEB,
-        useCustomScreenshot = true)
+@Action(actionText = "Click on text testdata on system/desktop window", description = "Click on the text using the text coordinates in system/desktop window", applicationType = ApplicationType.WEB, useCustomScreenshot = true)
 
 public class ClickOnTextSystemOrDesktop extends WebAction {
     @OCR
@@ -40,9 +37,10 @@ public class ClickOnTextSystemOrDesktop extends WebAction {
     @Override
     protected Result execute() {
         Result result = Result.SUCCESS;
-        try{
+        try {
             if (isCloudExecution()) {
-                setErrorMessage("This action (Click on text testdata on system/desktop window) is not supported in cloud execution environments.");
+                setErrorMessage(
+                        "This action (Click on text testdata on system/desktop window) is not supported in cloud execution environments.");
                 result = Result.FAILED;
                 return result;
             }
@@ -56,12 +54,12 @@ public class ClickOnTextSystemOrDesktop extends WebAction {
 
             // Provide the destination details to copy the screenshot
             String tempDir = System.getProperty("java.io.tmpdir");
-            String filename = "screenshot"+System.currentTimeMillis()+".jpg";
+            String filename = "screenshot" + System.currentTimeMillis() + ".jpg";
             String path = tempDir + filename;
             logger.info("Path: " + path);
 
             // To copy source image in to destination path
-            ImageIO.write(tmp, "jpg",new File(path));
+            ImageIO.write(tmp, "jpg", new File(path));
             int width = tmp.getWidth();
             int height = tmp.getHeight();
             logger.info("Width of image: " + width);
@@ -74,49 +72,50 @@ public class ClickOnTextSystemOrDesktop extends WebAction {
             List<OCRTextPoint> textPoints = ocr.extractTextFromImage(ocrImage);
             printAllCoordinates(textPoints);
             OCRTextPoint textPoint = getTextPointFromText(textPoints);
-            if(textPoint == null) {
+            if (textPoint == null) {
                 result = Result.FAILED;
                 setErrorMessage("Given text is not found");
 
             } else {
-                logger.info("Found Textpoint with text = " + textPoint.getText() +  ", x1 = " + textPoint.getX1() +
+                logger.info("Found Textpoint with text = " + textPoint.getText() + ", x1 = " + textPoint.getX1() +
                         ", y1 = " + textPoint.getY1() + ", x2 = " + textPoint.getX2() + ", y2 = " + textPoint.getY2());
                 clickOnCoordinates(textPoint, width, height);
                 tmp = robot.createScreenCapture(screenSize);
-                filename = "screenshot"+System.currentTimeMillis()+".jpg";
+                filename = "screenshot" + System.currentTimeMillis() + ".jpg";
                 path = tempDir + filename;
-                ImageIO.write(tmp, "jpg",new File(path));
+                ImageIO.write(tmp, "jpg", new File(path));
                 baseImageFile = new File(path);
                 String url = testStepResult.getScreenshotUrl();
                 ocr.uploadFile(url, baseImageFile);
                 setSuccessMessage("Click operation performed on the text " +
-                        "    Text coordinates :" + "x-" + (int)xrelative + ", y-" + (int)yrelative);
+                        "    Text coordinates :" + "x-" + (int) xrelative + ", y-" + (int) yrelative);
             }
-        } catch (Exception e){
-            logger.info("Exception: "+ Arrays.toString(e.getStackTrace()));
+        } catch (Exception e) {
+            logger.info("Exception: " + Arrays.toString(e.getStackTrace()));
             setErrorMessage("Exception occurred while searching for the given text");
             result = Result.FAILED;
         }
 
-
         return result;
     }
+
     private OCRTextPoint getTextPointFromText(List<OCRTextPoint> textPoints) {
-        if(textPoints == null) {
+        if (textPoints == null) {
             return null;
         }
-        for(OCRTextPoint textPoint: textPoints) {
-            if(text.getValue().equals(textPoint.getText())) {
+        for (OCRTextPoint textPoint : textPoints) {
+            if (text.getValue().equals(textPoint.getText())) {
                 return textPoint;
 
             }
         }
-        return  null;
+        return null;
     }
 
     private void printAllCoordinates(List<OCRTextPoint> textPoints) {
-        for(OCRTextPoint textPoint: textPoints) {
-            logger.info("text =" + textPoint.getText() + "x1 = " + textPoint.getX1() + ", y1 =" + textPoint.getY1()  + ", x2 = " + textPoint.getX2() + ", y2 =" + textPoint.getY2() +"\n\n\n\n");
+        for (OCRTextPoint textPoint : textPoints) {
+            logger.info("text =" + textPoint.getText() + "x1 = " + textPoint.getX1() + ", y1 =" + textPoint.getY1()
+                    + ", x2 = " + textPoint.getX2() + ", y2 =" + textPoint.getY2() + "\n\n\n\n");
         }
     }
 
@@ -142,12 +141,11 @@ public class ClickOnTextSystemOrDesktop extends WebAction {
         long browserHeight = (Long) js.executeScript("return window.innerHeight;");
         long browserWidth = (Long) js.executeScript("return window.innerWidth;");
 
-        xrelative = ((double)x / (double)browserWidth) * (double)imageWidth;
-        yrelative = ((double)y / (double)browserHeight) * (double)imageHeight;
+        xrelative = ((double) x / (double) browserWidth) * (double) imageWidth;
+        yrelative = ((double) y / (double) browserHeight) * (double) imageHeight;
 
-
-        logger.info("X relative: " + (int)xrelative + "\n");
-        logger.info("Y relative: " + (int)yrelative + "\n");
+        logger.info("X relative: " + (int) xrelative + "\n");
+        logger.info("Y relative: " + (int) yrelative + "\n");
 
         robot.mouseMove((int) xrelative, (int) yrelative);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
@@ -157,10 +155,11 @@ public class ClickOnTextSystemOrDesktop extends WebAction {
     private boolean isCloudExecution() {
         try {
             // If the driver is an instance of any driver than it is local
-            if (driver instanceof ChromiumDriver || driver instanceof EdgeDriver || driver instanceof FirefoxDriver || driver instanceof SafariDriver) {
+            if (driver instanceof ChromiumDriver || driver instanceof EdgeDriver || driver instanceof FirefoxDriver
+                    || driver instanceof SafariDriver) {
                 return false;
             } else {
-                //It's a cloud environment
+                // It's a cloud environment
                 return true;
             }
         } catch (Exception e) {

@@ -36,7 +36,7 @@ public class GetTDPColumncount extends WebAction {
             String setName = testData2.getValue().toString();
             String apiKey = testData3.getValue().toString();
             logger.info("TDP ID: "+ tdpId +", Set Name: "+ setName +", API Key: "+ apiKey);
-            Map<String, String> parameterValues = TDPApiUtil.getTDPIterationData(tdpId, setName, apiKey);
+            Map<String, String> parameterValues = TDPApiUtil.getTDPIterationData(tdpId, setName, apiKey, logger);
             logger.info("Parameter values: " + parameterValues);
             int totalColumnCount = parameterValues.entrySet().size();
 

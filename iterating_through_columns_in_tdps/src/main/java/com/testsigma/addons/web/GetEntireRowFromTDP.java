@@ -43,7 +43,7 @@ public class GetEntireRowFromTDP extends WebAction {
             String apiKey = testData3.getValue().toString();
             
             // Use the utility class to get TDP iteration data
-            Map<String, String> parameterValues = TDPApiUtil.getTDPIterationData(tdpId, setName, apiKey);
+            Map<String, String> parameterValues = TDPApiUtil.getTDPIterationData(tdpId, setName, apiKey, logger);
             
             // Log the retrieved parameter values
             parameterValues.forEach((key, value) -> 

@@ -28,9 +28,10 @@ public class StoreNextColumnTdpValue extends WebAction {
     @TestData(reference = "api-key")
     private com.testsigma.sdk.TestData testData3;
     @TestData(reference = "column-name", isRuntimeVariable = true)
-    private com.testsigma.sdk.TestData testData4;
+    private com.testsigma.sdk.TestData columnNameTestData;
+
     @TestData(reference = "column-value", isRuntimeVariable = true)
-    private com.testsigma.sdk.TestData testData6;
+    private com.testsigma.sdk.TestData columnValueTestData;
     @TestData(reference = "TDP_ITERATOR_KEY_NAME", isRuntimeVariable = true)
     private com.testsigma.sdk.TestData testData5;
     @TestCaseResult
@@ -51,13 +52,13 @@ public class StoreNextColumnTdpValue extends WebAction {
             String apiKey = testData3.getValue().toString();
             logger.debug("TDP ID: " + tdpId + ", Set Name: " + setName + ", API Key: " + apiKey);
             // use api util to get the next column value
-            Map<String, String> parameterValues = TDPApiUtil.getTDPIterationData(tdpId, setName, apiKey);
+            Map<String, String> parameterValues = TDPApiUtil.getTDPIterationData(tdpId, setName, apiKey, logger);
 
             // get the iterator value
             try {
                 int iteratorValue = Integer.parseInt(testData5.getValue().toString());
                 logger.info("Iterator value: " + iteratorValue);
-                ArrayList<String> resultVariableForStoringOutput = new ArrayList<>();
+                ArrayList<String> columnValuesList = new ArrayList<>();
                 ArrayList<String> columnNamesList = new ArrayList<>();
                 // Loop through the parameters/columns in the parameterValues map
                 for (Map.Entry<String, String> entry : parameterValues.entrySet()) {
@@ -67,29 +68,29 @@ public class StoreNextColumnTdpValue extends WebAction {
                         continue;
                     } else {
                         logger.info("Adding column value to list: " + entry.getValue());
-                        resultVariableForStoringOutput.add(entry.getValue());
+                        columnValuesList.add(entry.getValue());
                         columnNamesList.add(key);
                     }
                 }
-                logger.info("Total columns available after skipping first three columns: " + resultVariableForStoringOutput.size());
-                if (iteratorValue > resultVariableForStoringOutput.size() -1) {
-                    logger.info("Iterator index " + iteratorValue + " exceeds available columns " + resultVariableForStoringOutput.size());
-                    setErrorMessage("Iterator index " + iteratorValue + " exceeds available columns " + resultVariableForStoringOutput.size());
+                logger.info("Total columns available after skipping first three columns: " + columnValuesList.size());
+                if (iteratorValue > columnValuesList.size() - 1) {
+                    logger.info("Iterator index " + iteratorValue + " exceeds available columns " + columnValuesList.size());
+                    setErrorMessage("Iterator index " + iteratorValue + " exceeds available columns " + columnValuesList.size());
                     return com.testsigma.sdk.Result.FAILED;
                 }
 
                 logger.info("Storing column value at index " + iteratorValue + " to runtime variable = "
-                        + resultVariableForStoringOutput.get(iteratorValue));
-                runTimeData.setValue(resultVariableForStoringOutput.get(iteratorValue));
-                runTimeData.setKey(testData4.getValue().toString());
+                        + columnValuesList.get(iteratorValue));
+                runTimeData.setValue(columnValuesList.get(iteratorValue));
+                runTimeData.setKey(columnValueTestData.getValue().toString());
 
                 // store the key value of result variable
                 columnNameRuntimeData.setValue(columnNamesList.get(iteratorValue));
-                columnNameRuntimeData.setKey(testData6.getValue().toString());
+                columnNameRuntimeData.setKey(columnNameTestData.getValue().toString());
                 logger.info("Stored column name in runtime variable: " + columnNamesList.get(iteratorValue));
-                logger.info("Stored next column value in runtime variable: " + resultVariableForStoringOutput.get(iteratorValue));
+                logger.info("Stored next column value in runtime variable: " + columnValuesList.get(iteratorValue));
 
-                setSuccessMessage("Successfully retrieved and stored next column data i.e <b>" + resultVariableForStoringOutput.get(iteratorValue) +
+                setSuccessMessage("Successfully retrieved and stored next column data i.e <b>" + columnValuesList.get(iteratorValue) +
                         "</b> for set name: <b>" + setName + "</b>");
 
                 // updating the iterator value for next iteration...
