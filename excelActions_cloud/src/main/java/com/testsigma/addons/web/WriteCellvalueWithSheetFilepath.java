@@ -1,5 +1,6 @@
 package com.testsigma.addons.web;
 
+import com.testsigma.addons.util.ExcelCellUtils;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
@@ -14,8 +15,6 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.*;
-import java.net.URL;
-import java.nio.file.Paths;
 
 @Data
 @Action(actionText = "Write the data datavalue into the Excelfile excel-path with Cell value rowNo,columnNo," +
@@ -115,17 +114,6 @@ public class WriteCellvalueWithSheetFilepath extends WebAction {
     }
 
     private File downloadFile(String fileUrl) throws IOException {
-        URL url = new URL(fileUrl);
-        String fileName = Paths.get(url.getPath()).getFileName().toString();
-        File tempFile = File.createTempFile("downloaded-", fileName);
-        try (InputStream in = url.openStream();
-             OutputStream out = new FileOutputStream(tempFile)) {
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = in.read(buffer)) != -1) {
-                out.write(buffer, 0, bytesRead);
-            }
-        }
-        return tempFile;
+        return ExcelCellUtils.downloadUrlToTempFile(fileUrl);
     }
 }

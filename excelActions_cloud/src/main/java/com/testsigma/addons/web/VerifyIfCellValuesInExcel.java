@@ -13,11 +13,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.net.URL;
-import java.nio.file.Paths;
 
 @Data
 @Action(actionText = "Verify if cell values are equal for Excel file-path excel-path-1 and another Excel file-path excel-path-2 " +
@@ -149,17 +144,7 @@ public class VerifyIfCellValuesInExcel extends WebAction {
      * Downloads a file from URL to a temporary location
      */
     private File downloadFile(String fileUrl) throws IOException {
-        URL url = new URL(fileUrl);
-        String fileName = Paths.get(url.getPath()).getFileName().toString();
-        File tempFile = File.createTempFile("excel-compare-", "-" + fileName);
-        try (InputStream in = url.openStream();
-             OutputStream out = new FileOutputStream(tempFile)) {
-            byte[] buffer = new byte[4096];
-            int bytesRead;
-            while ((bytesRead = in.read(buffer)) != -1) {
-                out.write(buffer, 0, bytesRead);
-            }
-        }
+        File tempFile = ExcelCellUtils.downloadUrlToTempFile(fileUrl);
         logger.info("Downloaded file to: " + tempFile.getAbsolutePath());
         return tempFile;
     }

@@ -1,12 +1,12 @@
 package com.testsigma.addons.web;
 
+import com.testsigma.addons.util.ExcelCellUtils;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.RunTimeData;
 import com.testsigma.sdk.annotation.TestData;
 import lombok.Data;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -16,7 +16,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.net.URL;
 
 @Data
 @Action(actionText = "Store the count of test-data from the excel file file-url in sheet sheet-name-or-index " +
@@ -173,9 +172,7 @@ public class StoreNonEmptyCellCountWithSheet extends WebAction {
         try {
             if (url.startsWith("https://") || url.startsWith("http://")) {
                 logger.info("Processing remote URL...");
-                URL urlObject = new URL(url);
-                File tempFile = File.createTempFile("excelData", ".xlsx");
-                FileUtils.copyURLToFile(urlObject, tempFile);
+                File tempFile = ExcelCellUtils.downloadUrlToTempFile(url);
                 logger.info("Temporary file created: " + tempFile.getName() + " at path: " + tempFile.getAbsolutePath());
                 return tempFile;
             } else {
