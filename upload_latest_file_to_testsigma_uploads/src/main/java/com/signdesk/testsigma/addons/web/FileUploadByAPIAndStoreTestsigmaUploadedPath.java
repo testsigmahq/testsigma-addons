@@ -9,6 +9,8 @@ import com.testsigma.sdk.annotation.RunTimeData;
 import com.testsigma.sdk.annotation.TestData;
 import lombok.Data;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
+
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 @Data
@@ -52,8 +54,13 @@ public class FileUploadByAPIAndStoreTestsigmaUploadedPath extends WebAction {
 				throw new RuntimeException("Unexpected response code: " + response);
 			}
 
+			ResponseBody responseBody = response.body();
+			if (responseBody == null) {
+				throw new RuntimeException("Response body is null");
+			}
+
 			String uploadedPath = "testsigma-storage:/" + TestsigmaUtils.readJsonData(
-					response.body().string(), "$.latestVersion.path", logger);
+					responseBody.string(), "$.latestVersion.path", logger);
 
 			runTimeData.setKey(variableName.getValue().toString());
 			runTimeData.setValue(uploadedPath);

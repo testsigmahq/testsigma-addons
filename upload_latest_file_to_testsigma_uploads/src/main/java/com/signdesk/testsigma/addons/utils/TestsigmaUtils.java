@@ -13,17 +13,18 @@ import okhttp3.Response;
 import java.io.File;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 public class TestsigmaUtils {
 
-  /**
-   * Uploads a file to Testsigma uploads via the API and returns the raw Response.
-   * Caller is responsible for closing the response inside a try-with-resources block.
-   */
   public static Response uploadFile(String filePath, String projectId, String applicationId,
       String uploadName, String apiUrl, String apiKey) throws Exception {
 
     File pathFile = getLastModified(filePath);
+
+    if (pathFile == null) {
+      throw new IllegalArgumentException("No file found at path: " + filePath);
+    }
 
     Date date = new Date();
     Calendar calendar = Calendar.getInstance();
@@ -48,7 +49,11 @@ public class TestsigmaUtils {
         .addHeader("Authorization", "Bearer " + apiKey)
         .build();
 
-    OkHttpClient client = new OkHttpClient().newBuilder().build();
+    OkHttpClient client = new OkHttpClient().newBuilder()
+        .connectTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
+        .build();
     return client.newCall(request).execute();
   }
 
