@@ -10,8 +10,6 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.openqa.selenium.NoSuchElementException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -41,7 +39,7 @@ public class UpdateXmlWithNewData extends WebAction {
     @Override
     protected Result execute() throws NoSuchElementException {
         logger.info("Initiating execution");
-        com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
+        Result result = Result.SUCCESS;
         try {
                 logger.info("first level");
                 File inputFile = new File(testData1.getValue().toString());
@@ -70,7 +68,7 @@ public class UpdateXmlWithNewData extends WebAction {
                 return result;
             } catch (Exception e) {
                 String errorMessage = ExceptionUtils.getStackTrace(e);
-                result = com.testsigma.sdk.Result.FAILED;
+                result = Result.FAILED;
                 setErrorMessage(errorMessage);
                 logger.warn(errorMessage);
             return result;
