@@ -89,7 +89,9 @@ public class StoreRowCountCsvFile extends WebAction {
         if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
 
             String originalFileName = FilenameUtils.getName(new URL(pathOrUrl).getPath());
-            String uniqueFileName = "temp_" + System.currentTimeMillis() + "_" + originalFileName;
+            // Use only the timestamp for uniqueness — the original name can be arbitrarily long
+            // (e.g. an encoded path from a prior temp file), which would exceed OS filename limits
+            String uniqueFileName = "temp_" + System.currentTimeMillis() + ".csv";
 
             String tempPath = FileUtils.getTempDirectoryPath()
                     + File.separator + uniqueFileName;

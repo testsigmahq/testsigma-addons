@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.testsigma.addons</groupId>
     <artifactId>csv_file_update_from_upload_section</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.6</version>
     <packaging>jar</packaging>
 
     <properties>
