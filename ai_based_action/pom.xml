@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.testsigma.addons</groupId>
     <artifactId>ai_based_action</artifactId>
-    <version>1.0.14</version>
+    <version>1.0.3</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -80,11 +80,6 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
             <version>4.5.14</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.pdfbox</groupId>
-            <artifactId>pdfbox</artifactId>
-            <version>3.0.2</version>
         </dependency>
 
     </dependencies>

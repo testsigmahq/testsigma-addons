@@ -8,7 +8,6 @@ import com.testsigma.sdk.annotation.AI;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.TestStepResult;
-import io.appium.java_client.ios.IOSDriver;
 import lombok.Data;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
@@ -113,14 +112,14 @@ public class ClickOnImageUsingAi extends IOSAction {
                     pageCapture, cap[0], cap[1], cap[2], cap[3], tapX, tapY, Color.MAGENTA);
             finalAnnotatedFile = ScreenshotUtils.saveScreenshotToFile(annotated, "ai_click_elem_result");
             ScreenshotUtils.uploadScreenshotToS3(testStepResult, finalAnnotatedFile, logger);
-            IOSDriver iosDriver = (IOSDriver) driver;
+
             logger.info(String.format("Tapping at (%d,%d)  confidence=%d", tapX, tapY, confidence));
             PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
             Sequence tap = new Sequence(finger, 0);
             tap.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), tapX, tapY));
             tap.addAction(finger.createPointerDown(0));
             tap.addAction(finger.createPointerUp(0));
-            ((Interactive) iosDriver).perform(Collections.singletonList(tap));
+            ((Interactive) driver).perform(Collections.singletonList(tap));
 
             setSuccessMessage(String.format(
                     "Successfully tapped '%s' at (%d,%d) | bbox (%d,%d)-(%d,%d) | confidence=%d | %s",

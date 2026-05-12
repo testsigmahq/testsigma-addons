@@ -19,7 +19,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 
 @Data
-@Action(actionText = "Ai: Verify if the screen contains or matches the condition verification-query",
+@Action(actionText = "Ai: Verify screen contains verification-query",
         description = "Capture a screenshot of the iOS screen and ask AI to verify whether the described " +
                 "content or condition is present. The step passes if AI confirms the query; fails otherwise.",
         displayName = "Ai: Verify screen contains",
