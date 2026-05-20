@@ -19,17 +19,23 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 
 @Data
-@Action(actionText = "Ai: Verify if the page has content matching prompt verification-query",
-        description = "Capture a screenshot of the web page and ask AI to verify whether the described " +
-                "content or condition is present. The step passes if AI confirms the query; fails otherwise. " +
-                "Use natural language to describe what you expect to see.",
-        displayName = "Ai: Verify page contains",
+@Action(actionText = "Ai: store the output from prompt ai-prompt into a runtime variable runtime-variable",
+        description = "uses AI prompt to extract specific " +
+                "content or values visible on the page, and store the result into a runtime variable. " +
+                "Use natural language to describe what content to extract (e.g. 'the order number', 'the total price').",
+        displayName = "Ai: Store output from AI prompt",
         applicationType = ApplicationType.WEB,
         useCustomScreenshot = true)
-public class VerifyImageContent extends WebAction {
+public class StoreOutputFromAiPrompt extends WebAction {
 
-    @TestData(reference = "verification-query")
-    private com.testsigma.sdk.TestData verificationQuery;
+    @TestData(reference = "ai-prompt")
+    private com.testsigma.sdk.TestData aiPrompt;
+
+    @TestData(reference = "runtime-variable", isRuntimeVariable = true)
+    private com.testsigma.sdk.TestData runtimeVariable;
+
+    @com.testsigma.sdk.annotation.RunTimeData
+    private com.testsigma.sdk.RunTimeData runTimeData;
 
     @AI
     private com.testsigma.sdk.AI ai;
@@ -39,13 +45,14 @@ public class VerifyImageContent extends WebAction {
 
     @Override
     public Result execute() {
-        logger.info("=== VerifyImageContent (Web): Starting ===");
+        logger.info("=== StoreOutputFromAiPrompt (Web): Starting ===");
         File screenshotFile     = null;
         File finalAnnotatedFile = null;
 
         try {
-            String query = verificationQuery.getValue().toString();
-            logger.info("Verification query: " + query);
+            String prompt       = aiPrompt.getValue().toString();
+            String variableName = runtimeVariable.getValue().toString();
+            logger.info("AI prompt: " + prompt + " | target variable: " + variableName);
 
             byte[] screenshotBytes = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
             BufferedImage pageCapture = ImageIO.read(new ByteArrayInputStream(screenshotBytes));
@@ -53,19 +60,20 @@ public class VerifyImageContent extends WebAction {
             int captureH = pageCapture.getHeight();
             logger.info("Viewport screenshot size: " + captureW + "x" + captureH);
 
-            screenshotFile = AiActionUtils.captureAsJpeg(pageCapture, "ai_web_verify_capture", logger);
+            screenshotFile = AiActionUtils.captureAsJpeg(pageCapture, "ai_web_store_capture", logger);
 
-            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.VERIFY_PROMPT_WEB, query, logger);
+            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.STORE_PROMPT_WEB, prompt, logger);
 
             JsonNode responseNode = AiActionUtils.parseAiJson(aiResponse, logger);
             if (responseNode == null) {
-                setErrorMessage("Failed to get verification response from AI (contact support)");
-                finalAnnotatedFile = ScreenshotUtils.saveScreenshotToFile(pageCapture, "ai_verify_failed");
+                setErrorMessage("Failed to get extraction response from AI (contact support)");
+                finalAnnotatedFile = ScreenshotUtils.saveScreenshotToFile(pageCapture, "ai_store_failed");
                 ScreenshotUtils.uploadScreenshotToS3(testStepResult, finalAnnotatedFile, logger);
                 return Result.FAILED;
             }
 
-            boolean verified   = responseNode.path("verified").asBoolean(false);
+            boolean found      = responseNode.path("found").asBoolean(false);
+            String output      = responseNode.path("output").asText("");
             int aiX1           = responseNode.path("x1").asInt(0);
             int aiY1           = responseNode.path("y1").asInt(0);
             int aiX2           = responseNode.path("x2").asInt(0);
@@ -76,36 +84,38 @@ public class VerifyImageContent extends WebAction {
             String description = responseNode.path("description").asText("");
 
             logger.info(String.format(
-                    "AI verification result — verified=%b | bbox: (%d,%d)-(%d,%d) | AI image dims: %dx%d | confidence: %d | desc: '%s'",
-                    verified, aiX1, aiY1, aiX2, aiY2, imageWidth, imageHeight, confidence, description));
+                    "AI extraction result — found=%b | output='%s' | AI image dims: %dx%d | confidence: %d | desc: '%s'",
+                    found, output, imageWidth, imageHeight, confidence, description));
 
-            if (verified && imageWidth > 0 && imageHeight > 0 && (aiX1 | aiY1 | aiX2 | aiY2) != 0) {
+            if (found && imageWidth > 0 && imageHeight > 0 && (aiX1 | aiY1 | aiX2 | aiY2) != 0) {
                 int[] cap = AiActionUtils.scaleAiToCapture(aiX1, aiY1, aiX2, aiY2, imageWidth, imageHeight, captureW, captureH);
                 int capCX = (cap[0] + cap[2]) / 2;
                 int capCY = (cap[1] + cap[3]) / 2;
                 BufferedImage annotated = AiActionUtils.drawHighlight(
                         pageCapture, cap[0], cap[1], cap[2], cap[3], capCX, capCY, Color.GREEN);
-                finalAnnotatedFile = ScreenshotUtils.saveScreenshotToFile(annotated, "ai_verify_passed");
+                finalAnnotatedFile = ScreenshotUtils.saveScreenshotToFile(annotated, "ai_store_passed");
             } else {
-                finalAnnotatedFile = ScreenshotUtils.saveScreenshotToFile(pageCapture, "ai_verify_result");
+                finalAnnotatedFile = ScreenshotUtils.saveScreenshotToFile(pageCapture, "ai_store_result");
             }
             ScreenshotUtils.uploadScreenshotToS3(testStepResult, finalAnnotatedFile, logger);
 
-            if (verified) {
+            if (found) {
+                runTimeData.setKey(variableName);
+                runTimeData.setValue(output);
                 setSuccessMessage(String.format(
-                        "Verification PASSED for '%s' | confidence=%d | %s",
-                        query, confidence, description));
+                        "Stored '%s' into variable '%s' | confidence=%d | %s",
+                        output, variableName, confidence, description));
                 return Result.SUCCESS;
             } else {
                 setErrorMessage(String.format(
-                        "Verification FAILED for '%s' | confidence=%d | %s",
-                        query, confidence, description));
+                        "Could not extract output for prompt '%s' | confidence=%d | %s",
+                        prompt, confidence, description));
                 return Result.FAILED;
             }
 
         } catch (Exception e) {
             logger.info("Exception: " + e.getMessage());
-            setErrorMessage("Failed to verify using AI. Error: " + e.getMessage());
+            setErrorMessage("Failed to store AI output. Error: " + e.getMessage());
             return Result.FAILED;
         } finally {
             AiActionUtils.deleteQuietly(screenshotFile);

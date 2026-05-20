@@ -8,10 +8,13 @@ import com.testsigma.sdk.annotation.AI;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.TestStepResult;
+import io.appium.java_client.ios.IOSDriver;
 import lombok.Data;
+import org.openqa.selenium.Dimension;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.interactions.Interactive;
+import org.openqa.selenium.interactions.Pause;
 import org.openqa.selenium.interactions.PointerInput;
 import org.openqa.selenium.interactions.Sequence;
 
@@ -112,18 +115,30 @@ public class ClickOnImageUsingAi extends IOSAction {
                     pageCapture, cap[0], cap[1], cap[2], cap[3], tapX, tapY, Color.MAGENTA);
             finalAnnotatedFile = ScreenshotUtils.saveScreenshotToFile(annotated, "ai_click_elem_result");
             ScreenshotUtils.uploadScreenshotToS3(testStepResult, finalAnnotatedFile, logger);
+            IOSDriver iosDriver = (IOSDriver) driver;
 
-            logger.info(String.format("Tapping at (%d,%d)  confidence=%d", tapX, tapY, confidence));
+            // Screenshot is in physical pixels; PointerInput expects logical points (UIKit).
+            // Derive the pixel ratio from the driver's logical window size.
+            Dimension windowSize = iosDriver.manage().window().getSize();
+            int logicalTapX = (int) Math.round((double) tapX * windowSize.width  / captureW);
+            int logicalTapY = (int) Math.round((double) tapY * windowSize.height / captureH);
+            logger.info(String.format(
+                    "Tapping at physical (%d,%d) → logical (%d,%d)  window=%dx%d  confidence=%d",
+                    tapX, tapY, logicalTapX, logicalTapY,
+                    windowSize.width, windowSize.height, confidence));
+
             PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
             Sequence tap = new Sequence(finger, 0);
-            tap.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), tapX, tapY));
+            tap.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), logicalTapX, logicalTapY));
             tap.addAction(finger.createPointerDown(0));
+            tap.addAction(new Pause(finger, Duration.ofMillis(100)));
             tap.addAction(finger.createPointerUp(0));
-            ((Interactive) driver).perform(Collections.singletonList(tap));
+            ((Interactive) iosDriver).perform(Collections.singletonList(tap));
 
             setSuccessMessage(String.format(
-                    "Successfully tapped '%s' at (%d,%d) | bbox (%d,%d)-(%d,%d) | confidence=%d | %s",
-                    query, tapX, tapY, cap[0], cap[1], cap[2], cap[3], confidence, description));
+                    "Successfully tapped '%s' at logical (%d,%d) | physical (%d,%d) | bbox (%d,%d)-(%d,%d) | confidence=%d | %s",
+                    query, logicalTapX, logicalTapY, tapX, tapY,
+                    cap[0], cap[1], cap[2], cap[3], confidence, description));
             return Result.SUCCESS;
 
         } catch (Exception e) {

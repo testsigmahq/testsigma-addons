@@ -9,9 +9,12 @@ import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.TestStepResult;
 import lombok.Data;
+import org.openqa.selenium.Dimension;
+import org.openqa.selenium.HasCapabilities;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.interactions.Interactive;
+import org.openqa.selenium.interactions.Pause;
 import org.openqa.selenium.interactions.PointerInput;
 import org.openqa.selenium.interactions.Sequence;
 
@@ -113,17 +116,33 @@ public class ClickOnImageUsingAi extends WebAction {
             finalAnnotatedFile = ScreenshotUtils.saveScreenshotToFile(annotated, "ai_click_elem_result");
             ScreenshotUtils.uploadScreenshotToS3(testStepResult, finalAnnotatedFile, logger);
 
-            logger.info(String.format("Tapping at (%d,%d)  confidence=%d", tapX, tapY, confidence));
+            String platform = (String) ((HasCapabilities) driver).getCapabilities().getCapability("platformName");
+            boolean isIos = "iOS".equalsIgnoreCase(platform);
+
+            int finalTapX = tapX;
+            int finalTapY = tapY;
+            if (isIos) {
+                // iOS screenshots are physical pixels; PointerInput expects logical UIKit points.
+                Dimension windowSize = driver.manage().window().getSize();
+                finalTapX = (int) Math.round((double) tapX * windowSize.width  / captureW);
+                finalTapY = (int) Math.round((double) tapY * windowSize.height / captureH);
+                logger.info(String.format(
+                        "iOS: physical (%d,%d) → logical (%d,%d)  window=%dx%d",
+                        tapX, tapY, finalTapX, finalTapY, windowSize.width, windowSize.height));
+            }
+
+            logger.info(String.format("Tapping at (%d,%d)  confidence=%d", finalTapX, finalTapY, confidence));
             PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
             Sequence tap = new Sequence(finger, 0);
-            tap.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), tapX, tapY));
+            tap.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), finalTapX, finalTapY));
             tap.addAction(finger.createPointerDown(0));
+            tap.addAction(new Pause(finger, Duration.ofMillis(100)));
             tap.addAction(finger.createPointerUp(0));
             ((Interactive) driver).perform(Collections.singletonList(tap));
 
             setSuccessMessage(String.format(
                     "Successfully tapped '%s' at (%d,%d) | bbox (%d,%d)-(%d,%d) | confidence=%d | %s",
-                    query, tapX, tapY, cap[0], cap[1], cap[2], cap[3], confidence, description));
+                    query, finalTapX, finalTapY, cap[0], cap[1], cap[2], cap[3], confidence, description));
             return Result.SUCCESS;
 
         } catch (Exception e) {

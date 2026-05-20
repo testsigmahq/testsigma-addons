@@ -12,6 +12,7 @@ import lombok.Data;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.interactions.Interactive;
+import org.openqa.selenium.interactions.Pause;
 import org.openqa.selenium.interactions.PointerInput;
 import org.openqa.selenium.interactions.Sequence;
 
@@ -118,6 +119,7 @@ public class ClickOnImageUsingAi extends AndroidAction {
             Sequence tap = new Sequence(finger, 0);
             tap.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), tapX, tapY));
             tap.addAction(finger.createPointerDown(0));
+            tap.addAction(new Pause(finger, Duration.ofMillis(100)));
             tap.addAction(finger.createPointerUp(0));
             ((Interactive) driver).perform(Collections.singletonList(tap));
 
