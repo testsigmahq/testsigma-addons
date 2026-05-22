@@ -94,10 +94,11 @@ public class WriteCellvalueWithSheetFilepath extends WebAction {
                 runTimeData.setKey(variableName.getValue().toString());
                 runTimeData.setValue(excelFile.getAbsolutePath());
                 String successMsg = "Successfully wrote value '" + data + "' to cell [Row: " + rowIndex + 
-                        ", Column: " + columnIndex + "] in Sheet index: " + sheetIndex + 
+                        ", Column: " + columnIndex + "] in Sheet index: " + sheetIndex +
                         ".<br>File path: " + excelFile.getAbsolutePath();
                 logger.info(successMsg.replace("<br>", " "));
                 setSuccessMessage(successMsg);
+                System.out.println("Successfully wrote excel file at: " + excelFile.getAbsolutePath());
             } catch (IOException e) {
                 String errorMessage = ExceptionUtils.getStackTrace(e);
                 result = com.testsigma.sdk.Result.FAILED;
