@@ -1,6 +1,8 @@
 package com.testsigma.addons.web;
 
+import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
@@ -57,7 +59,9 @@ public class StoreRowCountCsvFile extends WebAction {
 
             int rowCount;
             try (Reader reader = new FileReader(csvFile);
-                 CSVReader csvReader = new CSVReader(reader)) {
+                 CSVReader csvReader = new CSVReaderBuilder(reader)
+                         .withCSVParser(new CSVParserBuilder().withIgnoreQuotations(true).build())
+                         .build()) {
 
                 List<String[]> rows = csvReader.readAll();
                 rowCount = rows.size();
@@ -89,7 +93,9 @@ public class StoreRowCountCsvFile extends WebAction {
         if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
 
             String originalFileName = FilenameUtils.getName(new URL(pathOrUrl).getPath());
-            String uniqueFileName = "temp_" + System.currentTimeMillis() + "_" + originalFileName;
+            // Use only the timestamp for uniqueness — the original name can be arbitrarily long
+            // (e.g. an encoded path from a prior temp file), which would exceed OS filename limits
+            String uniqueFileName = "temp_" + System.currentTimeMillis() + ".csv";
 
             String tempPath = FileUtils.getTempDirectoryPath()
                     + File.separator + uniqueFileName;
