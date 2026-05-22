@@ -6,6 +6,7 @@ import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import lombok.Data;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.remote.Command;
 import org.openqa.selenium.remote.CommandExecutor;
@@ -51,10 +52,9 @@ public class NetworkThrottling extends WebAction {
 			  );			
 			setSuccessMessage("Simulated Network as per given data. Upload speed is now "+testData1.getValue().toString()+" Download Speed is now "+testData2.getValue().toString()+" and Latency time now is "+testData3.getValue().toString());
 		} catch (IOException e) {
-			setErrorMessage("Exception in Setting Network Condtion. Check log for details");
+			setErrorMessage("Exception in Setting Network Condtion. Error: " + ExceptionUtils.getMessage(e));
 			result = com.testsigma.sdk.Result.FAILED;
-			logger.warn(e.getMessage().toString());
-			e.printStackTrace();
+			logger.warn("Exception Occurred: " +  ExceptionUtils.getStackTrace(e));
 		}	
 	} 
     
