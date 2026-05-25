@@ -55,6 +55,7 @@ public class ExtractLatestDownloadedPDFFileContentUsingPassword extends WebActio
 
                 // Extract content
                 PDFTextStripper pdfTextStripper = new PDFTextStripper();
+                pdfTextStripper.setSortByPosition(true);
                 String fileContent = pdfTextStripper.getText(document);
 
                 // Store in runtime variable

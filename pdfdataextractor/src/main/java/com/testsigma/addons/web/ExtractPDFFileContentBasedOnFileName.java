@@ -45,6 +45,7 @@ public class ExtractPDFFileContentBasedOnFileName extends WebAction {
             String fileContent = "";
             if (!document.isEncrypted()) {
                 PDFTextStripper pdfTextStripper = new PDFTextStripper();
+                pdfTextStripper.setSortByPosition(true);
                 fileContent = pdfTextStripper.getText(document);
             } else {
                 throw new Exception("The file in the downloads is encrypted one, Unable to access it");
