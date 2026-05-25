@@ -9,7 +9,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 public class TestWebAction {
     private ActionRunner runner;
@@ -20,7 +20,7 @@ public class TestWebAction {
         System.setProperty("webdriver.chrome.driver", "<Chrome Driver Path>");
         driver = new ChromeDriver();
         driver.manage().deleteAllCookies();
-        driver.manage().timeouts().implicitlyWait(20, TimeUnit.SECONDS);
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(20));
         runner = new ActionRunner(driver); //Initialie Action runner
         driver.get("https://www.orangehrm.com/orangehrm-30-day-trial/");
     }
