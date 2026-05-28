@@ -92,7 +92,6 @@ public class ReadCellValueFromCsv extends WebAction {
 
         try (Reader reader = new FileReader(csvFilePath);
              CSVReader csvReader = new CSVReaderBuilder(reader)
-                     .withCSVParser(new CSVParserBuilder().withIgnoreQuotations(true).build())
                      .build()) {
             List<String[]> rows = csvReader.readAll();
 
@@ -109,7 +108,6 @@ public class ReadCellValueFromCsv extends WebAction {
                     runTimeData.setKey(variableName.getValue().toString());
                     runTimeData.setValue(cellValue);
 
-                    System.out.println("Reading cell value from CSV file: " + cellValue);
 
                     logger.info("Cell value '" + cellValue + "' read from row " + originalRow +
                             " and column " + originalColumn);

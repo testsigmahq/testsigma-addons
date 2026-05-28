@@ -1,16 +1,18 @@
 package com.testsigma.addons.web;
 
-
-import com.testsigma.sdk.ApplicationType;
-import com.testsigma.sdk.WebAction;
-import com.testsigma.sdk.annotation.Action;
-import com.testsigma.sdk.annotation.TestData;
-import lombok.Data;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvException;
+import com.testsigma.sdk.ApplicationType;
+import com.testsigma.sdk.WebAction;
+import com.testsigma.sdk.annotation.Action;
+import com.testsigma.sdk.annotation.TestData;
+import lombok.Data;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.openqa.selenium.NoSuchElementException;
 
 import java.io.File;
 import java.io.FileReader;
@@ -20,15 +22,11 @@ import java.io.Reader;
 import java.net.URL;
 import java.util.List;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.openqa.selenium.NoSuchElementException;
-
 @Data
-@Action(actionText = "Write value test-data into a cell in CSV file file-path at row row-number and column column-number",
-        description = "Writes a value to a particular cell in CSV file using 1-based indexing for row and column numbers.",
+@Action(actionText = "Write value test-data into a cell in CSV file file-path at row row-number and column column-number with delimiter delimiter-value",
+        description = "Writes a value to a particular cell in a delimiter-separated file (e.g. pipe | for pipe-separated files, comma , for standard CSV) using 1-based indexing for row and column numbers.",
         applicationType = ApplicationType.WEB)
-public class WriteCellValueInCsv extends WebAction {
+public class WriteCellValueInCsvWithCustomDelimiter extends WebAction {
 
     @TestData(reference = "file-path")
     private com.testsigma.sdk.TestData filePathOrUpload;
@@ -42,6 +40,9 @@ public class WriteCellValueInCsv extends WebAction {
     @TestData(reference = "test-data")
     private com.testsigma.sdk.TestData cellValue;
 
+    @TestData(reference = "delimiter-value")
+    private com.testsigma.sdk.TestData delimiter;
+
     @Override
     public com.testsigma.sdk.Result execute() throws NoSuchElementException {
         logger.info("Initiating execution");
@@ -50,6 +51,10 @@ public class WriteCellValueInCsv extends WebAction {
 
         String filePathString = filePathOrUpload.getValue().toString();
         String valueToWrite = cellValue.getValue().toString();
+        String delimiterStr = delimiter.getValue().toString().trim();
+        if (delimiterStr.isEmpty()) delimiterStr = ",";
+        char sep = delimiterStr.charAt(0);
+
         int targetRow;
         int targetColumn;
         try {
@@ -60,17 +65,11 @@ public class WriteCellValueInCsv extends WebAction {
             return com.testsigma.sdk.Result.FAILED;
         }
 
-        // Validate 1-based input (must be at least 1)
         if (targetRow < 1 || targetColumn < 1) {
             setErrorMessage("Row and Column numbers must be at least 1. Given: row=" + targetRow + ", column=" + targetColumn);
             return com.testsigma.sdk.Result.FAILED;
         }
 
-        // Store original 1-based values for user-friendly messages
-        int originalRow = targetRow;
-        int originalColumn = targetColumn;
-
-        // Convert to 0-based index (user gives 1,1 → maps to 0,0 in CSV)
         int rowIndex = targetRow - 1;
         int columnIndex = targetColumn - 1;
 
@@ -79,7 +78,6 @@ public class WriteCellValueInCsv extends WebAction {
             File tempFile = urlToCSVFileConverter("csvFileName", filePathString);
             csvFilePath = tempFile.getAbsolutePath();
         } else {
-            // Use local file path directly
             logger.info("Given is local file path...");
             csvFilePath = filePathString;
         }
@@ -87,46 +85,45 @@ public class WriteCellValueInCsv extends WebAction {
 
         try (Reader reader = new FileReader(csvFilePath);
              CSVReader csvReader = new CSVReaderBuilder(reader)
+                     .withCSVParser(new CSVParserBuilder().withSeparator(sep).build())
                      .build()) {
             List<String[]> rows = csvReader.readAll();
 
-            // Check row bounds using 0-based index
             if (rowIndex >= 0 && rowIndex < rows.size()) {
-                logger.info("Accessing row " + originalRow);
+                logger.info("Accessing row " + targetRow);
                 String[] row = rows.get(rowIndex);
 
-                // Check column bounds using 0-based index
                 if (columnIndex >= 0 && columnIndex < row.length) {
                     row[columnIndex] = valueToWrite;
 
-                    // Write the modified CSV back to the same file
-                    try (CSVWriter writer = new CSVWriter(new FileWriter(csvFilePath))) {
+                    try (CSVWriter writer = new CSVWriter(new FileWriter(csvFilePath), sep,
+                            CSVWriter.DEFAULT_QUOTE_CHARACTER, CSVWriter.DEFAULT_ESCAPE_CHARACTER,
+                            CSVWriter.DEFAULT_LINE_END)) {
                         writer.writeAll(rows);
                     } catch (IOException e) {
                         logger.warn("Error writing to CSV file: " + ExceptionUtils.getStackTrace(e));
                         setErrorMessage("Error writing to CSV file: " + e.getMessage());
-                        result = com.testsigma.sdk.Result.FAILED;
-                        return result;
+                        return com.testsigma.sdk.Result.FAILED;
                     }
 
-                    logger.info("Value '" + valueToWrite + "' written to row " + originalRow + " and column " + originalColumn);
-                    setSuccessMessage("Value '" + valueToWrite + "' written to row " + originalRow + " and column " + originalColumn);
+                    logger.info("Value '" + valueToWrite + "' written to row " + targetRow + " and column " + targetColumn);
+                    setSuccessMessage("Value '" + valueToWrite + "' written to row " + targetRow + " and column " + targetColumn);
                 } else {
-                    logger.warn("Column number " + originalColumn + " is out of bounds.");
-                    setErrorMessage("Column number " + originalColumn + " is out of bounds.");
+                    logger.warn("Column number " + targetColumn + " is out of bounds.");
+                    setErrorMessage("Column number " + targetColumn + " is out of bounds.");
                     result = com.testsigma.sdk.Result.FAILED;
                 }
             } else {
-                logger.warn("Row number " + originalRow + " is out of bounds.");
-                setErrorMessage("Row number " + originalRow + " is out of bounds.");
+                logger.warn("Row number " + targetRow + " is out of bounds.");
+                setErrorMessage("Row number " + targetRow + " is out of bounds.");
                 result = com.testsigma.sdk.Result.FAILED;
             }
         } catch (IOException | CsvException e) {
             logger.warn("Error processing CSV file: " + ExceptionUtils.getStackTrace(e));
             setErrorMessage("Error processing CSV file: " + e.getMessage());
             result = com.testsigma.sdk.Result.FAILED;
-            return result;
         }
+
         return result;
     }
 
@@ -135,9 +132,8 @@ public class WriteCellValueInCsv extends WebAction {
             logger.info("Given is URL... File name: " + fileName);
             URL urlObject = new URL(url);
 
-            // Extract file extension if present
             String baseName = fileName;
-            String extension = ".csv"; // default csv format
+            String extension = ".csv";
             int lastDotIndex = fileName.lastIndexOf('.');
             if (lastDotIndex > 0) {
                 baseName = fileName.substring(0, lastDotIndex);

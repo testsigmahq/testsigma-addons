@@ -25,7 +25,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.openqa.selenium.NoSuchElementException;
 
 @Data
-@Action(actionText = "clear cell value from a CSV file file-path where row is row-number and column is column-number",
+@Action(actionText = "Clear cell value from a CSV file file-path where row is row-number and column is column-number",
         description = "Deletes a particular cell from CSV file uses 1-based indexing for row and column numbers.",
         applicationType = ApplicationType.WEB)
 public class DeleteRowContentFromCsv extends WebAction {
@@ -84,7 +84,6 @@ public class DeleteRowContentFromCsv extends WebAction {
 
         try (Reader reader = new FileReader(csvFilePath);
              CSVReader csvReader = new CSVReaderBuilder(reader)
-                     .withCSVParser(new CSVParserBuilder().withIgnoreQuotations(true).build())
                      .build()) {
             List<String[]> rows = csvReader.readAll();
 
