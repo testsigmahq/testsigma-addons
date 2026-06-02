@@ -1,5 +1,6 @@
 package com.testsigma.addons.web;
 
+import com.testsigma.addons.util.ExcelCellUtils;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
@@ -14,10 +15,10 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.*;
-import java.net.URL;
-import java.nio.file.Paths;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Action(actionText = "Write the data data-value into the Excelfile excel-path with Cell value rowNo,columnNo in new sheet name sheet-name and store the path in runtime variable variable-name(supports upload section)",
         description = "Write the given data value into a specified row and column of a sheet if it exists, or create a new sheet in the Excel file and store the updated file path in a runtime variable",
         applicationType = ApplicationType.WEB)
@@ -59,6 +60,7 @@ public class WriteCellValueInNewSheetFilePath extends WebAction {
         String data = testData3.getValue().toString();
 
         File excelFile = null;
+        boolean sheetExisted = false;
 
         if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
             try {
@@ -80,6 +82,7 @@ public class WriteCellValueInNewSheetFilePath extends WebAction {
         try (FileInputStream fis = new FileInputStream(excelFile);
              Workbook workbook = new XSSFWorkbook(fis)) {
             Sheet newSheet = workbook.getSheet(newsheetName);
+            sheetExisted = newSheet != null;
             if (newSheet == null) {
                 newSheet = workbook.createSheet(newsheetName);
             }
@@ -101,6 +104,7 @@ public class WriteCellValueInNewSheetFilePath extends WebAction {
                 logger.warn(errorMessage);
             }
 
+            System.out.println("Excel file path: " + excelFile.getAbsolutePath());
             runTimeData.setKey(variableName.getValue().toString());
             runTimeData.setValue(excelFile.getAbsolutePath());
             logger.info("Data written successfully to Excel file.File path: " + excelFile.getAbsolutePath());
@@ -111,23 +115,15 @@ public class WriteCellValueInNewSheetFilePath extends WebAction {
             logger.warn(errorMessage);
         }
 
-        setSuccessMessage("Data written successfully to Excel file.File path: " + excelFile.getAbsolutePath());
+        String sheetMsg = sheetExisted
+                ? "Sheet '" + newsheetName + "' already exists. Updated the data successfully."
+                : "Sheet '" + newsheetName + "' did not exist. Created new sheet and written data successfully.";
+        setSuccessMessage(sheetMsg + "<br>File path: " + excelFile.getAbsolutePath());
 
         return result;
     }
 
     private File downloadFile(String fileUrl) throws IOException {
-        URL url = new URL(fileUrl);
-        String fileName = Paths.get(url.getPath()).getFileName().toString();
-        File tempFile = File.createTempFile("downloaded-", fileName);
-        try (InputStream in = url.openStream();
-             OutputStream out = new FileOutputStream(tempFile)) {
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = in.read(buffer)) != -1) {
-                out.write(buffer, 0, bytesRead);
-            }
-        }
-        return tempFile;
+        return ExcelCellUtils.downloadUrlToTempFile(fileUrl);
     }
 }

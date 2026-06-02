@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.testsigma.addons</groupId>
   <artifactId>image_based_actions</artifactId>
-  <version>1.0.10</version>
+  <version>1.0.16</version>
   <build>
     <finalName>image_based_actions</finalName>
     <plugins>
@@ -16,6 +16,19 @@
             <goals>
               <goal>shade</goal>
             </goals>
+            <configuration>
+              <minimizeJar>false</minimizeJar>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -56,8 +69,8 @@
     </dependency>
   </dependencies>
   <properties>
-    <testsigma.sdk.version>1.2.6_cloud</testsigma.sdk.version>
-    <lombok.version>1.18.20</lombok.version>
+    <testsigma.sdk.version>1.2.24_cloud</testsigma.sdk.version>
+    <lombok.version>1.18.30</lombok.version>
     <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
     <maven.compiler.target>11</maven.compiler.target>
     <maven.compiler.source>11</maven.compiler.source>

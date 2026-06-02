@@ -60,27 +60,28 @@ public class StoreMatchingRegexValueInAVariableOccurrence extends WebAction {
                 matchCount++;
                 if (matchCount == occurrenceValue) {
                     matchedString = matcher.group();
-                    logger.info("Second matched value found : " + matchedString);
+                    logger.info("Matched value found : " + matchedString);
                     break;
                 }
             }
 
             if (matchedString == null) {
-                setErrorMessage("Second matching value with given regex is not found in input data");
+                setErrorMessage("Matching value with given regex is not found in input data");
                 return Result.FAILED;
             }
 
             runTimeData.setKey(varName);
             runTimeData.setValue(matchedString);
+            System.out.println("Matched string : " + matchedString);
 
-            setSuccessMessage("Successfully stored second matched value '" + matchedString +
+            setSuccessMessage("Successfully stored matched value '" + matchedString +
                     "' into variable '" + varName + "'");
 
             return Result.SUCCESS;
 
         } catch (Exception e) {
             logger.warn("Exception occurred " + ExceptionUtils.getStackTrace(e));
-            setErrorMessage("Failed to extract second regex match : " + ExceptionUtils.getMessage(e));
+            setErrorMessage("Failed to extract regex match : " + ExceptionUtils.getMessage(e));
             return Result.FAILED;
         }
     }

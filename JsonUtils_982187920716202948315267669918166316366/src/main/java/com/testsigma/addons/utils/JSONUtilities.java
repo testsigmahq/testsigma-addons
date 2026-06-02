@@ -72,30 +72,58 @@ public class JSONUtilities {
 
         logger.info("Reading JSON data with path: " + jsonPath);
 
-
         jsonString = preprocessJsonString(jsonString, logger);
 
         if (jsonString == null || jsonString.isEmpty()) {
             String errorMsg = "JSON string is null or empty";
-
             logger.warn(errorMsg);
-
             throw new IllegalArgumentException(errorMsg);
         }
 
         try {
             Object result = JsonPath.read(jsonString, jsonPath);
-            String output = result.toString();
+
+            // Handle null safely
+            if (result == null) {
+                logger.info("JSON path returned null value");
+                return "null"; // change to "" if empty string is preferred
+            }
+
+            String output;
+
+            // Handle list results (for paths like $..value)
+            if (result instanceof List) {
+                List<?> list = (List<?>) result;
+
+                if (list.isEmpty()) {
+                    return "[]";
+                }
+
+                StringBuilder sb = new StringBuilder();
+                for (Object obj : list) {
+                    if (obj != null) {
+                        sb.append(obj.toString()).append(",");
+                    } else {
+                        sb.append("null").append(",");
+                    }
+                }
+
+                // remove trailing comma
+                sb.setLength(sb.length() - 1);
+
+                output = sb.toString();
+            } else {
+                output = String.valueOf(result);
+            }
 
             logger.info("Successfully extracted data using JSON path: " + jsonPath);
-
             return output;
+
         } catch (PathNotFoundException e) {
             String errorMsg = "Invalid JSON Path: " + jsonPath + ". Path not found in JSON structure.";
-
             logger.warn(errorMsg);
-
             throw new PathNotFoundException(errorMsg);
+
         } catch (Exception e) {
             String errorMsg = "Error reading JSON data with path " + jsonPath + ": " + e.getMessage();
             logger.warn(errorMsg);

@@ -44,7 +44,7 @@ public class ClickOnImage extends WebAction {
             File baseImageFile = scrShot.getScreenshotAs(OutputType.FILE);
 
             // Switch to native app context
-            appiumDriver.execute(DriverCommand.SWITCH_TO_CONTEXT, ImmutableMap.of("name", "NATIVE_APP"));
+            ((io.appium.java_client.remote.SupportsContextSwitching) appiumDriver).context("NATIVE_APP");
 
             String successMessage= performClick(ocr, testData1.getValue().toString(), null,
                     baseImageFile,testStepResult.getScreenshotUrl(), appiumDriver, logger);
@@ -52,11 +52,11 @@ public class ClickOnImage extends WebAction {
             setSuccessMessage(successMessage);
 
             // Switch back to old context
-            appiumDriver.execute(DriverCommand.SWITCH_TO_CONTEXT, ImmutableMap.of("name", existingContext));
+            ((io.appium.java_client.remote.SupportsContextSwitching) appiumDriver).context(existingContext);
 
             return Result.SUCCESS;
         } catch (Exception e) {
-            appiumDriver.execute(DriverCommand.SWITCH_TO_CONTEXT, ImmutableMap.of("name", existingContext));
+            ((io.appium.java_client.remote.SupportsContextSwitching) appiumDriver).context(existingContext);
             logger.info("Exception: " + ExceptionUtils.getStackTrace(e));
             setErrorMessage("Exception occurred while performing click on image: " + e.getMessage());
             return Result.FAILED;

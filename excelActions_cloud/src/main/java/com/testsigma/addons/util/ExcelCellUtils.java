@@ -1,14 +1,115 @@
 package com.testsigma.addons.util;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Random;
+
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.ss.usermodel.Sheet;
 
 /**
- * Utility class for common Excel cell operations
+ * Utility class for common Excel cell operations and downloading workbooks from URLs.
  */
 public class ExcelCellUtils {
+
+    private static final Random FILENAME_RANDOM = new Random();
+
+    /**
+     * Downloads a remote file to the system temp directory using a short basename (≤63 chars)
+     * derived from the URL path (percent-decoded), for UIs that limit filename length.
+     */
+    public static File downloadUrlToTempFile(String fileUrl) throws IOException {
+        URL url = new URL(fileUrl);
+        String rawName = Paths.get(url.getPath()).getFileName().toString();
+        String fileName;
+        try {
+            fileName = URLDecoder.decode(rawName, StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException e) {
+            fileName = rawName;
+        }
+        String ext = tempSuffixFromFileName(fileName);
+        String stem = fileStem(fileName);
+        stem = sanitizeTempStem(stem);
+        File tempFile = createShortNamedTempFile(stem, ext);
+        try (InputStream in = url.openStream();
+             OutputStream out = new FileOutputStream(tempFile)) {
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = in.read(buffer)) != -1) {
+                out.write(buffer, 0, bytesRead);
+            }
+        }
+        return tempFile;
+    }
+
+    private static File createShortNamedTempFile(String stem, String ext) throws IOException {
+        Path dir = Paths.get(System.getProperty("java.io.tmpdir"));
+        final int maxBase = 63;
+        final int uniqueLen = 8;
+        int maxStem = maxBase - ext.length() - 1 - uniqueLen;
+        if (maxStem < 1) {
+            maxStem = 1;
+        }
+        if (stem.length() > maxStem) {
+            stem = stem.substring(0, maxStem);
+        }
+        for (int attempt = 0; attempt < 64; attempt++) {
+            String unique = String.format("%08x", FILENAME_RANDOM.nextInt());
+            String name = stem + "-" + unique + ext;
+            Path path = dir.resolve(name);
+            try {
+                Files.createFile(path);
+                return path.toFile();
+            } catch (FileAlreadyExistsException ignored) {
+                // retry
+            }
+        }
+        return File.createTempFile("ex-", ext);
+    }
+
+    private static String fileStem(String name) {
+        int dot = name.lastIndexOf('.');
+        if (dot <= 0) {
+            return name.isEmpty() ? "excel" : name;
+        }
+        return name.substring(0, dot);
+    }
+
+    private static String sanitizeTempStem(String stem) {
+        if (stem == null || stem.isEmpty()) {
+            return "excel";
+        }
+        String s = stem.replaceAll("[^a-zA-Z0-9._()-]", "_");
+        s = s.replaceAll("_+", "_");
+        if (s.isEmpty() || ".".equals(s)) {
+            return "excel";
+        }
+        return s;
+    }
+
+    private static String tempSuffixFromFileName(String fileName) {
+        int dot = fileName.lastIndexOf('.');
+        if (dot < 0 || dot == fileName.length() - 1) {
+            return ".tmp";
+        }
+        String ext = fileName.substring(dot);
+        if (ext.length() > 12) {
+            return ".tmp";
+        }
+        return ext;
+    }
 
     /**
      * Gets a cell value as a String, handling different cell types
@@ -18,7 +119,7 @@ public class ExcelCellUtils {
      * @param colIdx The column index (0-based)
      * @return The cell value as a String
      */
-    public static String getCellValueAsString(XSSFSheet sheet, int rowIdx, int colIdx) {
+    public static String getCellValueAsString(Sheet sheet, int rowIdx, int colIdx) {
         Row row = sheet.getRow(rowIdx);
         if (row == null) {
             return "[EMPTY ROW]";

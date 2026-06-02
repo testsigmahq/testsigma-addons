@@ -1,5 +1,6 @@
 package com.testsigma.addons.web;
 
+import com.testsigma.addons.web.utils.WordTextExtractor;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
 import com.testsigma.sdk.WebAction;
@@ -9,14 +10,9 @@ import com.testsigma.sdk.annotation.TestData;
 import lombok.Data;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.poi.hwpf.HWPFDocument;
-import org.apache.poi.hwpf.extractor.WordExtractor;
-import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.openqa.selenium.NoSuchElementException;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
 
@@ -41,7 +37,6 @@ public class ExtractWordFileContentAtGivenPath extends WebAction {
         Result result = Result.SUCCESS;
         String originalFilePath = filePath_.getValue().toString();
         File wordFile = null;
-        boolean isTempFile = false;
 
         try {
             String cleanPath = originalFilePath;
@@ -63,7 +58,6 @@ public class ExtractWordFileContentAtGivenPath extends WebAction {
             if (originalFilePath.toLowerCase().startsWith("http://") || originalFilePath.toLowerCase().startsWith("https://")) {
                 String fileName = isDocx ? "input.docx" : "input.doc";
                 wordFile = urlToFileConverter(fileName, originalFilePath);
-                isTempFile = true;
             } else {
                 wordFile = new File(originalFilePath);
             }
@@ -72,19 +66,7 @@ public class ExtractWordFileContentAtGivenPath extends WebAction {
                 throw new IOException("File not found at the specified path: " + originalFilePath);
             }
 
-            String text;
-            try (FileInputStream fis = new FileInputStream(wordFile)) {
-                if (isDocx) {
-                    XWPFDocument document = new XWPFDocument(fis);
-                    XWPFWordExtractor extractor = new XWPFWordExtractor(document);
-                    text = extractor.getText();
-                } else {
-                    HWPFDocument document = new HWPFDocument(fis);
-                    WordExtractor extractor = new WordExtractor(document);
-                    text = extractor.getText();
-                }
-            }
-
+            String text = WordTextExtractor.extract(wordFile, isDocx);
             logger.debug("Extracted text: " + text);
 
             String runtimeVariableKey = runtimeVariable.getValue().toString();

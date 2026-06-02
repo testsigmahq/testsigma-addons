@@ -61,6 +61,8 @@ public class ClickOnImageWithThreshold extends WindowsAction {
             logger.info("Height of image: " + height);
 
             File baseImageFile = new File(path);
+
+            logger.info("Base image file: " + baseImageFile.getAbsolutePath());
             String url = testStepResult.getScreenshotUrl();
             ocr.uploadFile(url, baseImageFile);
             logger.info("url: "+ testStepResult.getScreenshotUrl());
