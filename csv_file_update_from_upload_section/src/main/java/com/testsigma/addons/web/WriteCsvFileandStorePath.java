@@ -93,6 +93,7 @@ public class WriteCsvFileandStorePath extends WebAction {
                         .build();
                 List<String[]> data = csvReader.readAll();
 
+                // Convert from 1-based (user input) to 0-based index (user gives 1,1 → maps to 0,0)
                 int rowIndex = targetRow - 1;
                 int columnIndex = targetColumn - 1;
 
