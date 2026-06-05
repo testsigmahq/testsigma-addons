@@ -1,6 +1,7 @@
 package com.testsigma.addons.web;
 
 import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvException;
 import com.testsigma.sdk.ApplicationType;
@@ -52,7 +53,7 @@ public class WriteCsvFileandStorePath extends WebAction {
 
         String filePathString = filePath.getValue().toString();
         String replace = testData.getValue().toString();
-        
+
         int targetRow;
         int targetColumn;
         try {
@@ -63,15 +64,10 @@ public class WriteCsvFileandStorePath extends WebAction {
             return com.testsigma.sdk.Result.FAILED;
         }
 
-        // Validate 1-based input (must be at least 1)
         if (targetRow < 1 || targetColumn < 1) {
             setErrorMessage("Row and Column numbers must be at least 1. Given: row=" + targetRow + ", column=" + targetColumn);
             return com.testsigma.sdk.Result.FAILED;
         }
-
-        // Store original 1-based values for user-friendly messages
-        int originalRow = targetRow;
-        int originalColumn = targetColumn;
 
         File csvFile = null;
         File tempCsvFile = null;
@@ -85,7 +81,6 @@ public class WriteCsvFileandStorePath extends WebAction {
                 return com.testsigma.sdk.Result.FAILED;
             }
 
-            // Create a unique temp file each time
             String uniqueFileName = "updated_" + System.currentTimeMillis() + ".csv";
             tempCsvFile = new File(csvFile.getParentFile(), uniqueFileName);
             logger.info("Temp file path: " + tempCsvFile.getAbsolutePath());
@@ -94,7 +89,8 @@ public class WriteCsvFileandStorePath extends WebAction {
             CSVReader csvReader = null;
             CSVWriter writer = null;
             try {
-                csvReader = new CSVReader(new FileReader(tempCsvFile));
+                csvReader = new CSVReaderBuilder(new FileReader(tempCsvFile))
+                        .build();
                 List<String[]> data = csvReader.readAll();
 
                 // Convert from 1-based (user input) to 0-based index (user gives 1,1 → maps to 0,0)
@@ -113,14 +109,14 @@ public class WriteCsvFileandStorePath extends WebAction {
                 }
                 targetRowData[columnIndex] = replace;
 
-                writer = new CSVWriter(new FileWriter(tempCsvFile), ',', CSVWriter.NO_QUOTE_CHARACTER,
+                writer = new CSVWriter(new FileWriter(tempCsvFile), ',', CSVWriter.DEFAULT_QUOTE_CHARACTER,
                         CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
                 writer.writeAll(data);
                 writer.flush();
-            } catch (IOException | CsvException e) { // Catch both exceptions
+            } catch (IOException | CsvException e) {
                 result = com.testsigma.sdk.Result.FAILED;
                 setErrorMessage("Error processing CSV file: " + e.getMessage());
-                logger.warn("Error processing CSV file: " + e); // Use logger.error for exceptions
+                logger.warn("Error processing CSV file: " + e);
                 return result;
             } finally {
                 if (csvReader != null) {
@@ -138,7 +134,7 @@ public class WriteCsvFileandStorePath extends WebAction {
                     }
                 }
             }
-            // Copy the temp file back to the original file
+
             try {
                 Files.copy(tempCsvFile.toPath(), csvFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 logger.info("Successfully copied content to original file" + csvFile.getAbsolutePath());
@@ -148,12 +144,11 @@ public class WriteCsvFileandStorePath extends WebAction {
                 return com.testsigma.sdk.Result.FAILED;
             }
 
-            // Store the path of the new updated file
             runTimeData.setKey(variableName.getValue().toString());
-            runTimeData.setValue(csvFile.getAbsolutePath()); // Store absolute path of the new file
+            runTimeData.setValue(csvFile.getAbsolutePath());
 
-            setSuccessMessage("Data updated successfully at row " + originalRow + ", column " + originalColumn 
-                    + " with value: " + replace + ". File path stored in runtime variable: " 
+            setSuccessMessage("Data updated successfully at row " + targetRow + ", column " + targetColumn
+                    + " with value: " + replace + ". File path stored in runtime variable: "
                     + variableName.getValue().toString() + " = " + csvFile.getAbsolutePath());
         } catch (Exception e) {
             result = com.testsigma.sdk.Result.FAILED;
@@ -166,20 +161,15 @@ public class WriteCsvFileandStorePath extends WebAction {
 
     private File convertToFile(String pathOrUrl) throws IOException {
         if (pathOrUrl.startsWith("https://") || pathOrUrl.startsWith("http://")) {
-            // Extract the original file name from the URL for logging only
             String originalFileName = FilenameUtils.getName(new URL(pathOrUrl).getPath());
-            // Use only the timestamp for uniqueness — the original name can be arbitrarily long
-            // (e.g. an encoded path from a prior temp file), which would exceed OS filename limits
             String uniqueFileName = "temp_" + System.currentTimeMillis() + ".csv";
             logger.info("Given is a URL... Original file name: " + originalFileName + ", Unique file name: "
                     + uniqueFileName);
 
-            // Create the full path for the temporary file
             String filePath = String.format("%s%s%s", FileUtils.getTempDirectoryPath(), File.separator, uniqueFileName);
             File tempFile = new File(filePath);
 
-            // Download the file from the URL to the temporary location
-            FileUtils.copyURLToFile(new URL(pathOrUrl), tempFile, 10000, 10000); // Adding timeouts
+            FileUtils.copyURLToFile(new URL(pathOrUrl), tempFile, 10000, 10000);
             logger.info("Temp file created for URL file: " + uniqueFileName + " at path " + filePath);
 
             return tempFile;

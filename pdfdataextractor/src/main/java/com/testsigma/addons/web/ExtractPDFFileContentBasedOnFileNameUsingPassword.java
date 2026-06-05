@@ -59,6 +59,7 @@ public class ExtractPDFFileContentBasedOnFileNameUsingPassword extends WebAction
 
                 // Extract text
                 PDFTextStripper pdfTextStripper = new PDFTextStripper();
+                pdfTextStripper.setSortByPosition(true);
                 String fileContent = pdfTextStripper.getText(document);
 
                 // Store in runtime variable

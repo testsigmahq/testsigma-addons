@@ -1,6 +1,8 @@
 package com.testsigma.addons.web;
 
+import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvException;
 import com.testsigma.sdk.ApplicationType;
@@ -23,7 +25,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 @Data
-@Action(actionText = "clear cell value from CSV file test_data where row is row-number and column column-number" +
+@Action(actionText = "Clear cell value from CSV file test_data where row is row-number and column column-number" +
         " and store filepath in runtime variable variable-name (It supports file from upload section)",
         description = "Deletes content from a particular cell in CSV file using 1-based indexing for row " +
                 "and column numbers. Can accept local file paths or URLs for the CSV file." +
@@ -95,7 +97,8 @@ public class DeleteRowContentFromCsvAndStorePath extends WebAction {
             CSVReader csvReader = null;
             CSVWriter writer = null;
             try {
-                csvReader = new CSVReader(new FileReader(tempCsvFile));
+                csvReader = new CSVReaderBuilder(new FileReader(tempCsvFile))
+                        .build();
                 List<String[]> data = csvReader.readAll();
 
                 // Convert from 1-based (user input) to 0-based index (user gives 1,1 → maps to 0,0)
@@ -111,7 +114,7 @@ public class DeleteRowContentFromCsvAndStorePath extends WebAction {
                     if (columnIndex < row.length) {
                         row[columnIndex] = "";
 
-                        writer = new CSVWriter(new FileWriter(tempCsvFile), ',', CSVWriter.NO_QUOTE_CHARACTER,
+                        writer = new CSVWriter(new FileWriter(tempCsvFile), ',', CSVWriter.DEFAULT_QUOTE_CHARACTER,
                                 CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
                         writer.writeAll(data);
                         writer.flush();

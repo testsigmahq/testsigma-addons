@@ -1,6 +1,8 @@
 package com.testsigma.addons.web;
 
+import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
@@ -57,7 +59,8 @@ public class StoreRowCountCsvFile extends WebAction {
 
             int rowCount;
             try (Reader reader = new FileReader(csvFile);
-                 CSVReader csvReader = new CSVReader(reader)) {
+                 CSVReader csvReader = new CSVReaderBuilder(reader)
+                         .build()) {
 
                 List<String[]> rows = csvReader.readAll();
                 rowCount = rows.size();

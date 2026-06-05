@@ -1,8 +1,8 @@
 package com.testsigma.addons.web;
 
-
 import com.testsigma.addons.web.utils.DocxDocUtilities;
 import com.testsigma.addons.web.utils.DocxDocUtilitiesFactory;
+import com.testsigma.addons.web.utils.WordTextExtractor;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
 import com.testsigma.sdk.WebAction;
@@ -11,13 +11,9 @@ import com.testsigma.sdk.annotation.RunTimeData;
 import com.testsigma.sdk.annotation.TestData;
 import lombok.Data;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.openqa.selenium.NoSuchElementException;
 
 import java.io.File;
-import java.io.FileInputStream;
-
 
 @Data
 @Action(actionText = "DOCX: Extract content from the file file-name from the downloads and store it in runtime-variable variable-name",
@@ -34,7 +30,6 @@ public class ExtractDocxFileContentBasedOnFileName extends WebAction {
     @RunTimeData
     private com.testsigma.sdk.RunTimeData runTimeData;
 
-
     @Override
     protected Result execute() throws NoSuchElementException {
         Result result = Result.SUCCESS;
@@ -42,16 +37,14 @@ public class ExtractDocxFileContentBasedOnFileName extends WebAction {
         try {
             logger.info("Initiated execution");
             File downloadedDocxFile = docxUtilities.copyFileFromDownloads("docx", fileName.getValue().toString());
-            FileInputStream fis = new FileInputStream(downloadedDocxFile);
-            XWPFDocument document = new XWPFDocument(fis);
-            XWPFWordExtractor extractor = new XWPFWordExtractor(document);
-            String fileContent = extractor.getText();
+            String fileContent = WordTextExtractor.extract(downloadedDocxFile, true);
 
             logger.info("Local path: " + downloadedDocxFile.getAbsolutePath());
             runTimeData.setKey(variable.getValue().toString());
             runTimeData.setValue(fileContent);
             logger.info("File content: " + fileContent);
-            setSuccessMessage("Successfully extracted the data in the file and stored in run time variable " + variable.getValue().toString() + ". " + variable.getValue().toString() + " = " + fileContent);
+            setSuccessMessage("Successfully extracted the data in the file and stored in run time variable "
+                    + variable.getValue().toString() + ". " + variable.getValue().toString() + " = " + fileContent);
         } catch (RuntimeException e) {
             logger.info("Unable to find the given file in the downloads" + ExceptionUtils.getStackTrace(e));
             setErrorMessage(e.getMessage());
