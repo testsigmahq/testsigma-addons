@@ -10,7 +10,6 @@ import com.testsigma.sdk.annotation.TestData;
 import lombok.Data;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 @Data
@@ -60,7 +59,7 @@ public class FileUploadByAPIAndStoreTestsigmaUploadedPath extends WebAction {
 			}
 
 			String uploadedPath = "testsigma-storage:/" + TestsigmaUtils.readJsonData(
-					responseBody.string(), "$.latestVersion.path", logger);
+					response.body().string(), "$.latestVersion.path", logger);
 
 			runTimeData.setKey(variableName.getValue().toString());
 			runTimeData.setValue(uploadedPath);
