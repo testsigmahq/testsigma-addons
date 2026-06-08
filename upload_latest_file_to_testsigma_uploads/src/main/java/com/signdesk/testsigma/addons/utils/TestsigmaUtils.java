@@ -17,6 +17,10 @@ import java.util.concurrent.TimeUnit;
 
 public class TestsigmaUtils {
 
+  /**
+   * Uploads a file to Testsigma uploads via the API and returns the raw Response.
+   * Caller is responsible for closing the response inside a try-with-resources block.
+   */
   public static Response uploadFile(String filePath, String projectId, String applicationId,
       String uploadName, String apiUrl, String apiKey) throws Exception {
 
@@ -32,7 +36,7 @@ public class TestsigmaUtils {
 
     RequestBody body = new MultipartBody.Builder()
         .setType(MultipartBody.FORM)
-        .addFormDataPart("fileContent", pathFile.getAbsolutePath(),
+            .addFormDataPart("fileContent", pathFile.getAbsolutePath().replaceAll("[/\\\\]", "_").replaceAll("^_+", ""),
             RequestBody.create(new File(pathFile.getAbsolutePath()), MediaType.parse("application/octet-stream")))
         .addFormDataPart("projectId", projectId)
         .addFormDataPart("name", uploadName)
@@ -50,10 +54,11 @@ public class TestsigmaUtils {
         .build();
 
     OkHttpClient client = new OkHttpClient().newBuilder()
-        .connectTimeout(60, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(60, TimeUnit.SECONDS)
-        .build();
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
+            .build();
+
     return client.newCall(request).execute();
   }
 
