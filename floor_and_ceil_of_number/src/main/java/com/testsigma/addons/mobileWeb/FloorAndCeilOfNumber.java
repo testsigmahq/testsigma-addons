@@ -10,16 +10,16 @@ import lombok.Data;
 import org.openqa.selenium.NoSuchElementException;
 
 @Data
-@Action(actionText = "Get floor or ceil of number and store the result inside a runtimevariable",
+@Action(actionText = "Store operation of number test-data into a runtime variable runtime-variable",
         description = "Performs floor or ceil on the given number and stores the result into a runtime variable",
         applicationType = ApplicationType.MOBILE_WEB)
 public class FloorAndCeilOfNumber extends WebAction {
 
-    @TestData(reference = "number")
+    @TestData(reference = "test-data")
     private com.testsigma.sdk.TestData number;
     @TestData(reference = "operation", allowedValues = {"floor", "ceil"})
     private com.testsigma.sdk.TestData operation;
-    @TestData(reference = "runtimevariable", isRuntimeVariable = true)
+    @TestData(reference = "runtime-variable", isRuntimeVariable = true)
     private com.testsigma.sdk.TestData runtimeVariable;
     @RunTimeData
     private com.testsigma.sdk.RunTimeData runTimeData;
