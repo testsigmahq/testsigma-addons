@@ -1,10 +1,11 @@
-package com.testsigma.addons.browserstack.android;
+package com.testsigma.addons.ios;
 
-import com.testsigma.sdk.AndroidAction;
+import com.testsigma.addons.TokenGenerator;
 import com.testsigma.sdk.ApplicationType;
+import com.testsigma.sdk.IOSAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
-import io.appium.java_client.android.AndroidDriver;
+import io.appium.java_client.ios.IOSDriver;
 import lombok.Data;
 import org.json.JSONObject;
 import org.openqa.selenium.NoSuchElementException;
@@ -17,11 +18,11 @@ import java.net.http.HttpResponse;
 
 
 @Data
-@Action(actionText = "switch to network configuration profile-name",
+@Action(actionText = "Switch to network configuration profile-name",
         description = "switches the network type to no-network/3G/4G & default resets the initial network configuration",
-        applicationType = ApplicationType.ANDROID,
+        applicationType = ApplicationType.IOS,
         useCustomScreenshot = false)
-public class SwitchToNetworkProfile extends AndroidAction {
+public class SwitchToNetworkProfile extends IOSAction {
     @TestData(reference = "profile-name", allowedValues = {"no-network", "default", "2G", "3G", "4G"})
     com.testsigma.sdk.TestData profileName;
 
@@ -32,24 +33,31 @@ public class SwitchToNetworkProfile extends AndroidAction {
 
         final String successMessage = "Successfully switched to network-configuration : " + profileName.getValue().toString();
         final String errorMessage = "Failed to switch to network configuration";
-        AndroidDriver androidDriver = (AndroidDriver) this.driver;
-
-        String sessionId = androidDriver.getSessionId().toString().toLowerCase();
+        IOSDriver iosDriver = (IOSDriver) this.driver;
+        String rawSessionId = iosDriver.getSessionId().toString();
+        String sessionId = rawSessionId.contains(":")
+                ? rawSessionId.substring(rawSessionId.lastIndexOf(":") + 1).toLowerCase()
+                : rawSessionId.toLowerCase();
 
         String apiUrl = "https://api-cloud.browserstack.com/app-automate/sessions/" + sessionId + "/update_network.json";
 
         try {
             HttpClient client = HttpClient.newHttpClient();
-            String modifiedProfileName = getBrowserStackProfileName(profileName.getValue().toString());
+            String modifiedProfileName = getBrowserStackProfileName(profileName.getValue().toString().toLowerCase());
+            logger.info("Profile name is: " + modifiedProfileName);
+
 
             // Prepare the request body
             JSONObject requestBody = new JSONObject();
             requestBody.put("networkProfile", modifiedProfileName);
 
+            // generate Token by using username and password.
+            String authToken = "Basic " + TokenGenerator.generateBase64Token("rukmangada1:PzpzSFEGNQUaWXpzNok5");
+            logger.info("authToken: " + authToken);
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(apiUrl))
                     .header("Content-Type", "application/json")
-                    .header("Authorization", "Basic <UserName:Password>")
+                    .header("Authorization", authToken)
                     .PUT(HttpRequest.BodyPublishers.ofString(requestBody.toString()))
                     .build();
 
@@ -69,7 +77,7 @@ public class SwitchToNetworkProfile extends AndroidAction {
             result = com.testsigma.sdk.Result.FAILED;
         }
 
-        setSuccessMessage(successMessage + profileName.getValue().toString());
+        setSuccessMessage(successMessage);
         return result;
     }
 
@@ -85,7 +93,7 @@ public class SwitchToNetworkProfile extends AndroidAction {
                 modifiedProfileName = "3g-umts-good";
                 break;
             case "4g":
-                modifiedProfileName = "4g-umts-good";
+                modifiedProfileName = "4g-lte-good";
                 break;
             case "default":
                 modifiedProfileName = "reset";
