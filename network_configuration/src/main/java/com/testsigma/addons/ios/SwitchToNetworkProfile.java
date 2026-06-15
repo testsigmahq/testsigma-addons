@@ -52,7 +52,8 @@ public class SwitchToNetworkProfile extends IOSAction {
             requestBody.put("networkProfile", modifiedProfileName);
 
             // generate Token by using username and password.
-            String authToken = "Basic " + TokenGenerator.generateBase64Token("rukmangada1:PzpzSFEGNQUaWXpzNok5");
+            String bsCredentials = System.getenv("BROWSERSTACK_USERNAME") + ":" + System.getenv("BROWSERSTACK_ACCESS_KEY");
+            String authToken = "Basic " + TokenGenerator.generateBase64Token(bsCredentials);
             logger.info("authToken: " + authToken);
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(apiUrl))
