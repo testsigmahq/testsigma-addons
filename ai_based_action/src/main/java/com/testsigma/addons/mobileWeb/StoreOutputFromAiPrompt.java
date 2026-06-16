@@ -65,7 +65,8 @@ public class StoreOutputFromAiPrompt extends WebAction {
 
             screenshotFile = AiActionUtils.captureAsJpeg(pageCapture, "ai_mobileweb_store_capture", logger);
 
-            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.STORE_PROMPT_MOBILE_WEB, prompt, logger);
+            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.STORE_PROMPT_MOBILE_WEB, prompt,
+                    logger);
 
             JsonNode responseNode = AiActionUtils.parseAiJson(aiResponse, logger);
             if (responseNode == null) {

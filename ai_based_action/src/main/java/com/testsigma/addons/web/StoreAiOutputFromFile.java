@@ -52,10 +52,11 @@ public class StoreAiOutputFromFile extends WebAction {
             String variableName = runtimeVariable.getValue().toString();
             logger.info("Prompt: " + prompt + " | File: " + path + " | Variable: " + variableName);
 
-            File file = resolveFile(path, tempFiles);
+            File file = AiActionUtils.flattenPdf(resolveFile(path, tempFiles), tempFiles, logger);
 
             String aiResponse = AiActionUtils.invokeAiWithFiles(
-                    ai, Collections.singletonList(file), AiActionUtils.EXTRACT_FROM_FILE_PROMPT, prompt, logger);
+                    ai, Collections.singletonList(file), AiActionUtils.EXTRACT_FROM_FILE_PROMPT, prompt,
+                    logger);
 
             JsonNode responseNode = AiActionUtils.parseAiJson(aiResponse, logger);
             if (responseNode == null) {
@@ -97,9 +98,15 @@ public class StoreAiOutputFromFile extends WebAction {
 
     private File resolveFile(String path, Set<File> tempFiles) throws Exception {
         if (path.startsWith("http://") || path.startsWith("https://")) {
-            String fileName = path.substring(path.lastIndexOf('/') + 1);
+            // Strip query string BEFORE extracting filename/extension
+            String pathOnly = path.contains("?") ? path.substring(0, path.indexOf('?')) : path;
+            String fileName = pathOnly.substring(pathOnly.lastIndexOf('/') + 1);
+            // URL-decode the filename (handles %2B, %28, etc.)
+            fileName = java.net.URLDecoder.decode(fileName, "UTF-8");
+
             String ext  = fileName.contains(".") ? fileName.substring(fileName.lastIndexOf('.')) : ".tmp";
             String base = fileName.contains(".") ? fileName.substring(0, fileName.lastIndexOf('.')) : "ai_file";
+
             File tmp = File.createTempFile(base, ext);
             try (InputStream in = new URL(path).openStream()) {
                 Files.copy(in, tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);

@@ -62,7 +62,8 @@ public class StoreOutputFromAiPrompt extends SalesforceAction {
 
             screenshotFile = AiActionUtils.captureAsJpeg(pageCapture, "ai_salesforce_store_capture", logger);
 
-            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.STORE_PROMPT_SALESFORCE, prompt, logger);
+            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.STORE_PROMPT_SALESFORCE, prompt,
+                    logger);
 
             JsonNode responseNode = AiActionUtils.parseAiJson(aiResponse, logger);
             if (responseNode == null) {

@@ -1,4 +1,4 @@
-package com.testsigma.addons.salesforce;
+package com.testsigma.addons.windowsAdvanced;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.testsigma.addons.util.AiActionUtils;
@@ -9,23 +9,22 @@ import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.TestStepResult;
 import lombok.Data;
-import org.openqa.selenium.OutputType;
-import org.openqa.selenium.TakesScreenshot;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 
 @Data
-@Action(actionText = "Ai: Verify page contains verification-query",
-        description = "Capture a screenshot of the Salesforce page and ask AI to verify whether the described " +
-                "content or condition is present. The step passes if AI confirms the query; fails otherwise.",
-        displayName = "Ai: Verify page contains",
-        applicationType = ApplicationType.Salesforce,
+@Action(actionText = "Ai: Verify if the page has content matching prompt verification-query",
+        description = "Capture a screenshot of the desktop and ask AI to verify whether the described " +
+                "content or condition is present. The step passes if AI confirms the query; fails otherwise. " +
+                "Use natural language to describe what you expect to see.",
+        applicationType = ApplicationType.WINDOWS_ADVANCED,
+        actionType = StepActionType.IF_CONDITION,
         useCustomScreenshot = true)
-public class VerifyImageContent extends SalesforceAction {
+public class VerifyImageContentIfStep extends WindowsAdvancedAction {
 
     @TestData(reference = "verification-query")
     private com.testsigma.sdk.TestData verificationQuery;
@@ -38,7 +37,7 @@ public class VerifyImageContent extends SalesforceAction {
 
     @Override
     public Result execute() {
-        logger.info("=== VerifyImageContent (Salesforce): Starting ===");
+        logger.info("=== VerifyImageContentIfStep (WindowsAdvanced): Starting ===");
         File screenshotFile     = null;
         File finalAnnotatedFile = null;
 
@@ -46,21 +45,31 @@ public class VerifyImageContent extends SalesforceAction {
             String query = verificationQuery.getValue().toString();
             logger.info("Verification query: " + query);
 
-            byte[] screenshotBytes = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
-            BufferedImage pageCapture = ImageIO.read(new ByteArrayInputStream(screenshotBytes));
-            int captureW = pageCapture.getWidth();
-            int captureH = pageCapture.getHeight();
-            logger.info("Viewport screenshot size: " + captureW + "x" + captureH);
+            Dimension logicalScreen = Toolkit.getDefaultToolkit().getScreenSize();
+            int logicalScreenW = logicalScreen.width;
+            int logicalScreenH = logicalScreen.height;
+            logger.info("Logical screen size (Toolkit): " + logicalScreenW + "x" + logicalScreenH);
 
-            screenshotFile = AiActionUtils.captureAsJpeg(pageCapture, "ai_salesforce_verify_capture", logger);
+            Robot robot = new Robot();
+            BufferedImage desktopCapture = robot.createScreenCapture(new Rectangle(logicalScreen));
+            int captureW = desktopCapture.getWidth();
+            int captureH = desktopCapture.getHeight();
+            logger.info("Robot desktop capture size (physical px): " + captureW + "x" + captureH);
 
-            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.VERIFY_PROMPT_SALESFORCE, query,
+            double displayScaleX = (double) captureW / logicalScreen.width;
+            double displayScaleY = (double) captureH / logicalScreen.height;
+            logger.info(String.format(
+                    "Display scale (capture / logical): %.4fx%.4f", displayScaleX, displayScaleY));
+
+            screenshotFile = AiActionUtils.captureAsJpeg(desktopCapture, "ai_desktop_verify_capture", logger);
+
+            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.VERIFY_PROMPT_DESKTOP, query,
                     logger);
 
             JsonNode responseNode = AiActionUtils.parseAiJson(aiResponse, logger);
             if (responseNode == null) {
                 setErrorMessage("Failed to get verification response from AI (contact support)");
-                finalAnnotatedFile = ScreenshotUtils.saveScreenshotToFile(pageCapture, "ai_verify_failed");
+                finalAnnotatedFile = ScreenshotUtils.saveScreenshotToFile(desktopCapture, "ai_verify_failed");
                 ScreenshotUtils.uploadScreenshotToS3(testStepResult, finalAnnotatedFile, logger);
                 return Result.FAILED;
             }
@@ -84,10 +93,10 @@ public class VerifyImageContent extends SalesforceAction {
                 int capCX = (cap[0] + cap[2]) / 2;
                 int capCY = (cap[1] + cap[3]) / 2;
                 BufferedImage annotated = AiActionUtils.drawHighlight(
-                        pageCapture, cap[0], cap[1], cap[2], cap[3], capCX, capCY, Color.GREEN);
+                        desktopCapture, cap[0], cap[1], cap[2], cap[3], capCX, capCY, Color.GREEN);
                 finalAnnotatedFile = ScreenshotUtils.saveScreenshotToFile(annotated, "ai_verify_passed");
             } else {
-                finalAnnotatedFile = ScreenshotUtils.saveScreenshotToFile(pageCapture, "ai_verify_result");
+                finalAnnotatedFile = ScreenshotUtils.saveScreenshotToFile(desktopCapture, "ai_verify_result");
             }
             ScreenshotUtils.uploadScreenshotToS3(testStepResult, finalAnnotatedFile, logger);
 
@@ -104,7 +113,7 @@ public class VerifyImageContent extends SalesforceAction {
             }
 
         } catch (Exception e) {
-            logger.info("Exception: " + e.getMessage());
+            logger.info("Exception: " + ExceptionUtils.getStackTrace(e));
             setErrorMessage("Failed to verify using AI. Error: " + e.getMessage());
             return Result.FAILED;
         } finally {

@@ -147,14 +147,7 @@ public class VerifyPdfSimilarityInWhileLoop extends WebAction {
             try {
                 List<File> files = Arrays.asList(baseJpeg, actualJpeg);
 
-                AIRequest aiRequest = new AIRequest();
-                aiRequest.setPrompt(AiActionUtils.COMPARE_PDF_PROMPT + prompt +
-                        "\n<custom_instructions>\n{\n  \"provider\": \"vertex-ai\",\n  \"image_detail\": \"high\"\n}\n</custom_instructions>");
-                aiRequest.setModel(AiActionUtils.AI_MODEL);
-                aiRequest.setFiles(files);
-                logger.info("Sending AI request for page " + pageNum + " with " + files.size() + " file(s)...");
-                String aiResponse = ai.invokeAI(aiRequest);
-                logger.info("AI response: " + aiResponse);
+                String aiResponse = AiActionUtils.invokeAiWithFiles(ai, files, AiActionUtils.COMPARE_PDF_PROMPT, prompt, logger);
 
                 JsonNode node = AiActionUtils.parseAiJson(aiResponse, logger);
                 if (node == null) {

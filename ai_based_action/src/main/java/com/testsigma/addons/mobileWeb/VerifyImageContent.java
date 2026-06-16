@@ -54,7 +54,8 @@ public class VerifyImageContent extends WebAction {
 
             screenshotFile = AiActionUtils.captureAsJpeg(pageCapture, "ai_mobileweb_verify_capture", logger);
 
-            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.VERIFY_PROMPT_MOBILE_WEB, query, logger);
+            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.VERIFY_PROMPT_MOBILE_WEB, query,
+                    logger);
 
             JsonNode responseNode = AiActionUtils.parseAiJson(aiResponse, logger);
             if (responseNode == null) {

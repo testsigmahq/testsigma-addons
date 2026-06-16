@@ -62,7 +62,8 @@ public class StoreOutputFromAiPrompt extends WindowsAction {
 
             screenshotFile = AiActionUtils.captureAsJpeg(pageCapture, "ai_windows_store_capture", logger);
 
-            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.STORE_PROMPT_DESKTOP, prompt, logger);
+            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.STORE_PROMPT_DESKTOP, prompt,
+                    logger);
 
             JsonNode responseNode = AiActionUtils.parseAiJson(aiResponse, logger);
             if (responseNode == null) {

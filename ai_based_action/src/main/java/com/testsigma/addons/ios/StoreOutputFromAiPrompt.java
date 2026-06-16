@@ -62,7 +62,8 @@ public class StoreOutputFromAiPrompt extends IOSAction {
 
             screenshotFile = AiActionUtils.captureAsJpeg(pageCapture, "ai_ios_store_capture", logger);
 
-            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.STORE_PROMPT_IOS, prompt, logger);
+            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.STORE_PROMPT_IOS, prompt,
+                    logger);
 
             JsonNode responseNode = AiActionUtils.parseAiJson(aiResponse, logger);
             if (responseNode == null) {
