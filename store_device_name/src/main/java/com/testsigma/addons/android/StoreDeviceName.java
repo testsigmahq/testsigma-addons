@@ -34,10 +34,8 @@ public class StoreDeviceName extends AndroidAction {
     private com.testsigma.sdk.RunTimeData runtimeData;
 
     private static final String SAUCE_LABS_DEVICE_FIELD_NAME = "testobject_device_name";
-    private static final String LAMBDA_TEST_DEVICE_FIELD_NAME = "deviceName";
     private static final String BROWSER_STACK_DEVICE_FIELD_NAME = "device";
     private static final String DEVICE_FIELD_IN_DESIRED_CAPS = "deviceName";
-
     private static final String DESIRED_CAPABILITY_NAME = "desired";
 
     @Override
@@ -49,7 +47,10 @@ public class StoreDeviceName extends AndroidAction {
         try {
             AndroidDriver driver = (AndroidDriver) this.driver;
             Capabilities capabilities = driver.getCapabilities();
-            String environmentType = getEnvironmentType();
+
+            String environmentType = getEnvironmentType(capabilities);
+            logger.info("Environment type: " + environmentType);
+
             if (!environmentType.equals("error")) {
                 switch (environmentType) {
                     case "saucelabs":
@@ -73,11 +74,26 @@ public class StoreDeviceName extends AndroidAction {
                 return Result.FAILED;
             }
 
-            // Store in runtime variable
+            logger.info("Device name before version append: " + fullDeviceName);
+
+            // Append Android platform version — prefer desired.platformVersion (configured target)
+            // over appium:platformVersion (what Appium reports back, may differ for beta OS)
+            // Skip if the name already contains "Android" (e.g. SauceLabs testobject_device_name)
+            if (fullDeviceName != null && !fullDeviceName.toLowerCase().contains("android")) {
+                Map<String, Object> desiredCaps = (Map<String, Object>) capabilities.getCapability(DESIRED_CAPABILITY_NAME);
+                String platformVersion = desiredCaps != null ? String.valueOf(desiredCaps.get("platformVersion")) : null;
+                if (platformVersion == null || platformVersion.equals("null") || platformVersion.isEmpty()) {
+                    platformVersion = (String) capabilities.getCapability("appium:platformVersion");
+                }
+                logger.info("Platform version: " + platformVersion);
+                if (platformVersion != null && !platformVersion.isEmpty()) {
+                    fullDeviceName = fullDeviceName + " Android v" + platformVersion;
+                }
+            }
+
             if (fullDeviceName != null) {
                 runtimeData.setValue(fullDeviceName);
                 runtimeData.setKey(var.getValue().toString());
-
                 setSuccessMessage("Successfully stored deviceName '" + fullDeviceName + "' in runtime variable: " + runtimeData.getKey());
                 logger.info("Stored 'deviceName' : '" + fullDeviceName + "' into runtime variable: " + runtimeData.getKey());
             } else {
@@ -96,51 +112,67 @@ public class StoreDeviceName extends AndroidAction {
         return result;
     }
 
-    private String getEnvironmentType() {
+    private String getEnvironmentType(Capabilities capabilities) {
         RemoteWebDriver remoteDriver = (RemoteWebDriver) driver;
-        String remoteAddress;
-        String environmentType = null;
         try {
             Object commandExecutor = remoteDriver.getCommandExecutor();
+            String remoteAddress;
             if (commandExecutor instanceof AppiumCommandExecutor) {
-                AppiumCommandExecutor appiumExecutor = (AppiumCommandExecutor) commandExecutor;
-                remoteAddress = appiumExecutor.getAddressOfRemoteServer().toString();
+                remoteAddress = ((AppiumCommandExecutor) commandExecutor).getAddressOfRemoteServer().toString();
             } else {
                 remoteAddress = "unknown";
             }
 
-            if (remoteAddress.toLowerCase().contains("lambdatest")) {
-                environmentType = "lambdatest";
-            } else if (remoteAddress.toLowerCase().contains("browserstack")) {
-                environmentType = "browserstack";
-            } else if (remoteAddress.toLowerCase().contains("saucelabs")) {
-                environmentType = "saucelabs";
-            } else {
-                environmentType = "local";
+            // Primary: check remote URL (direct connections to cloud providers)
+            String lowerAddress = remoteAddress.toLowerCase();
+            if (lowerAddress.contains("lambdatest")) {
+                return "lambdatest";
+            } else if (lowerAddress.contains("browserstack")) {
+                return "browserstack";
+            } else if (lowerAddress.contains("saucelabs")) {
+                return "saucelabs";
             }
+
+            // Secondary: check session ID prefix (when routed through Testsigma's proxy)
+            String sessionId = remoteDriver.getSessionId().toString();
+            if (sessionId.toLowerCase().startsWith("lt:")) {
+                return "lambdatest";
+            } else if (sessionId.toLowerCase().startsWith("sl:")) {
+                return "saucelabs";
+            } else if (sessionId.toLowerCase().startsWith("bs:")) {
+                return "browserstack";
+            }
+
+            // Tertiary: check chromedriver executable path in capabilities
+            String chromedriverExec = (String) capabilities.getCapability("appium:chromedriverExecutable");
+            if (chromedriverExec != null && chromedriverExec.toLowerCase().contains("browserstack")) {
+                return "browserstack";
+            }
+
+            return "local";
         } catch (Exception e) {
-            logger.info("Exception: " + ExceptionUtils.getStackTrace(e));
+            logger.info("Exception in getEnvironmentType: " + ExceptionUtils.getStackTrace(e));
             return "error";
         }
-
-        return environmentType;
     }
 
     private String getLambdaTestDeviceName(Capabilities capabilities) {
-        String deviceManufacturer = (String) capabilities.getCapability("appium:deviceManufacturer");
-
-        // Make deviceManufacturer value first letter capital
-        if (deviceManufacturer != null && !deviceManufacturer.isEmpty()) {
-            deviceManufacturer = StringUtils.capitalize(deviceManufacturer);
-        }
-
         Map<String, Object> desiredCaps = (Map<String, Object>) capabilities.getCapability(DESIRED_CAPABILITY_NAME);
         String deviceName = desiredCaps != null ? (String) desiredCaps.get(DEVICE_FIELD_IN_DESIRED_CAPS) : null;
 
-        if (deviceManufacturer != null && deviceName != null) {
-            return deviceManufacturer + " " + deviceName;
+        if (deviceName == null || deviceName.isEmpty()) {
+            deviceName = (String) capabilities.getCapability("appium:deviceName");
         }
-        return null;
+
+        // Prepend manufacturer only if not already present (e.g. "Pixel 10 Pro" needs "Google", "OnePlus 11" does not)
+        if (deviceName != null && !deviceName.isEmpty()) {
+            String manufacturer = StringUtils.capitalize((String) capabilities.getCapability("appium:deviceManufacturer"));
+            if (manufacturer != null && !manufacturer.isEmpty()
+                    && !deviceName.toLowerCase().startsWith(manufacturer.toLowerCase())) {
+                deviceName = manufacturer + " " + deviceName;
+            }
+        }
+        return deviceName;
     }
 
     private String getBrowserStackDeviceName() throws ParseException {
@@ -155,7 +187,11 @@ public class StoreDeviceName extends AndroidAction {
     }
 
     private String getDeviceNameFromDriverDesiredCaps(Capabilities capabilities) {
-        Map<String, Object> desiredCaps = (Map<String, Object>) capabilities.getCapability(DESIRED_CAPABILITY_NAME);
-        return desiredCaps != null ? (String) desiredCaps.get(DEVICE_FIELD_IN_DESIRED_CAPS) : null;
+        String manufacturer = StringUtils.capitalize((String) capabilities.getCapability("appium:deviceManufacturer"));
+        String model = (String) capabilities.getCapability("appium:deviceModel");
+        if (manufacturer != null && !manufacturer.isEmpty() && model != null && !model.isEmpty()) {
+            return manufacturer + " " + model;
+        }
+        return null;
     }
 }
