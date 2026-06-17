@@ -81,7 +81,8 @@ public class VerifyImageContentWithScroll extends AndroidAction {
 
             // Send all 3 screenshots to AI
             List<File> screenshotFiles = Arrays.asList(screenshot1File, screenshot2File, screenshot3File);
-            String aiResponse = AiActionUtils.invokeAiWithFiles(ai, screenshotFiles, AiActionUtils.VERIFY_SCROLL_PROMPT_ANDROID, query, logger);
+            String aiResponse = AiActionUtils.invokeAiWithFiles(ai, screenshotFiles, AiActionUtils.VERIFY_SCROLL_PROMPT_ANDROID, query,
+                    logger);
 
             JsonNode responseNode = AiActionUtils.parseAiJson(aiResponse, logger);
             if (responseNode == null) {

@@ -54,7 +54,8 @@ public class VerifyImageContent extends IOSAction {
 
             screenshotFile = AiActionUtils.captureAsJpeg(pageCapture, "ai_ios_verify_capture", logger);
 
-            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.VERIFY_PROMPT_IOS, query, logger);
+            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.VERIFY_PROMPT_IOS, query,
+                    logger);
 
             JsonNode responseNode = AiActionUtils.parseAiJson(aiResponse, logger);
             if (responseNode == null) {

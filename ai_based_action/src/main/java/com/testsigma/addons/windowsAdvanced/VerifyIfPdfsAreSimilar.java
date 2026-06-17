@@ -106,7 +106,8 @@ public class VerifyIfPdfsAreSimilar extends WindowsAdvancedAction {
                 try {
                     List<File> files = Arrays.asList(baseJpeg, actualJpeg);
                     String aiResponse = AiActionUtils.invokeAiWithFiles(
-                            ai, files, AiActionUtils.COMPARE_PDF_PROMPT, prompt, logger);
+                            ai, files, AiActionUtils.COMPARE_PDF_PROMPT, prompt,
+                    logger);
 
                     JsonNode node = AiActionUtils.parseAiJson(aiResponse, logger);
                     if (node == null) {

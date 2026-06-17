@@ -54,7 +54,8 @@ public class VerifyImageContent extends WindowsAction {
 
             screenshotFile = AiActionUtils.captureAsJpeg(pageCapture, "ai_win_verify_capture", logger);
 
-            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.VERIFY_PROMPT_DESKTOP, query, logger);
+            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.VERIFY_PROMPT_DESKTOP, query,
+                    logger);
 
             JsonNode responseNode = AiActionUtils.parseAiJson(aiResponse, logger);
             if (responseNode == null) {

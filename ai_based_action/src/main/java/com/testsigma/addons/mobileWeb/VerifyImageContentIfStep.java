@@ -1,9 +1,12 @@
-package com.testsigma.addons.salesforce;
+package com.testsigma.addons.mobileWeb;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.testsigma.addons.util.AiActionUtils;
 import com.testsigma.addons.util.ScreenshotUtils;
-import com.testsigma.sdk.*;
+import com.testsigma.sdk.ApplicationType;
+import com.testsigma.sdk.Result;
+import com.testsigma.sdk.StepActionType;
+import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.AI;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
@@ -19,13 +22,14 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 
 @Data
-@Action(actionText = "Ai: Verify page contains verification-query",
-        description = "Capture a screenshot of the Salesforce page and ask AI to verify whether the described " +
-                "content or condition is present. The step passes if AI confirms the query; fails otherwise.",
-        displayName = "Ai: Verify page contains",
-        applicationType = ApplicationType.Salesforce,
+@Action(actionText = "Ai: Verify if the page has content matching prompt verification-query",
+        description = "Capture a screenshot of the web page and ask AI to verify whether the described " +
+                "content or condition is present. The step passes if AI confirms the query; fails otherwise. " +
+                "Use natural language to describe what you expect to see.",
+        applicationType = ApplicationType.MOBILE_WEB,
+        actionType = StepActionType.IF_CONDITION,
         useCustomScreenshot = true)
-public class VerifyImageContent extends SalesforceAction {
+public class VerifyImageContentIfStep extends WebAction {
 
     @TestData(reference = "verification-query")
     private com.testsigma.sdk.TestData verificationQuery;
@@ -38,7 +42,7 @@ public class VerifyImageContent extends SalesforceAction {
 
     @Override
     public Result execute() {
-        logger.info("=== VerifyImageContent (Salesforce): Starting ===");
+        logger.info("=== VerifyImageContentIfStep (Mobile Web): Starting ===");
         File screenshotFile     = null;
         File finalAnnotatedFile = null;
 
@@ -52,9 +56,9 @@ public class VerifyImageContent extends SalesforceAction {
             int captureH = pageCapture.getHeight();
             logger.info("Viewport screenshot size: " + captureW + "x" + captureH);
 
-            screenshotFile = AiActionUtils.captureAsJpeg(pageCapture, "ai_salesforce_verify_capture", logger);
+            screenshotFile = AiActionUtils.captureAsJpeg(pageCapture, "ai_web_verify_capture", logger);
 
-            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.VERIFY_PROMPT_SALESFORCE, query,
+            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.VERIFY_PROMPT_WEB, query,
                     logger);
 
             JsonNode responseNode = AiActionUtils.parseAiJson(aiResponse, logger);

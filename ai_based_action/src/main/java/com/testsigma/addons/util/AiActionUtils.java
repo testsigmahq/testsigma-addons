@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testsigma.sdk.AI;
 import com.testsigma.sdk.AIRequest;
 import com.testsigma.sdk.Logger;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 
@@ -13,15 +16,28 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.List;
+import java.util.Set;
 
 public class AiActionUtils {
 
+    /** Used for click / locate actions (Vertex AI). */
     public static final String AI_MODEL = "anthropic.claude-opus-4-6";
+
+    /** Used for verify and store (data extraction) actions (Anthropic direct). */
+    public static final String AI_MODEL_ANTHROPIC = "claude-opus-4-8";
 
     private static final String CUSTOM_INSTRUCTIONS =
             "<custom_instructions>\n" +
             "{\n" +
             "  \"provider\": \"vertex-ai\",\n" +
+            "  \"image_detail\": \"high\"\n" +
+            "}\n" +
+            "</custom_instructions>";
+
+    private static final String CUSTOM_INSTRUCTIONS_ANTHROPIC =
+            "<custom_instructions>\n" +
+            "{\n" +
+            "  \"provider\": \"anthropic\",\n" +
             "  \"image_detail\": \"high\"\n" +
             "}\n" +
             "</custom_instructions>";
@@ -337,21 +353,75 @@ public class AiActionUtils {
         return invokeAiWithFiles(ai, List.of(screenshotFile), basePrompt, query, logger);
     }
 
+    /** Builds the full AI prompt and invokes the AI service with a single screenshot (Anthropic-direct first). */
+    public static String invokeAiAnthropicFirst(AI ai, File screenshotFile,
+                                                 String basePrompt, String query,
+                                                 Logger logger) throws Exception {
+        return invokeAiWithFilesAnthropicFirst(ai, List.of(screenshotFile), basePrompt, query, logger);
+    }
+
     /**
-     * Variant that sends multiple files in one request — used for two-image verification
-     * where Screenshot A (clean) and Screenshot B (annotated) are attached together.
+     * Same as invokeAiWithFiles but with model priority reversed:
+     * tries AI_MODEL_ANTHROPIC (anthropic direct) first, falls back to AI_MODEL (vertex-ai).
+     */
+    public static String invokeAiWithFilesAnthropicFirst(AI ai, List<File> files,
+                                                          String basePrompt, String query,
+                                                          Logger logger) throws Exception {
+        // Primary: anthropic direct
+        AIRequest primary = new AIRequest();
+        primary.setPrompt(basePrompt + query + CUSTOM_INSTRUCTIONS_ANTHROPIC);
+        primary.setModel(AI_MODEL_ANTHROPIC);
+        primary.setFiles(files);
+        logger.info("Sending AI request with model=" + AI_MODEL_ANTHROPIC + ", files=" + files.size() + "...");
+        String response = ai.invokeAI(primary);
+        logger.info("AI response: " + response);
+
+        if (isBlankOrEmptyJson(response)) {
+            // Fallback: vertex-ai
+            logger.info("Primary model returned empty response, falling back to model=" + AI_MODEL);
+            AIRequest fallback = new AIRequest();
+            fallback.setPrompt(basePrompt + query + CUSTOM_INSTRUCTIONS);
+            fallback.setModel(AI_MODEL);
+            fallback.setFiles(files);
+            response = ai.invokeAI(fallback);
+            logger.info("Fallback AI response: " + response);
+        }
+        return response;
+    }
+
+    /**
+     * Sends multiple files in one request. Tries AI_MODEL (vertex-ai) first;
+     * if the response is null or empty falls back to AI_MODEL_ANTHROPIC (anthropic direct).
      */
     public static String invokeAiWithFiles(AI ai, List<File> files,
                                             String basePrompt, String query,
                                             Logger logger) throws Exception {
-        AIRequest aiRequest = new AIRequest();
-        aiRequest.setPrompt(basePrompt + query + CUSTOM_INSTRUCTIONS);
-        aiRequest.setModel(AI_MODEL);
-        aiRequest.setFiles(files);
-        logger.info("Sending AI request with " + files.size() + " file(s)...");
-        String response = ai.invokeAI(aiRequest);
+        // Primary: vertex-ai
+        AIRequest primary = new AIRequest();
+        primary.setPrompt(basePrompt + query + CUSTOM_INSTRUCTIONS);
+        primary.setModel(AI_MODEL);
+        primary.setFiles(files);
+        logger.info("Sending AI request with model=" + AI_MODEL + ", files=" + files.size() + "...");
+        String response = ai.invokeAI(primary);
         logger.info("AI response: " + response);
+
+        if (isBlankOrEmptyJson(response)) {
+            // Fallback: anthropic direct
+            logger.info("Primary model returned empty response, falling back to model=" + AI_MODEL_ANTHROPIC);
+            AIRequest fallback = new AIRequest();
+            fallback.setPrompt(basePrompt + query + CUSTOM_INSTRUCTIONS_ANTHROPIC);
+            fallback.setModel(AI_MODEL_ANTHROPIC);
+            fallback.setFiles(files);
+            response = ai.invokeAI(fallback);
+            logger.info("Fallback AI response: " + response);
+        }
         return response;
+    }
+
+    private static boolean isBlankOrEmptyJson(String response) {
+        if (response == null || response.isBlank()) return true;
+        String trimmed = response.trim();
+        return trimmed.isEmpty() || trimmed.equals("{}") || trimmed.equals("null");
     }
 
     /** Strips markdown fences and extracts the first JSON object from an AI response. */
@@ -497,6 +567,39 @@ public class AiActionUtils {
         g.drawImage(src, 0, 0, null);
         g.dispose();
         return rgb;
+    }
+
+    /**
+     * If the file is a PDF, flattens its AcroForm fields so that widget values stored only in
+     * /V (but without an appearance stream /AP) are baked into visible page content before the
+     * file is sent to Anthropic. Anthropic's renderer relies on appearance streams; without this
+     * step, form fields whose /AP is empty appear blank even though the data exists in /V.
+     *
+     * Non-PDF files are returned unchanged. The flattened PDF is written to a temp file added to
+     * tempFiles so it is cleaned up by the caller's finally block.
+     */
+    public static File flattenPdf(File file, Set<File> tempFiles, Logger logger) {
+        String name = file.getName().toLowerCase();
+        if (!name.endsWith(".pdf")) {
+            return file;
+        }
+        try {
+            try (PDDocument doc = Loader.loadPDF(file)) {
+                PDAcroForm form = doc.getDocumentCatalog().getAcroForm();
+                if (form != null && !form.getFields().isEmpty()) {
+                    form.flatten();
+                    logger.info("PDF AcroForm flattened: " + file.getName());
+                }
+                File flat = File.createTempFile("flat_", ".pdf");
+                doc.save(flat);
+                tempFiles.add(flat);
+                logger.info("Flattened PDF written to: " + flat.getAbsolutePath());
+                return flat;
+            }
+        } catch (Exception e) {
+            logger.info("PDF flatten failed (using original): " + e.getMessage());
+            return file;
+        }
     }
 
     public static void deleteQuietly(File file) {

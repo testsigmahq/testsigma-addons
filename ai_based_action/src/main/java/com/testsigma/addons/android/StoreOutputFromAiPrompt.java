@@ -62,7 +62,8 @@ public class StoreOutputFromAiPrompt extends AndroidAction {
 
             screenshotFile = AiActionUtils.captureAsJpeg(pageCapture, "ai_android_store_capture", logger);
 
-            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.STORE_PROMPT_ANDROID, prompt, logger);
+            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.STORE_PROMPT_ANDROID, prompt,
+                    logger);
 
             JsonNode responseNode = AiActionUtils.parseAiJson(aiResponse, logger);
             if (responseNode == null) {

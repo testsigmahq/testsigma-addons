@@ -54,7 +54,8 @@ public class VerifyImageContent extends AndroidAction {
 
             screenshotFile = AiActionUtils.captureAsJpeg(pageCapture, "ai_android_verify_capture", logger);
 
-            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.VERIFY_PROMPT_ANDROID, query, logger);
+            String aiResponse = AiActionUtils.invokeAi(ai, screenshotFile, AiActionUtils.VERIFY_PROMPT_ANDROID, query,
+                    logger);
 
             JsonNode responseNode = AiActionUtils.parseAiJson(aiResponse, logger);
             if (responseNode == null) {

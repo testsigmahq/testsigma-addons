@@ -53,10 +53,11 @@ public class StoreAiOutputFromFile extends WindowsAction {
             String variableName = runtimeVariable.getValue().toString();
             logger.info("Prompt: " + prompt + " | File: " + path + " | Variable: " + variableName);
 
-            File file = resolveFile(path, tempFiles);
+            File file = AiActionUtils.flattenPdf(resolveFile(path, tempFiles), tempFiles, logger);
 
             String aiResponse = AiActionUtils.invokeAiWithFiles(
-                    ai, Collections.singletonList(file), AiActionUtils.EXTRACT_FROM_FILE_PROMPT, prompt, logger);
+                    ai, Collections.singletonList(file), AiActionUtils.EXTRACT_FROM_FILE_PROMPT, prompt,
+                    logger);
 
             JsonNode responseNode = AiActionUtils.parseAiJson(aiResponse, logger);
             if (responseNode == null) {
