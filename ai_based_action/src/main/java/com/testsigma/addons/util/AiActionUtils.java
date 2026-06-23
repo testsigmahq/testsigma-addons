@@ -28,308 +28,312 @@ public class AiActionUtils {
 
     private static final String CUSTOM_INSTRUCTIONS =
             "<custom_instructions>\n" +
-            "{\n" +
-            "  \"provider\": \"vertex-ai\",\n" +
-            "  \"image_detail\": \"high\"\n" +
-            "}\n" +
-            "</custom_instructions>";
+                    "{\n" +
+                    "  \"provider\": \"vertex-ai\",\n" +
+                    "  \"image_detail\": \"high\"\n" +
+                    "}\n" +
+                    "</custom_instructions>";
 
     private static final String CUSTOM_INSTRUCTIONS_ANTHROPIC =
             "<custom_instructions>\n" +
-            "{\n" +
-            "  \"provider\": \"anthropic\",\n" +
-            "  \"image_detail\": \"high\"\n" +
-            "}\n" +
-            "</custom_instructions>";
+                    "{\n" +
+                    "  \"provider\": \"anthropic\",\n" +
+                    "  \"image_detail\": \"high\"\n" +
+                    "}\n" +
+                    "</custom_instructions>";
 
     private static final String LOCATE_STEP1 =
             "STEP 1 — Measure the image:\n" +
-            "  Look at the raw pixel dimensions of the image you received (width × height).\n" +
-            "  You MUST include these as \"imageWidth\" and \"imageHeight\" in your JSON response.\n\n";
+                    "  Look at the raw pixel dimensions of the image you received (width × height).\n" +
+                    "  You MUST include these as \"imageWidth\" and \"imageHeight\" in your JSON response.\n\n";
 
     private static final String LOCATE_STEP2_SUFFIX =
             "  For image/graphic elements (buttons, icons, logos, images) find the actual element.\n" +
-            "  For text elements, look for the distinctive font color and style.\n" +
-            "  Report the bounding box as pixel coordinates: top-left corner (x1, y1) and bottom-right corner (x2, y2).\n\n";
+                    "  For text elements, look for the distinctive font color and style.\n" +
+                    "  Report the bounding box as pixel coordinates: top-left corner (x1, y1) and bottom-right corner (x2, y2).\n\n";
 
     private static final String LOCATE_OUTPUT_FORMAT =
             "OUTPUT FORMAT — strict JSON only, no markdown, no explanation:\n" +
-            "If found:\n" +
-            "  {\"found\": true, \"x1\": <int>, \"y1\": <int>, \"x2\": <int>, \"y2\": <int>, " +
-            "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
-            "\"confidence\": <0-100>, \"description\": \"<what you found>\"}\n" +
-            "If not found:\n" +
-            "  {\"found\": false, \"x1\": 0, \"y1\": 0, \"x2\": 0, \"y2\": 0, " +
-            "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
-            "\"confidence\": 0, \"description\": \"<why not found>\"}\n\n" +
-            "TASK: Find the exact bounding box of: ";
+                    "If found:\n" +
+                    "  {\"found\": true, \"x1\": <int>, \"y1\": <int>, \"x2\": <int>, \"y2\": <int>, " +
+                    "\"cx\": <int>, \"cy\": <int>, " +
+                    "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
+                    "\"confidence\": <0-100>, \"description\": \"<what you found>\"}\n" +
+                    "  where cx/cy is the VISUAL CENTER of the element (not simply (x1+x2)/2 — " +
+                    "account for padding, text centering, and visual weight).\n" +
+                    "If not found:\n" +
+                    "  {\"found\": false, \"x1\": 0, \"y1\": 0, \"x2\": 0, \"y2\": 0, " +
+                    "\"cx\": 0, \"cy\": 0, " +
+                    "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
+                    "\"confidence\": 0, \"description\": \"<why not found>\"}\n\n" +
+                    "TASK: Find the exact bounding box of: ";
 
     private static final String VERIFY_STEP1 =
             "STEP 1 — Measure the image:\n" +
-            "  Look at the raw pixel dimensions of the image you received (width × height).\n" +
-            "  You MUST include these as \"imageWidth\" and \"imageHeight\" in your JSON response.\n\n";
+                    "  Look at the raw pixel dimensions of the image you received (width × height).\n" +
+                    "  You MUST include these as \"imageWidth\" and \"imageHeight\" in your JSON response.\n\n";
 
     private static final String VERIFY_STEP2 =
             "STEP 2 — Verify the condition:\n" +
-            "  Carefully examine the screenshot for the described content.\n" +
-            "  Consider text, images, UI elements, colors, layout, and any visible state.\n" +
-            "  If the described content is found, set \"verified\" to true and provide the bounding box " +
-            "of the relevant area so it can be highlighted.\n" +
-            "  If the described content is NOT found or the condition is NOT met, set \"verified\" to false.\n\n";
+                    "  Carefully examine the screenshot for the described content.\n" +
+                    "  Consider text, images, UI elements, colors, layout, and any visible state.\n" +
+                    "  If the described content is found, set \"verified\" to true and provide the bounding box " +
+                    "of the relevant area so it can be highlighted.\n" +
+                    "  If the described content is NOT found or the condition is NOT met, set \"verified\" to false.\n\n";
 
     private static final String VERIFY_OUTPUT_FORMAT =
             "OUTPUT FORMAT — strict JSON only, no markdown, no explanation:\n" +
-            "If verified (content found / condition met):\n" +
-            "  {\"verified\": true, \"x1\": <int>, \"y1\": <int>, \"x2\": <int>, \"y2\": <int>, " +
-            "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
-            "\"confidence\": <0-100>, \"description\": \"<what was found and why it passes>\"}\n" +
-            "If NOT verified (content missing / condition not met):\n" +
-            "  {\"verified\": false, \"x1\": 0, \"y1\": 0, \"x2\": 0, \"y2\": 0, " +
-            "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
-            "\"confidence\": <0-100>, \"description\": \"<what was expected but not found>\"}\n\n" +
-            "VERIFICATION QUERY: ";
+                    "If verified (content found / condition met):\n" +
+                    "  {\"verified\": true, \"x1\": <int>, \"y1\": <int>, \"x2\": <int>, \"y2\": <int>, " +
+                    "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
+                    "\"confidence\": <0-100>, \"description\": \"<what was found and why it passes>\"}\n" +
+                    "If NOT verified (content missing / condition not met):\n" +
+                    "  {\"verified\": false, \"x1\": 0, \"y1\": 0, \"x2\": 0, \"y2\": 0, " +
+                    "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
+                    "\"confidence\": <0-100>, \"description\": \"<what was expected but not found>\"}\n\n" +
+                    "VERIFICATION QUERY: ";
 
     // ── Store prompts (per platform) ──
 
     private static final String STORE_STEP2 =
             "STEP 2 — Extract the requested content:\n" +
-            "  Carefully examine the screenshot for the content described in the prompt.\n" +
-            "  Consider text, numbers, labels, values, dates, and any visible data on the page.\n" +
-            "  If the requested content is found, set \"found\" to true, provide the exact extracted " +
-            "text or value in \"output\", and provide the bounding box of the relevant area.\n" +
-            "  If the content is NOT found, set \"found\" to false and leave \"output\" empty.\n\n";
+                    "  Carefully examine the screenshot for the content described in the prompt.\n" +
+                    "  Consider text, numbers, labels, values, dates, and any visible data on the page.\n" +
+                    "  If the requested content is found, set \"found\" to true, provide the exact extracted " +
+                    "text or value in \"output\", and provide the bounding box of the relevant area.\n" +
+                    "  If the content is NOT found, set \"found\" to false and leave \"output\" empty.\n\n";
 
     private static final String STORE_OUTPUT_FORMAT =
             "OUTPUT FORMAT — strict JSON only, no markdown, no explanation:\n" +
-            "If found:\n" +
-            "  {\"found\": true, \"output\": \"<exact extracted text or value>\", " +
-            "\"x1\": <int>, \"y1\": <int>, \"x2\": <int>, \"y2\": <int>, " +
-            "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
-            "\"confidence\": <0-100>, \"description\": \"<what was found and where>\"}\n" +
-            "If NOT found:\n" +
-            "  {\"found\": false, \"output\": \"\", " +
-            "\"x1\": 0, \"y1\": 0, \"x2\": 0, \"y2\": 0, " +
-            "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
-            "\"confidence\": 0, \"description\": \"<why the content was not found>\"}\n\n" +
-            "EXTRACTION PROMPT: ";
+                    "If found:\n" +
+                    "  {\"found\": true, \"output\": \"<exact extracted text or value>\", " +
+                    "\"x1\": <int>, \"y1\": <int>, \"x2\": <int>, \"y2\": <int>, " +
+                    "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
+                    "\"confidence\": <0-100>, \"description\": \"<what was found and where>\"}\n" +
+                    "If NOT found:\n" +
+                    "  {\"found\": false, \"output\": \"\", " +
+                    "\"x1\": 0, \"y1\": 0, \"x2\": 0, \"y2\": 0, " +
+                    "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
+                    "\"confidence\": 0, \"description\": \"<why the content was not found>\"}\n\n" +
+                    "EXTRACTION PROMPT: ";
 
     public static final String STORE_PROMPT_WEB =
             "You are a UI content extraction assistant. Given a web page screenshot, extract the specific " +
-            "content or value described in the prompt and return it exactly as it appears on screen.\n\n" +
-            LOCATE_STEP1 + STORE_STEP2 + STORE_OUTPUT_FORMAT;
+                    "content or value described in the prompt and return it exactly as it appears on screen.\n\n" +
+                    LOCATE_STEP1 + STORE_STEP2 + STORE_OUTPUT_FORMAT;
 
     public static final String STORE_PROMPT_ANDROID =
             "You are a UI content extraction assistant. Given an Android device screenshot, extract the specific " +
-            "content or value described in the prompt and return it exactly as it appears on screen.\n\n" +
-            LOCATE_STEP1 + STORE_STEP2 + STORE_OUTPUT_FORMAT;
+                    "content or value described in the prompt and return it exactly as it appears on screen.\n\n" +
+                    LOCATE_STEP1 + STORE_STEP2 + STORE_OUTPUT_FORMAT;
 
     public static final String STORE_PROMPT_IOS =
             "You are a UI content extraction assistant. Given an iOS device screenshot, extract the specific " +
-            "content or value described in the prompt and return it exactly as it appears on screen.\n\n" +
-            LOCATE_STEP1 + STORE_STEP2 + STORE_OUTPUT_FORMAT;
+                    "content or value described in the prompt and return it exactly as it appears on screen.\n\n" +
+                    LOCATE_STEP1 + STORE_STEP2 + STORE_OUTPUT_FORMAT;
 
     public static final String STORE_PROMPT_MOBILE_WEB =
             "You are a UI content extraction assistant. Given a mobile web page screenshot, extract the specific " +
-            "content or value described in the prompt and return it exactly as it appears on screen.\n\n" +
-            LOCATE_STEP1 + STORE_STEP2 + STORE_OUTPUT_FORMAT;
+                    "content or value described in the prompt and return it exactly as it appears on screen.\n\n" +
+                    LOCATE_STEP1 + STORE_STEP2 + STORE_OUTPUT_FORMAT;
 
     public static final String STORE_PROMPT_SALESFORCE =
             "You are a UI content extraction assistant. Given a Salesforce page screenshot, extract the specific " +
-            "content or value described in the prompt and return it exactly as it appears on screen.\n\n" +
-            LOCATE_STEP1 + STORE_STEP2 + STORE_OUTPUT_FORMAT;
+                    "content or value described in the prompt and return it exactly as it appears on screen.\n\n" +
+                    LOCATE_STEP1 + STORE_STEP2 + STORE_OUTPUT_FORMAT;
 
     public static final String STORE_PROMPT_DESKTOP =
             "You are a UI content extraction assistant. Given a desktop application screenshot, extract the specific " +
-            "content or value described in the prompt and return it exactly as it appears on screen.\n\n" +
-            LOCATE_STEP1 + STORE_STEP2 + STORE_OUTPUT_FORMAT;
+                    "content or value described in the prompt and return it exactly as it appears on screen.\n\n" +
+                    LOCATE_STEP1 + STORE_STEP2 + STORE_OUTPUT_FORMAT;
 
     // ── Locate prompts (per platform) ──
 
     public static final String LOCATE_PROMPT_WEB =
             "You are a UI element locator. Given a web page screenshot, find the EXACT pixel " +
-            "bounding box of the requested element.\n\n" +
-            LOCATE_STEP1 +
-            "STEP 2 — Find the element:\n" +
-            "  Locate the element visually on the web page using pixel-level analysis.\n" +
-            LOCATE_STEP2_SUFFIX +
-            LOCATE_OUTPUT_FORMAT;
+                    "bounding box of the requested element.\n\n" +
+                    LOCATE_STEP1 +
+                    "STEP 2 — Find the element:\n" +
+                    "  Locate the element visually on the web page using pixel-level analysis.\n" +
+                    LOCATE_STEP2_SUFFIX +
+                    LOCATE_OUTPUT_FORMAT;
 
     public static final String LOCATE_PROMPT_ANDROID =
             "You are a UI element locator. Given an Android device screenshot, find the EXACT pixel " +
-            "bounding box of the requested element.\n\n" +
-            LOCATE_STEP1 +
-            "STEP 2 — Find the element:\n" +
-            "  Locate the element visually on the Android screen using pixel-level analysis.\n" +
-            LOCATE_STEP2_SUFFIX +
-            LOCATE_OUTPUT_FORMAT;
+                    "bounding box of the requested element.\n\n" +
+                    LOCATE_STEP1 +
+                    "STEP 2 — Find the element:\n" +
+                    "  Locate the element visually on the Android screen using pixel-level analysis.\n" +
+                    LOCATE_STEP2_SUFFIX +
+                    LOCATE_OUTPUT_FORMAT;
 
     public static final String LOCATE_PROMPT_IOS =
             "You are a UI element locator. Given an iOS device screenshot, find the EXACT pixel " +
-            "bounding box of the requested element.\n\n" +
-            LOCATE_STEP1 +
-            "STEP 2 — Find the element:\n" +
-            "  Locate the element visually on the iOS screen using pixel-level analysis.\n" +
-            LOCATE_STEP2_SUFFIX +
-            LOCATE_OUTPUT_FORMAT;
+                    "bounding box of the requested element.\n\n" +
+                    LOCATE_STEP1 +
+                    "STEP 2 — Find the element:\n" +
+                    "  Locate the element visually on the iOS screen using pixel-level analysis.\n" +
+                    LOCATE_STEP2_SUFFIX +
+                    LOCATE_OUTPUT_FORMAT;
 
     public static final String LOCATE_PROMPT_MOBILE_WEB =
             "You are a UI element locator. Given a mobile web page screenshot, find the EXACT pixel " +
-            "bounding box of the requested element.\n\n" +
-            LOCATE_STEP1 +
-            "STEP 2 — Find the element:\n" +
-            "  Locate the element visually on the mobile web page using pixel-level analysis.\n" +
-            LOCATE_STEP2_SUFFIX +
-            LOCATE_OUTPUT_FORMAT;
+                    "bounding box of the requested element.\n\n" +
+                    LOCATE_STEP1 +
+                    "STEP 2 — Find the element:\n" +
+                    "  Locate the element visually on the mobile web page using pixel-level analysis.\n" +
+                    LOCATE_STEP2_SUFFIX +
+                    LOCATE_OUTPUT_FORMAT;
 
     public static final String LOCATE_PROMPT_SALESFORCE =
             "You are a UI element locator. Given a Salesforce page screenshot, find the EXACT pixel " +
-            "bounding box of the requested element.\n\n" +
-            LOCATE_STEP1 +
-            "STEP 2 — Find the element:\n" +
-            "  Locate the element visually on the Salesforce page using pixel-level analysis.\n" +
-            LOCATE_STEP2_SUFFIX +
-            LOCATE_OUTPUT_FORMAT;
+                    "bounding box of the requested element.\n\n" +
+                    LOCATE_STEP1 +
+                    "STEP 2 — Find the element:\n" +
+                    "  Locate the element visually on the Salesforce page using pixel-level analysis.\n" +
+                    LOCATE_STEP2_SUFFIX +
+                    LOCATE_OUTPUT_FORMAT;
 
     public static final String LOCATE_PROMPT_DESKTOP =
             "You are a UI element locator. Given a screenshot, find the EXACT pixel " +
-            "bounding box of the requested element.\n\n" +
-            LOCATE_STEP1 +
-            "STEP 2 — Find the element:\n" +
-            "  Locate the element visually using pixel-level analysis. If there is an application opened " +
-            "consider only the opened application for locating the element.\n" +
-            "  For image/graphic elements (text, icons, logos) find the actual picture.\n" +
-            "  If there is an application running in windowed mode consider only that application for " +
-            "identification task and ignore taskbar and other elements present on the wallpaper.\n" +
-            "  For text elements, look for the distinctive font color and style.\n" +
-            "  Report the bounding box as pixel coordinates: top-left corner (x1, y1) and bottom-right corner (x2, y2).\n\n" +
-            LOCATE_OUTPUT_FORMAT;
+                    "bounding box of the requested element.\n\n" +
+                    LOCATE_STEP1 +
+                    "STEP 2 — Find the element:\n" +
+                    "  Locate the element visually using pixel-level analysis. If there is an application opened " +
+                    "consider only the opened application for locating the element.\n" +
+                    "  For image/graphic elements (text, icons, logos) find the actual picture.\n" +
+                    "  If there is an application running in windowed mode consider only that application for " +
+                    "identification task and ignore taskbar and other elements present on the wallpaper.\n" +
+                    "  For text elements, look for the distinctive font color and style.\n" +
+                    "  Report the bounding box as pixel coordinates: top-left corner (x1, y1) and bottom-right corner (x2, y2).\n\n" +
+                    LOCATE_OUTPUT_FORMAT;
 
     // ── Verify prompts (per platform) ──
 
     public static final String VERIFY_PROMPT_WEB =
             "You are a UI verification assistant. Given a web page screenshot, determine whether " +
-            "the described content or condition is present and visible on the page.\n\n" +
-            VERIFY_STEP1 + VERIFY_STEP2 + VERIFY_OUTPUT_FORMAT;
+                    "the described content or condition is present and visible on the page.\n\n" +
+                    VERIFY_STEP1 + VERIFY_STEP2 + VERIFY_OUTPUT_FORMAT;
 
     public static final String VERIFY_PROMPT_ANDROID =
             "You are a UI verification assistant. Given an Android device screenshot, determine whether " +
-            "the described content or condition is present and visible on the screen.\n\n" +
-            VERIFY_STEP1 + VERIFY_STEP2 + VERIFY_OUTPUT_FORMAT;
+                    "the described content or condition is present and visible on the screen.\n\n" +
+                    VERIFY_STEP1 + VERIFY_STEP2 + VERIFY_OUTPUT_FORMAT;
 
     public static final String VERIFY_PROMPT_IOS =
             "You are a UI verification assistant. Given an iOS device screenshot, determine whether " +
-            "the described content or condition is present and visible on the screen.\n\n" +
-            VERIFY_STEP1 + VERIFY_STEP2 + VERIFY_OUTPUT_FORMAT;
+                    "the described content or condition is present and visible on the screen.\n\n" +
+                    VERIFY_STEP1 + VERIFY_STEP2 + VERIFY_OUTPUT_FORMAT;
 
     public static final String VERIFY_PROMPT_MOBILE_WEB =
             "You are a UI verification assistant. Given a mobile web page screenshot, determine whether " +
-            "the described content or condition is present and visible on the page.\n\n" +
-            VERIFY_STEP1 + VERIFY_STEP2 + VERIFY_OUTPUT_FORMAT;
+                    "the described content or condition is present and visible on the page.\n\n" +
+                    VERIFY_STEP1 + VERIFY_STEP2 + VERIFY_OUTPUT_FORMAT;
 
     public static final String VERIFY_PROMPT_SALESFORCE =
             "You are a UI verification assistant. Given a Salesforce page screenshot, determine whether " +
-            "the described content or condition is present and visible on the page.\n\n" +
-            VERIFY_STEP1 + VERIFY_STEP2 + VERIFY_OUTPUT_FORMAT;
+                    "the described content or condition is present and visible on the page.\n\n" +
+                    VERIFY_STEP1 + VERIFY_STEP2 + VERIFY_OUTPUT_FORMAT;
 
     public static final String VERIFY_PROMPT_DESKTOP =
             "You are a UI verification assistant. Given a desktop application screenshot, determine whether " +
-            "the described content or condition is present and visible.\n\n" +
-            VERIFY_STEP1 + VERIFY_STEP2 + VERIFY_OUTPUT_FORMAT;
+                    "the described content or condition is present and visible.\n\n" +
+                    VERIFY_STEP1 + VERIFY_STEP2 + VERIFY_OUTPUT_FORMAT;
 
     // ── Scroll-verify prompts (multi-screenshot) ──
 
     private static final String VERIFY_SCROLL_STEP2 =
             "STEP 2 — Verify the condition across all screenshots:\n" +
-            "  Carefully examine ALL THREE screenshots for the described content.\n" +
-            "  The images are ordered: Image 1 = top of the page, Image 2 = after first scroll, Image 3 = after second scroll.\n" +
-            "  Consider text, images, UI elements, colors, layout, and any visible state in each image.\n" +
-            "  If the described content is found in any screenshot, set \"verified\" to true, report " +
-            "which screenshot it was found in as \"imageIndex\" (1, 2, or 3), and provide the bounding box " +
-            "of the relevant area within that screenshot.\n" +
-            "  If the described content is NOT found in any of the screenshots, set \"verified\" to false.\n\n";
+                    "  Carefully examine ALL THREE screenshots for the described content.\n" +
+                    "  The images are ordered: Image 1 = top of the page, Image 2 = after first scroll, Image 3 = after second scroll.\n" +
+                    "  Consider text, images, UI elements, colors, layout, and any visible state in each image.\n" +
+                    "  If the described content is found in any screenshot, set \"verified\" to true, report " +
+                    "which screenshot it was found in as \"imageIndex\" (1, 2, or 3), and provide the bounding box " +
+                    "of the relevant area within that screenshot.\n" +
+                    "  If the described content is NOT found in any of the screenshots, set \"verified\" to false.\n\n";
 
     private static final String VERIFY_SCROLL_OUTPUT_FORMAT =
             "OUTPUT FORMAT — strict JSON only, no markdown, no explanation:\n" +
-            "If verified (content found in one of the screenshots):\n" +
-            "  {\"verified\": true, \"imageIndex\": <1|2|3>, " +
-            "\"x1\": <int>, \"y1\": <int>, \"x2\": <int>, \"y2\": <int>, " +
-            "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
-            "\"confidence\": <0-100>, \"description\": \"<what was found and in which screenshot>\"}\n" +
-            "If NOT verified (content not found in any screenshot):\n" +
-            "  {\"verified\": false, \"imageIndex\": 0, " +
-            "\"x1\": 0, \"y1\": 0, \"x2\": 0, \"y2\": 0, " +
-            "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
-            "\"confidence\": <0-100>, \"description\": \"<what was expected but not found>\"}\n\n" +
-            "VERIFICATION QUERY: ";
+                    "If verified (content found in one of the screenshots):\n" +
+                    "  {\"verified\": true, \"imageIndex\": <1|2|3>, " +
+                    "\"x1\": <int>, \"y1\": <int>, \"x2\": <int>, \"y2\": <int>, " +
+                    "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
+                    "\"confidence\": <0-100>, \"description\": \"<what was found and in which screenshot>\"}\n" +
+                    "If NOT verified (content not found in any screenshot):\n" +
+                    "  {\"verified\": false, \"imageIndex\": 0, " +
+                    "\"x1\": 0, \"y1\": 0, \"x2\": 0, \"y2\": 0, " +
+                    "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
+                    "\"confidence\": <0-100>, \"description\": \"<what was expected but not found>\"}\n\n" +
+                    "VERIFICATION QUERY: ";
 
     public static final String VERIFY_SCROLL_PROMPT_IOS =
             "You are a UI verification assistant. You are given 3 sequential screenshots of an iOS screen " +
-            "taken while scrolling down. Image 1 is the initial view. Image 2 is after the first scroll. " +
-            "Image 3 is after the second scroll.\n\n" +
-            "STEP 1 — Note the image dimensions:\n" +
-            "  All three images share the same pixel dimensions (width × height).\n" +
-            "  You MUST include these as \"imageWidth\" and \"imageHeight\" in your JSON response.\n\n" +
-            VERIFY_SCROLL_STEP2 + VERIFY_SCROLL_OUTPUT_FORMAT;
+                    "taken while scrolling down. Image 1 is the initial view. Image 2 is after the first scroll. " +
+                    "Image 3 is after the second scroll.\n\n" +
+                    "STEP 1 — Note the image dimensions:\n" +
+                    "  All three images share the same pixel dimensions (width × height).\n" +
+                    "  You MUST include these as \"imageWidth\" and \"imageHeight\" in your JSON response.\n\n" +
+                    VERIFY_SCROLL_STEP2 + VERIFY_SCROLL_OUTPUT_FORMAT;
 
     public static final String VERIFY_SCROLL_PROMPT_ANDROID =
             "You are a UI verification assistant. You are given 3 sequential screenshots of an Android screen " +
-            "taken while scrolling down. Image 1 is the initial view. Image 2 is after the first scroll. " +
-            "Image 3 is after the second scroll.\n\n" +
-            "STEP 1 — Note the image dimensions:\n" +
-            "  All three images share the same pixel dimensions (width × height).\n" +
-            "  You MUST include these as \"imageWidth\" and \"imageHeight\" in your JSON response.\n\n" +
-            VERIFY_SCROLL_STEP2 + VERIFY_SCROLL_OUTPUT_FORMAT;
+                    "taken while scrolling down. Image 1 is the initial view. Image 2 is after the first scroll. " +
+                    "Image 3 is after the second scroll.\n\n" +
+                    "STEP 1 — Note the image dimensions:\n" +
+                    "  All three images share the same pixel dimensions (width × height).\n" +
+                    "  You MUST include these as \"imageWidth\" and \"imageHeight\" in your JSON response.\n\n" +
+                    VERIFY_SCROLL_STEP2 + VERIFY_SCROLL_OUTPUT_FORMAT;
 
     // ── PDF comparison prompt ──
 
     public static final String COMPARE_PDF_PROMPT =
             "You are a PDF page comparison assistant. You are given two images of the same PDF page:\n" +
-            "Image 1: The BASE (expected/reference) version\n" +
-            "Image 2: The ACTUAL (produced/test) version\n\n" +
-            "STEP 1 — Note the image dimensions:\n" +
-            "  Note the pixel dimensions shared by both images.\n" +
-            "  You MUST include these as \"imageWidth\" and \"imageHeight\" in your JSON response.\n\n" +
-            "STEP 2 — Compare both pages thoroughly:\n" +
-            "  Check for differences in: text content (missing, extra, or changed words), layout and " +
-            "positioning, images and graphics, tables (structure and cell content), headers/footers, " +
-            "page numbers, fonts, sizes, and text formatting.\n" +
-            "  If the user has provided additional instructions (e.g. regions to ignore or aspects to " +
-            "focus on), follow them strictly.\n" +
-            "  For each difference found, provide a bounding box in the 'regions' array marking the " +
-            "area of the difference (x1, y1 = top-left corner, x2, y2 = bottom-right corner).\n\n" +
-            "OUTPUT FORMAT — strict JSON only, no markdown, no explanation:\n" +
-            "If pages match (no meaningful differences):\n" +
-            "  {\"match\": true, \"differences\": [], \"regions\": [], " +
-            "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
-            "\"confidence\": <0-100>, \"description\": \"<brief summary why pages are considered equal>\"}\n" +
-            "If pages differ:\n" +
-            "  {\"match\": false, \"differences\": [\"<difference 1>\", \"<difference 2>\", ...], " +
-            "\"regions\": [{\"x1\": <int>, \"y1\": <int>, \"x2\": <int>, \"y2\": <int>}, ...], " +
-            "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
-            "\"confidence\": <0-100>, \"description\": \"<concise summary of all differences found>\"}\n\n" +
-            "Additional instructions: ";
+                    "Image 1: The BASE (expected/reference) version\n" +
+                    "Image 2: The ACTUAL (produced/test) version\n\n" +
+                    "STEP 1 — Note the image dimensions:\n" +
+                    "  Note the pixel dimensions shared by both images.\n" +
+                    "  You MUST include these as \"imageWidth\" and \"imageHeight\" in your JSON response.\n\n" +
+                    "STEP 2 — Compare both pages thoroughly:\n" +
+                    "  Check for differences in: text content (missing, extra, or changed words), layout and " +
+                    "positioning, images and graphics, tables (structure and cell content), headers/footers, " +
+                    "page numbers, fonts, sizes, and text formatting.\n" +
+                    "  If the user has provided additional instructions (e.g. regions to ignore or aspects to " +
+                    "focus on), follow them strictly.\n" +
+                    "  For each difference found, provide a bounding box in the 'regions' array marking the " +
+                    "area of the difference (x1, y1 = top-left corner, x2, y2 = bottom-right corner).\n\n" +
+                    "OUTPUT FORMAT — strict JSON only, no markdown, no explanation:\n" +
+                    "If pages match (no meaningful differences):\n" +
+                    "  {\"match\": true, \"differences\": [], \"regions\": [], " +
+                    "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
+                    "\"confidence\": <0-100>, \"description\": \"<brief summary why pages are considered equal>\"}\n" +
+                    "If pages differ:\n" +
+                    "  {\"match\": false, \"differences\": [\"<difference 1>\", \"<difference 2>\", ...], " +
+                    "\"regions\": [{\"x1\": <int>, \"y1\": <int>, \"x2\": <int>, \"y2\": <int>}, ...], " +
+                    "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
+                    "\"confidence\": <0-100>, \"description\": \"<concise summary of all differences found>\"}\n\n" +
+                    "Additional instructions: ";
 
     // ── File extraction prompt ──
 
     public static final String EXTRACT_FROM_FILE_PROMPT =
             "You are a file content extraction assistant. You are given a file (which may be a PDF, image, " +
-            "or other document). Extract the specific content or value described in the extraction prompt " +
-            "and return it exactly as it appears in the file.\n\n" +
-            "STEP 1 — Analyze the file:\n" +
-            "  Carefully examine all content in the provided file.\n" +
-            "  Consider text, numbers, tables, images, headers, footers, and any visible data.\n\n" +
-            "STEP 2 — Extract the requested content:\n" +
-            "  If the requested content is found, set \"found\" to true and provide the exact extracted " +
-            "text or value in \"output\".\n" +
-            "  If the content is NOT found, set \"found\" to false and leave \"output\" empty.\n\n" +
-            "OUTPUT FORMAT — strict JSON only, no markdown, no explanation:\n" +
-            "If found:\n" +
-            "  {\"found\": true, \"output\": \"<exact extracted text or value>\", " +
-            "\"confidence\": <0-100>, \"description\": \"<what was found and where in the file>\"}\n" +
-            "If NOT found:\n" +
-            "  {\"found\": false, \"output\": \"\", " +
-            "\"confidence\": 0, \"description\": \"<why the content was not found>\"}\n\n" +
-            "EXTRACTION PROMPT: ";
+                    "or other document). Extract the specific content or value described in the extraction prompt " +
+                    "and return it exactly as it appears in the file.\n\n" +
+                    "STEP 1 — Analyze the file:\n" +
+                    "  Carefully examine all content in the provided file.\n" +
+                    "  Consider text, numbers, tables, images, headers, footers, and any visible data.\n\n" +
+                    "STEP 2 — Extract the requested content:\n" +
+                    "  If the requested content is found, set \"found\" to true and provide the exact extracted " +
+                    "text or value in \"output\".\n" +
+                    "  If the content is NOT found, set \"found\" to false and leave \"output\" empty.\n\n" +
+                    "OUTPUT FORMAT — strict JSON only, no markdown, no explanation:\n" +
+                    "If found:\n" +
+                    "  {\"found\": true, \"output\": \"<exact extracted text or value>\", " +
+                    "\"confidence\": <0-100>, \"description\": \"<what was found and where in the file>\"}\n" +
+                    "If NOT found:\n" +
+                    "  {\"found\": false, \"output\": \"\", " +
+                    "\"confidence\": 0, \"description\": \"<why the content was not found>\"}\n\n" +
+                    "EXTRACTION PROMPT: ";
 
     // ── Core utilities ──
 
@@ -348,15 +352,15 @@ public class AiActionUtils {
 
     /** Builds the full AI prompt and invokes the AI service with a single screenshot. */
     public static String invokeAi(AI ai, File screenshotFile,
-                                   String basePrompt, String query,
-                                   Logger logger) throws Exception {
+                                  String basePrompt, String query,
+                                  Logger logger) throws Exception {
         return invokeAiWithFiles(ai, List.of(screenshotFile), basePrompt, query, logger);
     }
 
     /** Builds the full AI prompt and invokes the AI service with a single screenshot (Anthropic-direct first). */
     public static String invokeAiAnthropicFirst(AI ai, File screenshotFile,
-                                                 String basePrompt, String query,
-                                                 Logger logger) throws Exception {
+                                                String basePrompt, String query,
+                                                Logger logger) throws Exception {
         return invokeAiWithFilesAnthropicFirst(ai, List.of(screenshotFile), basePrompt, query, logger);
     }
 
@@ -365,8 +369,8 @@ public class AiActionUtils {
      * tries AI_MODEL_ANTHROPIC (anthropic direct) first, falls back to AI_MODEL (vertex-ai).
      */
     public static String invokeAiWithFilesAnthropicFirst(AI ai, List<File> files,
-                                                          String basePrompt, String query,
-                                                          Logger logger) throws Exception {
+                                                         String basePrompt, String query,
+                                                         Logger logger) throws Exception {
         // Primary: anthropic direct
         AIRequest primary = new AIRequest();
         primary.setPrompt(basePrompt + query + CUSTOM_INSTRUCTIONS_ANTHROPIC);
@@ -394,8 +398,8 @@ public class AiActionUtils {
      * if the response is null or empty falls back to AI_MODEL_ANTHROPIC (anthropic direct).
      */
     public static String invokeAiWithFiles(AI ai, List<File> files,
-                                            String basePrompt, String query,
-                                            Logger logger) throws Exception {
+                                           String basePrompt, String query,
+                                           Logger logger) throws Exception {
         // Primary: vertex-ai
         AIRequest primary = new AIRequest();
         primary.setPrompt(basePrompt + query + CUSTOM_INSTRUCTIONS);
@@ -448,7 +452,7 @@ public class AiActionUtils {
      * Returns [capX1, capY1, capX2, capY2].
      */
     public static int[] scaleAiToCapture(int aiX1, int aiY1, int aiX2, int aiY2,
-                                          int aiW, int aiH, int capW, int capH) {
+                                         int aiW, int aiH, int capW, int capH) {
         double sx = (double) capW / aiW;
         double sy = (double) capH / aiH;
         return new int[]{
@@ -499,7 +503,7 @@ public class AiActionUtils {
      * Returns [cssX, cssY].
      */
     public static int[] toCssCenter(WebDriver driver, int capCX, int capCY,
-                                     int capW, int capH, Logger logger) {
+                                    int capW, int capH, Logger logger) {
         int[] css = getCssViewport(driver, capW, capH, logger);
         logger.info(String.format("Screenshot dims: %dx%d  |  CSS viewport (window.inner): %dx%d",
                 capW, capH, css[0], css[1]));
@@ -552,6 +556,48 @@ public class AiActionUtils {
 
         // ── Green dot at the exact click point ───────────────────────────────
         // Black outline first for contrast on any background colour
+        g.setColor(Color.BLACK);
+        g.fillOval(cx - 7, cy - 7, 14, 14);
+        g.setColor(Color.GREEN);
+        g.fillOval(cx - 5, cy - 5, 10, 10);
+
+        g.dispose();
+        return copy;
+    }
+
+    /**
+     * Draws the final human-readable annotation: a bounding box rectangle + crosshair + green dot.
+     * This makes it visually obvious that the dot is at the exact center of the detected element.
+     * Only used for the result image shown to the user — NOT for the intermediate image sent to the AI.
+     */
+    public static BufferedImage drawFinalAnnotation(BufferedImage original,
+                                                    int x1, int y1, int x2, int y2,
+                                                    int cx, int cy) {
+        BufferedImage copy = new BufferedImage(
+                original.getWidth(), original.getHeight(), BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = copy.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.drawImage(original, 0, 0, null);
+
+        // ── Bounding box: scale inset and arc relative to element height so the
+        //    annotation looks correct at any screen/viewport resolution.
+        int elemH = y2 - y1;
+        int INSET = Math.max(2, elemH / 12);   // ~8% of element height
+        int ARC   = Math.max(6, elemH / 3);    // ~33% of element height (pill shape)
+        int bx = x1 + INSET, by = y1 + INSET;
+        int bw = (x2 - x1) - 2 * INSET, bh = elemH - 2 * INSET;
+        g.setColor(Color.MAGENTA);
+        g.setStroke(new BasicStroke(2));
+        g.drawRoundRect(bx, by, bw, bh, ARC, ARC);
+
+        // ── Crosshair at click center ─────────────────────────────────────────
+        final int ARM = Math.max(8, elemH / 3);
+        g.setColor(Color.MAGENTA);
+        g.setStroke(new BasicStroke(1.5f));
+        g.drawLine(cx - ARM, cy, cx + ARM, cy);
+        g.drawLine(cx, cy - ARM, cx, cy + ARM);
+
+        // ── Green dot at the exact click point ───────────────────────────────
         g.setColor(Color.BLACK);
         g.fillOval(cx - 7, cy - 7, 14, 14);
         g.setColor(Color.GREEN);
