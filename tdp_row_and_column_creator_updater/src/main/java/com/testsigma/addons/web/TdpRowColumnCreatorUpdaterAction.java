@@ -171,7 +171,7 @@ public class TdpRowColumnCreatorUpdaterAction extends WebAction {
             logger.info("PUT Status: " + putResponse.getStatusCode());
             logger.info("PUT Body: " + putResponse.getBody().asString());
 
-            if (putResponse.getStatusCode() != 200) {
+            if (putResponse.getStatusCode() < 200 || putResponse.getStatusCode() >= 300) {
                 setErrorMessage("PUT failed: " + putResponse.getBody().asString());
                 return Result.FAILED;
             }
