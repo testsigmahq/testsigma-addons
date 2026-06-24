@@ -47,50 +47,46 @@ public class ClickOnImageUsingAi extends IOSAction {
     private com.testsigma.sdk.TestStepResult testStepResult;
 
     // ── Iteration-2 prompt ────────────────────────────────────────────────────
-    // Build order: PART1 + query + PART2_COORDS + tapX + ", " + tapY + PART2_STEPS
+    // Coordinates are NOT injected — the AI locates the dot visually via the arrow overlay.
+    // Build order: PART1 + query + PART2_STEPS
     private static final String VERIFY_PROMPT_PART1 =
-            "You are given two screenshots of the same iOS screen, attached in order:\n" +
-            "  1. CLEAN IMAGE (first attachment) — the original, unaltered screenshot with no overlays.\n" +
-            "  2. ANNOTATED IMAGE (second attachment) — the same screenshot with two overlays " +
-            "added by an automated tool (NOT part of the original UI):\n" +
-            "       • GREEN DOT — the exact intended tap point proposed by a first AI pass.\n" +
-            "       • MAGENTA ARROW — points from the left toward the green dot " +
-            "(arrowhead stops ~20 px to the left of the dot) to indicate the tap location.\n\n" +
-            "Use the clean image to understand the UI. " +
-            "Use the annotated image to find the green dot via the arrow, then evaluate it.\n\n" +
-            "The element we are trying to tap is described as: \"";
+            "You are given two screenshots of the same UI, attached in order:\n" +
+                    "  1. CLEAN IMAGE (first attachment) — the original, unaltered screenshot with no overlays.\n" +
+                    "  2. ANNOTATED IMAGE (second attachment) — the same screenshot with two overlays " +
+                    "added by an automated tool (NOT part of the original UI):\n" +
+                    "       • GREEN DOT — the exact intended tap point proposed by a first AI pass.\n" +
+                    "       • MAGENTA ARROW — points from the left toward the green dot " +
+                    "(arrowhead stops ~20 px to the left of the dot) to indicate the tap location.\n\n" +
+                    "Use the clean image to understand the UI. " +
+                    "Use the annotated image to find the green dot via the arrow, then evaluate it.\n\n" +
+                    "The element we are trying to tap is described as: \"";
 
-    private static final String VERIFY_PROMPT_PART2_COORDS =
-            "\"\n\nThe green dot is currently placed at pixel coordinates (";
-
-    // %d %d → captureW, captureH injected at runtime so AI uses exact dimensions
-    private static final String VERIFY_PROMPT_STEPS_FMT =
-            "The screenshot dimensions are exactly %d × %d pixels (width × height).\n\n" +
-            "STEP 1 — Image dimensions:\n" +
-            "  The exact pixel dimensions are already stated above. " +
-            "Use those values verbatim as \"imageWidth\" and \"imageHeight\" in your output — do NOT guess or remeasure.\n\n" +
-            "STEP 2 — Follow the arrow to the green dot:\n" +
-            "  In the annotated image, the magenta arrow points at the green dot at the " +
-            "coordinates given above. Cross-reference with the clean image to identify " +
-            "exactly which UI element the green dot is sitting on.\n" +
-            "  • Is the green dot on the CORRECT target element described by the query?\n" +
-            "  • Is it at a good tappable position — center of the element, " +
-            "not on a border, gap, or neighboring element?\n" +
-            "  Set \"accurate\": true only if BOTH conditions are met.\n\n" +
-            "STEP 3 — Return the best tap location:\n" +
-            "  Always return the most precise (click_x, click_y) for the target element.\n" +
-            "  • Green dot IS correct → confirm it, return the same or very close coordinates.\n" +
-            "  • Green dot is wrong or slightly off → return the corrected center of the " +
-            "actual target element.\n" +
-            "  The returned point MUST land at the visual center of the target's tappable " +
-            "area and must NOT fall on any adjacent or neighboring element.\n" +
-            "  In the \"reason\" field, state which element the dot is on, whether it was " +
-            "correct, and if corrected — by how many pixels it moved (dx, dy).\n\n" +
-            "OUTPUT FORMAT — strict JSON only, no markdown, no explanation:\n" +
-            "{\"accurate\": <bool>, " +
-            "\"click_x\": <int>, \"click_y\": <int>, " +
-            "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
-            "\"reason\": \"<element the dot is on; accurate or corrected; if corrected: dx=N dy=N>\"}";
+    private static final String VERIFY_PROMPT_PART2_STEPS =
+            "\"\n\n" +
+                    "STEP 1 — Measure the image:\n" +
+                    "  Record the raw pixel dimensions as \"imageWidth\" and \"imageHeight\".\n\n" +
+                    "STEP 2 — Follow the arrow to the green dot:\n" +
+                    "  In the annotated image, follow the magenta arrow to locate the green dot. " +
+                    "Cross-reference with the clean image to identify " +
+                    "exactly which UI element the green dot is sitting on.\n" +
+                    "  • Is the green dot on the CORRECT target element described by the query?\n" +
+                    "  • Is it at a good tappable position — center of the element, " +
+                    "not on a border, gap, or neighboring element?\n" +
+                    "  Set \"accurate\": true only if BOTH conditions are met.\n\n" +
+                    "STEP 3 — Return the best tap location:\n" +
+                    "  Always return the most precise (click_x, click_y) for the target element.\n" +
+                    "  • Green dot IS correct → confirm it, return the same or very close coordinates.\n" +
+                    "  • Green dot is wrong or slightly off → return the corrected center of the " +
+                    "actual target element.\n" +
+                    "  The returned point MUST land at the visual center of the target's tappable " +
+                    "area and must NOT fall on any adjacent or neighboring element.\n" +
+                    "  In the \"reason\" field, state which element the dot is on, whether it was " +
+                    "correct, and if corrected — by how many pixels it moved (dx, dy).\n\n" +
+                    "OUTPUT FORMAT — strict JSON only, no markdown, no explanation:\n" +
+                    "{\"accurate\": <bool>, " +
+                    "\"click_x\": <int>, \"click_y\": <int>, " +
+                    "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
+                    "\"reason\": \"<element the dot is on; accurate or corrected; if corrected: dx=N dy=N>\"}";
 
     @Override
     public Result execute() {
@@ -138,14 +134,17 @@ public class ClickOnImageUsingAi extends IOSAction {
             int aiY1        = node1.path("y1").asInt(0);
             int aiX2        = node1.path("x2").asInt(0);
             int aiY2        = node1.path("y2").asInt(0);
+            int aiCx        = node1.path("cx").asInt(0);
+            int aiCy        = node1.path("cy").asInt(0);
             int imageWidth  = node1.path("imageWidth").asInt(0);
             int imageHeight = node1.path("imageHeight").asInt(0);
             int conf1       = node1.path("confidence").asInt(50);
             String desc1    = node1.path("description").asText("");
 
             logger.info(String.format(
-                    "[Iteration 1] AI result — bbox: (%d,%d)-(%d,%d) | AI image dims: %dx%d | confidence: %d | desc: '%s'",
-                    aiX1, aiY1, aiX2, aiY2, imageWidth, imageHeight, conf1, desc1));
+                    "[Iteration 1] AI result — bbox: (%d,%d)-(%d,%d) | cx/cy: (%d,%d) | " +
+                            "AI image dims: %dx%d | confidence: %d | desc: '%s'",
+                    aiX1, aiY1, aiX2, aiY2, aiCx, aiCy, imageWidth, imageHeight, conf1, desc1));
 
             if (imageWidth <= 0 || imageHeight <= 0) {
                 setErrorMessage(String.format(
@@ -157,8 +156,20 @@ public class ClickOnImageUsingAi extends IOSAction {
             }
 
             int[] cap = AiActionUtils.scaleAiToCapture(aiX1, aiY1, aiX2, aiY2, imageWidth, imageHeight, captureW, captureH);
-            int tapX = (cap[0] + cap[2]) / 2;
-            int tapY = (cap[1] + cap[3]) / 2;
+
+            // Use AI's reported visual center (cx/cy) when present; fall back to bbox midpoint.
+            int tapX, tapY;
+            if (aiCx > 0 && aiCy > 0) {
+                tapX = (int) Math.round((double) aiCx / imageWidth  * captureW);
+                tapY = (int) Math.round((double) aiCy / imageHeight * captureH);
+            } else {
+                tapX = (cap[0] + cap[2]) / 2;
+                tapY = (cap[1] + cap[3]) / 2;
+            }
+            // Clamp to bbox so the tap always lands within the detected element
+            tapX = Math.max(cap[0], Math.min(cap[2], tapX));
+            tapY = Math.max(cap[1], Math.min(cap[3], tapY));
+
             logger.info(String.format(
                     "[Iteration 1] Device bbox: (%d,%d)-(%d,%d)  tap: (%d,%d)",
                     cap[0], cap[1], cap[2], cap[3], tapX, tapY));
@@ -167,21 +178,17 @@ public class ClickOnImageUsingAi extends IOSAction {
                     pageCapture, cap[0], cap[1], cap[2], cap[3], tapX, tapY, Color.MAGENTA);
             annotatedJpegFile = AiActionUtils.captureAsJpeg(annotated1, "ai_ios_annotated", logger);
 
-            /*// ──────────────────────────────────────────────────────────────────────
+            // ──────────────────────────────────────────────────────────────────────
             // ITERATION 2 — Verify the GREEN DOT in the annotated screenshot
             // ──────────────────────────────────────────────────────────────────────
             logger.info(String.format(
                     "[Iteration 2] Verifying green-dot at physical (%d,%d)...", tapX, tapY));
-            String verifyPrompt = VERIFY_PROMPT_PART1 + query
-                    + VERIFY_PROMPT_PART2_COORDS
-                    + tapX + ", " + tapY + ") in this image.\n\n"
-                    + String.format(VERIFY_PROMPT_STEPS_FMT, captureW, captureH);
-            String aiResponse2 = AiActionUtils.invokeAiWithFilesAnthropicFirst(
+            String verifyPrompt = VERIFY_PROMPT_PART1 + query + VERIFY_PROMPT_PART2_STEPS;
+            String aiResponse2  = AiActionUtils.invokeAiWithFilesAnthropicFirst(
                     ai, List.of(screenshotFile, annotatedJpegFile), verifyPrompt, "", logger);
             JsonNode node2 = AiActionUtils.parseAiJson(aiResponse2, logger);
 
             String finalDesc = desc1;
-            int    finalConf = conf1;
 
             if (node2 != null) {
                 boolean accurate = node2.path("accurate").asBoolean(true);
@@ -192,12 +199,24 @@ public class ClickOnImageUsingAi extends IOSAction {
                 String  reason   = node2.path("reason").asText("");
 
                 if (rawX > 0 && rawY > 0 && imgW2 > 0 && imgH2 > 0) {
-                    double sx2    = (double) captureW / imgW2;
-                    double sy2    = (double) captureH / imgH2;
-                    int prevX     = tapX;
-                    int prevY     = tapY;
-                    tapX = (int) Math.round(rawX * sx2);
-                    tapY = (int) Math.round(rawY * sy2);
+                    int prevX = tapX;
+                    int prevY = tapY;
+
+                    if (accurate) {
+                        // Dot confirmed correct — use the geometric center of the Iteration 1 bbox.
+                        tapX = (cap[0] + cap[2]) / 2;
+                        tapY = (cap[1] + cap[3]) / 2;
+                    } else {
+                        // Dot is on the wrong element — use Iteration 2's corrected coordinates,
+                        // clamped to the Iteration 1 bbox as a safety bound.
+                        double sx2 = (double) captureW / imgW2;
+                        double sy2 = (double) captureH / imgH2;
+                        tapX = (int) Math.round(rawX * sx2);
+                        tapY = (int) Math.round(rawY * sy2);
+                        tapX = Math.max(cap[0], Math.min(cap[2], tapX));
+                        tapY = Math.max(cap[1], Math.min(cap[3], tapY));
+                    }
+
                     int dx = tapX - prevX;
                     int dy = tapY - prevY;
                     boolean corrected = Math.abs(dx) > 2 || Math.abs(dy) > 2;
@@ -205,23 +224,22 @@ public class ClickOnImageUsingAi extends IOSAction {
 
                     logger.info(String.format(
                             "[Iteration 2] accurate: %b | corrected: %b | " +
-                            "dot was (%d,%d) → corrected to (%d,%d) | delta: dx=%d dy=%d | reason: '%s'",
+                                    "dot was (%d,%d) → corrected to (%d,%d) | delta: dx=%d dy=%d | reason: '%s'",
                             accurate, corrected, prevX, prevY, tapX, tapY, dx, dy, reason));
                 } else {
                     logger.info("[Iteration 2] Invalid coordinates in response — using Iteration 1 result.");
                 }
             } else {
                 logger.info("[Iteration 2] No usable result — using Iteration 1 coordinates.");
-            }*/
+            }
 
-            // Upload the final annotated image: green dot at the definitive tap location
-            BufferedImage finalAnnotated = AiActionUtils.drawHighlight(
-                    pageCapture, cap[0], cap[1], cap[2], cap[3], tapX, tapY, Color.MAGENTA);
+            // Final annotation: bbox rectangle + crosshair + green dot (no misleading arrow)
+            BufferedImage finalAnnotated = AiActionUtils.drawFinalAnnotation(
+                    pageCapture, cap[0], cap[1], cap[2], cap[3], tapX, tapY);
             finalAnnotatedFile = ScreenshotUtils.saveScreenshotToFile(finalAnnotated, "ai_click_elem_result");
             ScreenshotUtils.uploadScreenshotToS3(testStepResult, finalAnnotatedFile, logger);
 
-            // Screenshot is in physical pixels; PointerInput expects logical points (UIKit).
-            // Derive the pixel ratio from the driver's logical window size.
+            // iOS screenshot is in physical pixels; PointerInput expects logical points (UIKit).
             IOSDriver iosDriver = (IOSDriver) driver;
             Dimension windowSize = iosDriver.manage().window().getSize();
             int logicalTapX = (int) Math.round((double) tapX * windowSize.width  / captureW);
@@ -247,7 +265,7 @@ public class ClickOnImageUsingAi extends IOSAction {
             setSuccessMessage(String.format(
                     "Successfully tapped '%s' at logical (%d,%d) | physical (%d,%d) | bbox (%d,%d)-(%d,%d) | confidence=%d | %s",
                     query, logicalTapX, logicalTapY, tapX, tapY,
-                    cap[0], cap[1], cap[2], cap[3], conf1, desc1));
+                    cap[0], cap[1], cap[2], cap[3], conf1, finalDesc));
             return Result.SUCCESS;
 
         } catch (Exception e) {
