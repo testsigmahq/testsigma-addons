@@ -7,10 +7,11 @@ import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.RunTimeData;
 import org.openqa.selenium.NoSuchElementException;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.util.Map;
 
-@Action(actionText = "get entire row from TDP tdp-id for the set name set-name using the apikey api-key and" +
+@Action(actionText = "Get entire row from TDP tdp-id for the set name set-name using the apikey api-key and" +
         " store data in the run time variable runtime-variable",
         description = "Get entire row from TDP",
         applicationType = ApplicationType.IOS,
@@ -47,7 +48,7 @@ public class GetEntireRowFromTDP extends IOSAction {
             runTimeData.setKey(testData4.getValue().toString());
             return com.testsigma.sdk.Result.SUCCESS;
         } catch (Exception e) {
-            setErrorMessage("Error occurred while processing TDP data: " + e.getMessage());
+            setErrorMessage("Error occurred while processing TDP data: " + ExceptionUtils.getMessage(e));
             return com.testsigma.sdk.Result.FAILED;
         }
     }

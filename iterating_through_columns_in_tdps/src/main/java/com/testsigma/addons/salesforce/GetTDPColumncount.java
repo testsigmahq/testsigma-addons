@@ -6,10 +6,11 @@ import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.RunTimeData;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.util.Map;
 
-@Action(actionText = "store total column count of TDP tdp-id for the set name set-name using the apikey" +
+@Action(actionText = "Store total column count of TDP tdp-id for the set name set-name using the apikey" +
         " api-key into variable column-count-variable",
         description = "Get total column count of TDP",
         applicationType = ApplicationType.Salesforce,
@@ -37,7 +38,7 @@ public class GetTDPColumncount extends SalesforceAction {
             runTimeData.setValue(String.valueOf(totalColumnCount));
             return com.testsigma.sdk.Result.SUCCESS;
         } catch (Exception e) {
-            setErrorMessage("Error occurred while getting total column count: " + e.getMessage());
+            setErrorMessage("Error occurred while getting total column count: " + ExceptionUtils.getMessage(e));
             return com.testsigma.sdk.Result.FAILED;
         }
     }

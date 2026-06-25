@@ -5,10 +5,11 @@ import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.RunTimeData;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.util.Objects;
 
-@Action(actionText = "set TDP iterator TDP_ITERATOR_KEY_NAME value to 0",
+@Action(actionText = "Set TDP iterator TDP_ITERATOR_KEY_NAME value to 0",
         description = "Set TDP iterator TDP_ITERATOR_KEY_NAME to 0",
         applicationType = ApplicationType.ANDROID,
         useCustomScreenshot = false)
@@ -32,7 +33,7 @@ public class SetTDpIteratorToZero extends AndroidAction {
             setSuccessMessage("Set TDP iterator TDP_ITERATOR_KEY_NAME to 0");
             return com.testsigma.sdk.Result.SUCCESS;
         } catch (Exception e) {
-            setErrorMessage("Error occurred while setting runtime variable to 0: " + e.getMessage());
+            setErrorMessage("Error occurred while setting runtime variable to 0: " + ExceptionUtils.getMessage(e));
             return com.testsigma.sdk.Result.FAILED;
         }
     }

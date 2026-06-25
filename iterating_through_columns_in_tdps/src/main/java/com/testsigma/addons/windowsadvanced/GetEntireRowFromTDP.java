@@ -6,10 +6,11 @@ import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.RunTimeData;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.util.Map;
 
-@Action(actionText = "get entire row from TDP tdp-id for the set name set-name using the apikey api-key and" +
+@Action(actionText = "Get entire row from TDP tdp-id for the set name set-name using the apikey api-key and" +
         " store data in the run time variable runtime-variable",
         description = "Get entire row from TDP",
         applicationType = ApplicationType.WINDOWS_ADVANCED,
@@ -43,7 +44,7 @@ public class GetEntireRowFromTDP extends WindowsAdvancedAction {
             runTimeData.setKey(testData4.getValue().toString());
             return com.testsigma.sdk.Result.SUCCESS;
         } catch (Exception e) {
-            setErrorMessage("Error occurred while processing TDP data: " + e.getMessage());
+            setErrorMessage("Error occurred while processing TDP data: " + ExceptionUtils.getMessage(e));
             return com.testsigma.sdk.Result.FAILED;
         }
     }

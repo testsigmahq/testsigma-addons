@@ -6,10 +6,11 @@ import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.RunTimeData;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.util.Map;
 
-@Action(actionText = "store total column count of TDP tdp-id for the set name set-name using the apikey" +
+@Action(actionText = "Store total column count of TDP tdp-id for the set name set-name using the apikey" +
         " api-key into variable column-count-variable",
         description = "Get total column count of TDP",
         applicationType = ApplicationType.ANDROID,
@@ -41,8 +42,9 @@ public class GetTDPColumncount extends AndroidAction {
             logger.info("Total column count: " + totalColumnCount);
             return com.testsigma.sdk.Result.SUCCESS;
         } catch (Exception e) {
-            logger.info("Error occurred while getting total column count of TDP: " + e.getMessage());
-            setErrorMessage("Error occurred while getting total column count: " + e.getMessage());
+            logger.warn("Exception Occurred: " + ExceptionUtils.getStackTrace(e));
+            logger.info("Error occurred while getting total column count of TDP: " + ExceptionUtils.getMessage(e));
+            setErrorMessage("Error occurred while getting total column count: " + ExceptionUtils.getMessage(e));
             return com.testsigma.sdk.Result.FAILED;
         }
     }
