@@ -10,6 +10,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
@@ -18,20 +19,11 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.util.EntityUtils;
-import org.apache.http.client.config.RequestConfig;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -323,6 +315,9 @@ public class TDPApiUtil {
             case "PATCH":
                 requestBuilder.patch(body);
                 break;
+            case "DELETE":
+                requestBuilder.delete(body);
+                break;
             default:
                 throw new IllegalArgumentException("Unsupported HTTP method: " + method);
         }
@@ -468,6 +463,103 @@ public class TDPApiUtil {
         requestBody.set("data", existingData);
 
         return makeHttpRequestWithBody(url, "PUT", objectMapper.writeValueAsString(requestBody), apiKey, logger);
+    }
+
+    /**
+     * Returns the total number of rows (sets/iterations) in a TDP.
+     *
+     * @param tdpId  The TDP ID
+     * @param apiKey The Bearer token for authentication
+     * @param logger Logger instance
+     * @return The number of rows in the TDP
+     * @throws Exception if the request or parsing fails
+     */
+    public static int getTDPRowCount(String tdpId, String apiKey, Logger logger) throws Exception {
+        String url = "https://app.testsigma.com/api/v1/test_data/" + tdpId;
+        logger.info("Fetching row count for TDP: " + tdpId);
+        String responseBody = makeHttpRequest2(url, apiKey, logger);
+        JsonNode rootNode = objectMapper.readTree(responseBody);
+        JsonNode dataArray = rootNode.get("data");
+        if (dataArray == null || !dataArray.isArray()) {
+            throw new RuntimeException("No data array found in the response");
+        }
+        int rowCount = dataArray.size();
+        logger.info("Total row count for TDP " + tdpId + ": " + rowCount);
+        return rowCount;
+    }
+
+    /**
+     * Replaces the target TDP with an exact replica of the reference TDP.
+     * Fetches the reference TDP in full and PUTs the entire payload (testDataName,
+     * columns, data) directly to the target — completely overwriting whatever was there.
+     *
+     * @param referenceTdpId The source TDP ID to copy from
+     * @param targetTdpId    The destination TDP ID to fully replace
+     * @param apiKey         The Bearer token for authentication
+     * @param logger         Logger instance
+     * @return The API response as a string
+     * @throws Exception if the request or parsing fails
+     */
+    public static String copyTDPRows(String referenceTdpId, String targetTdpId,
+                                      String apiKey, Logger logger) throws Exception {
+        String baseUrl = "https://app.testsigma.com/api/v1/test_data/";
+        logger.info("Replacing target TDP " + targetTdpId + " with exact replica of reference TDP " + referenceTdpId);
+
+        String referenceResponse = makeHttpRequest2(baseUrl + referenceTdpId, apiKey, logger);
+        JsonNode referenceJson = objectMapper.readTree(referenceResponse);
+
+        String targetResponse = makeHttpRequest2(baseUrl + targetTdpId, apiKey, logger);
+        JsonNode targetJson = objectMapper.readTree(targetResponse);
+
+        // Delete all existing rows in the target before inserting new ones.
+        // PUT's saveAll only inserts rows without IDs — it never removes old rows,
+        // so running the action multiple times would accumulate duplicates.
+        JsonNode targetDataNode = targetJson.get("data");
+        if (targetDataNode != null && targetDataNode.isArray() && targetDataNode.size() > 0) {
+            StringBuilder ids = new StringBuilder();
+            for (JsonNode row : targetDataNode) {
+                if (row.has("id")) {
+                    if (ids.length() > 0) ids.append(",");
+                    ids.append(row.get("id").asText());
+                }
+            }
+            if (ids.length() > 0) {
+                logger.info("Deleting " + targetDataNode.size() + " existing rows from target TDP " + targetTdpId);
+                makeHttpRequestWithBody(
+                        "https://app.testsigma.com/api/v1/test_data_sets/bulk?ids=" + ids,
+                        "DELETE", "{}", apiKey, logger);
+            }
+        }
+
+        JsonNode dataNode = referenceJson.get("data");
+        if (dataNode == null || !dataNode.isArray()) {
+            throw new RuntimeException("No data array found in reference TDP response");
+        }
+        logger.info("Reference TDP has " + dataNode.size() + " rows — sending as full replacement to target");
+
+        // Strip id and testDataProfileId so the server inserts fresh rows under the target.
+        ArrayNode cleanData = objectMapper.createArrayNode();
+        for (JsonNode row : dataNode) {
+            ObjectNode cleanRow = row.deepCopy();
+            cleanRow.remove("id");
+            cleanRow.remove("testDataProfileId");
+            cleanData.add(cleanRow);
+        }
+
+        // Keep the target's own name — using the reference name causes a unique-constraint
+        // violation when both TDPs share the same version.
+        String targetName = targetJson.has("testDataName")
+                ? targetJson.get("testDataName").asText()
+                : referenceJson.get("testDataName").asText();
+
+        ObjectNode requestBody = objectMapper.createObjectNode();
+        requestBody.put("testDataName", targetName);
+        if (referenceJson.has("columns")) {
+            requestBody.set("columns", referenceJson.get("columns"));
+        }
+        requestBody.set("data", cleanData);
+
+        return makeHttpRequestWithBody(baseUrl + targetTdpId, "PUT", objectMapper.writeValueAsString(requestBody), apiKey, logger);
     }
 
     /**

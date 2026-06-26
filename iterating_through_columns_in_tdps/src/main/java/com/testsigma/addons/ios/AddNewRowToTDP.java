@@ -7,8 +7,9 @@ import com.testsigma.sdk.Result;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import org.openqa.selenium.NoSuchElementException;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
-@Action(actionText = "add new row row-name to TDP tdp-id using the apikey api-key",
+@Action(actionText = "Add new row row-name to TDP tdp-id using the apikey api-key",
         description = "Adds a new row/set to an existing TDP with empty values for all existing parameters.",
         applicationType = ApplicationType.IOS,
         useCustomScreenshot = false)
@@ -32,7 +33,7 @@ public class AddNewRowToTDP extends IOSAction {
             setSuccessMessage("Successfully added new row <b>" + rowNameStr + "</b> to TDP with empty parameter values");
             return Result.SUCCESS;
         } catch (Exception e) {
-            setErrorMessage("Failed to add new row to TDP: " + e.getMessage());
+            setErrorMessage("Failed to add new row to TDP: " + ExceptionUtils.getMessage(e));
             return Result.FAILED;
         }
     }

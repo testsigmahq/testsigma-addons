@@ -8,11 +8,12 @@ import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.RunTimeData;
 import com.testsigma.sdk.annotation.TestCaseResult;
 import org.openqa.selenium.NoSuchElementException;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.util.Map;
 import java.util.ArrayList;
 
-@Action(actionText = "store next column name and value from TDP tdp-id for the set name set-name using" +
+@Action(actionText = "Store next column name and value from TDP tdp-id for the set name set-name using" +
         " the apikey api-key and iterator TDP_ITERATOR_KEY_NAME in the runtime variables column-name and column-value",
         description = "Store next column name and value from TDP for the given set name using iterator",
         applicationType = ApplicationType.ANDROID,
@@ -72,15 +73,16 @@ public class StoreNextColumnTdpValue extends AndroidAction {
                 iteratorRuntimeData.setValue(String.valueOf(iteratorValue));
                 iteratorRuntimeData.setKey("TDP_ITERATOR_KEY_NAME");
             } catch (NumberFormatException e) {
-                setErrorMessage("Error occurred while parsing iterator value: " + e.getMessage());
+                setErrorMessage("Error occurred while parsing iterator value: " + ExceptionUtils.getMessage(e));
                 return com.testsigma.sdk.Result.FAILED;
             } catch (Exception e) {
-                setErrorMessage("Error occurred while getting iterator value: " + e.getMessage());
+                setErrorMessage("Error occurred while getting iterator value: " + ExceptionUtils.getMessage(e));
                 return com.testsigma.sdk.Result.FAILED;
             }
         } catch (Exception e) {
-            logger.warn("Error occurred while processing TDP data: " + e.getMessage());
-            setErrorMessage("Error occurred while processing TDP data: " + e.getMessage());
+            logger.warn("Exception Occurred: " + ExceptionUtils.getStackTrace(e));
+            logger.warn("Error occurred while processing TDP data: " + ExceptionUtils.getMessage(e));
+            setErrorMessage("Error occurred while processing TDP data: " + ExceptionUtils.getMessage(e));
             return com.testsigma.sdk.Result.FAILED;
         }
         return com.testsigma.sdk.Result.SUCCESS;

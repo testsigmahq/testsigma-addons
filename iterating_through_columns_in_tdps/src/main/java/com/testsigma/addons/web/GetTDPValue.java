@@ -8,10 +8,11 @@ import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.RunTimeData;
 import com.testsigma.sdk.annotation.TestData;
 import org.openqa.selenium.NoSuchElementException;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.util.Map;
 
-@Action(actionText = "get TDP tdp-id value for set name set-name and parameter parameter-name" +
+@Action(actionText = "Get TDP tdp-id value for set name set-name and parameter parameter-name" +
         " using the apikey api-key and store in variable runtime-variable",
         description = "Gets the value of a specific parameter/column for a given set name in the TDP" +
                 " and stores it in a runtime variable.",
@@ -53,8 +54,9 @@ public class GetTDPValue extends WebAction {
             setSuccessMessage("Successfully retrieved parameter <b>" + paramName + "</b> = <b>" + value + "</b> from set <b>" + setNameStr + "</b>");
             return Result.SUCCESS;
         } catch (Exception e) {
-            logger.info("Error occurred while getting TDP value: " + e.getMessage());
-            setErrorMessage("Failed to get TDP value: " + e.getMessage());
+            logger.warn("Exception Occurred: " + ExceptionUtils.getStackTrace(e));
+            logger.info("Error occurred while getting TDP value: " + ExceptionUtils.getMessage(e));
+            setErrorMessage("Failed to get TDP value: " + ExceptionUtils.getMessage(e));
             return Result.FAILED;
         }
     }

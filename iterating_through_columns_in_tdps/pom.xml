@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.testsigma.addons</groupId>
     <artifactId>iterating_through_columns_in_tdps</artifactId>
-    <version>1.0.6</version>
+    <version>1.0.10</version>
     <packaging>jar</packaging>
 
     <properties>

@@ -7,11 +7,12 @@ import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import org.openqa.selenium.NoSuchElementException;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@Action(actionText = "update TDP tdp-id set name set-name parameter parameter-name with value parameter-value" +
+@Action(actionText = "Update TDP tdp-id set name set-name parameter parameter-name with value parameter-value" +
         " using the apikey api-key",
         description = "Updates the value of a specific parameter/column for a given set name in the TDP." +
                 " Uses the PATCH endpoint which matches rows by name and merges the updated data.",
@@ -60,8 +61,9 @@ public class UpdateTDPValue extends WebAction {
             return Result.SUCCESS;
 
         } catch (Exception e) {
-            logger.info("Error occurred while updating TDP value: " + e.getMessage());
-            setErrorMessage("Failed to update TDP value: " + e.getMessage());
+            logger.warn("Exception Occurred: " + ExceptionUtils.getStackTrace(e));
+            logger.info("Error occurred while updating TDP value: " + ExceptionUtils.getMessage(e));
+            setErrorMessage("Failed to update TDP value: " + ExceptionUtils.getMessage(e));
             return Result.FAILED;
         }
     }

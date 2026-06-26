@@ -7,8 +7,9 @@ import com.testsigma.sdk.Result;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import org.openqa.selenium.NoSuchElementException;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
-@Action(actionText = "add new column column-name with default value default-value to TDP tdp-id" +
+@Action(actionText = "Add new column column-name with default value default-value to TDP tdp-id" +
         " using the apikey api-key",
         description = "Adds a new parameter/column to an existing TDP with the specified default value for all rows.",
         applicationType = ApplicationType.MOBILE_WEB,
@@ -37,7 +38,7 @@ public class AddColumnToTDP extends WebAction {
             setSuccessMessage("Successfully added new column <b>" + colName + "</b> with default value <b>" + defaultValue.getValue() + "</b> to all rows in TDP");
             return Result.SUCCESS;
         } catch (Exception e) {
-            setErrorMessage("Failed to add column to TDP: " + e.getMessage());
+            setErrorMessage("Failed to add column to TDP: " + ExceptionUtils.getMessage(e));
             return Result.FAILED;
         }
     }
