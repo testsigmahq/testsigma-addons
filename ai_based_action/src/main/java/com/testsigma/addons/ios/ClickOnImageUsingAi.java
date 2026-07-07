@@ -258,7 +258,7 @@ public class ClickOnImageUsingAi extends IOSAction {
             Sequence tap = new Sequence(finger, 0);
             tap.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), logicalTapX, logicalTapY));
             tap.addAction(finger.createPointerDown(0));
-            tap.addAction(new Pause(finger, Duration.ofMillis(500)));
+            tap.addAction(new Pause(finger, Duration.ofMillis(50)));
             tap.addAction(finger.createPointerUp(0));
             ((Interactive) iosDriver).perform(Collections.singletonList(tap));
 
