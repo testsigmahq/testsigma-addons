@@ -3,7 +3,9 @@ package com.testsigma.addons.mobileWeb;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.testsigma.addons.util.AiActionUtils;
 import com.testsigma.addons.util.ScreenshotUtils;
-import com.testsigma.sdk.*;
+import com.testsigma.sdk.ApplicationType;
+import com.testsigma.sdk.Result;
+import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.AI;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
@@ -19,19 +21,17 @@ import org.openqa.selenium.interactions.PointerInput;
 import org.openqa.selenium.interactions.Sequence;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.time.Duration;
 import java.util.Collections;
-import java.util.List;
 
 @Data
 @Action(actionText = "Ai: Click on Image/text matching prompt prompt-describing-image",
-        description = "Locate and tap a UI element on a mobile web page using two AI passes: " +
-                "Pass 1 locates the element; Pass 2 verifies the green-dot tap location and " +
-                "corrects it if needed. Fails if the element is not found.",
+        description = "Locate and tap a UI element on a mobile web page using AI. " +
+                "The AI identifies the element bounding box; the tap always lands at its geometric center. " +
+                "Fails if the element is not found.",
         displayName = "Ai: Click on Image/text matching prompt",
         applicationType = ApplicationType.MOBILE_WEB,
         useCustomScreenshot = true)
@@ -46,224 +46,61 @@ public class ClickOnImageUsingAi extends WebAction {
     @TestStepResult
     private com.testsigma.sdk.TestStepResult testStepResult;
 
-    // ── Iteration-2 prompt ────────────────────────────────────────────────────
-    private static final String VERIFY_PROMPT_PART1 =
-            "You are given two screenshots of the same UI, attached in order:\n" +
-                    "  1. CLEAN IMAGE (first attachment) — the original, unaltered screenshot with no overlays.\n" +
-                    "  2. ANNOTATED IMAGE (second attachment) — the same screenshot with two overlays " +
-                    "added by an automated tool (NOT part of the original UI):\n" +
-                    "       • GREEN DOT — the exact intended tap point proposed by a first AI pass.\n" +
-                    "       • MAGENTA ARROW — points from the left toward the green dot " +
-                    "(arrowhead stops ~20 px to the left of the dot) to indicate the tap location.\n\n" +
-                    "Use the clean image to understand the UI. " +
-                    "Use the annotated image to find the green dot via the arrow, then evaluate it.\n\n" +
-                    "The element we are trying to tap is described as: \"";
-
-    private static final String VERIFY_PROMPT_PART2_STEPS =
-            "\"\n\n" +
-                    "STEP 1 — Measure the image:\n" +
-                    "  Record the raw pixel dimensions as \"imageWidth\" and \"imageHeight\".\n\n" +
-                    "STEP 2 — Follow the arrow to the green dot:\n" +
-                    "  In the annotated image, follow the magenta arrow to locate the green dot. " +
-                    "Cross-reference with the clean image to identify " +
-                    "exactly which UI element the green dot is sitting on.\n" +
-                    "  • Is the green dot on the CORRECT target element described by the query?\n" +
-                    "  • Is it at a good tappable position — center of the element, " +
-                    "not on a border, gap, or neighboring element?\n" +
-                    "  Set \"accurate\": true only if BOTH conditions are met.\n\n" +
-                    "STEP 3 — Return the best tap location:\n" +
-                    "  Always return the most precise (click_x, click_y) for the target element.\n" +
-                    "  • Green dot IS correct → confirm it, return the same or very close coordinates.\n" +
-                    "  • Green dot is wrong or slightly off → return the corrected center of the " +
-                    "actual target element.\n" +
-                    "  The returned point MUST land at the visual center of the target's tappable " +
-                    "area and must NOT fall on any adjacent or neighboring element.\n" +
-                    "  In the \"reason\" field, state which element the dot is on, whether it was " +
-                    "correct, and if corrected — by how many pixels it moved (dx, dy).\n\n" +
-                    "OUTPUT FORMAT — strict JSON only, no markdown, no explanation:\n" +
-                    "{\"accurate\": <bool>, " +
-                    "\"click_x\": <int>, \"click_y\": <int>, " +
-                    "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
-                    "\"reason\": \"<element the dot is on; accurate or corrected; if corrected: dx=N dy=N>\"}";
+    private static final int  MAX_IMAGE_EDGE = 1536;        // safely under Claude's ~1568 px long-edge cap
+    private static final long MAX_IMAGE_AREA = 1_150_000L;  // Claude's ~1.15 MP cap
 
     @Override
     public Result execute() {
         logger.info("=== ClickOnImageUsingAi (Mobile Web): Starting ===");
-        File screenshotFile     = null;
-        File annotatedJpegFile  = null;
-        File finalAnnotatedFile = null;
+        File annotatedFile = null;
 
         try {
             String query = queryDescribingElement.getValue().toString();
             logger.info("Query: " + query);
 
-            byte[] screenshotBytes = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
-            BufferedImage pageCapture = ImageIO.read(new ByteArrayInputStream(screenshotBytes));
+            // Capture the device screenshot
+            BufferedImage pageCapture = readScreenshot();
             int captureW = pageCapture.getWidth();
             int captureH = pageCapture.getHeight();
             logger.info("Device screenshot size: " + captureW + "x" + captureH);
 
-            screenshotFile = AiActionUtils.captureAsJpeg(pageCapture, "ai_mobileweb_capture", logger);
-
-            // ──────────────────────────────────────────────────────────────────────
-            // ITERATION 1 — Locate the element in the clean screenshot
-            // ──────────────────────────────────────────────────────────────────────
-            logger.info("[Iteration 1] Locating element...");
-            String aiResponse1 = AiActionUtils.invokeAi(
-                    ai, screenshotFile, AiActionUtils.LOCATE_PROMPT_MOBILE_WEB, query, logger);
-            JsonNode node1 = AiActionUtils.parseAiJson(aiResponse1, logger);
-
-            if (node1 == null) {
-                setErrorMessage("Failed to get image response from AI (contact support)");
-                finalAnnotatedFile = ScreenshotUtils.saveScreenshotToFile(pageCapture, "ai_click_failed");
-                ScreenshotUtils.uploadScreenshotToS3(testStepResult, finalAnnotatedFile, logger);
-                return Result.FAILED;
+            // Locate the element via AI
+            LocateResult result = locate(pageCapture, query);
+            if (result == null) {
+                return fail(pageCapture, "Failed to get image response from AI (contact support)");
+            }
+            if (!result.found) {
+                return fail(pageCapture, "AI could not locate '" + query + "': " + result.description);
             }
 
-            if (!node1.path("found").asBoolean(false)) {
-                String reason = node1.path("description").asText("element not found");
-                finalAnnotatedFile = ScreenshotUtils.saveScreenshotToFile(pageCapture, "ai_click_failed");
-                ScreenshotUtils.uploadScreenshotToS3(testStepResult, finalAnnotatedFile, logger);
-                setErrorMessage("AI could not locate '" + query + "': " + reason);
-                return Result.FAILED;
-            }
+            int[] box = result.box;
+            logger.info(String.format("AI element box (capture px): (%d,%d)-(%d,%d) conf=%d",
+                    box[0], box[1], box[2], box[3], result.confidence));
 
-            int aiX1        = node1.path("x1").asInt(0);
-            int aiY1        = node1.path("y1").asInt(0);
-            int aiX2        = node1.path("x2").asInt(0);
-            int aiY2        = node1.path("y2").asInt(0);
-            int aiCx        = node1.path("cx").asInt(0);
-            int aiCy        = node1.path("cy").asInt(0);
-            int imageWidth  = node1.path("imageWidth").asInt(0);
-            int imageHeight = node1.path("imageHeight").asInt(0);
-            int conf1       = node1.path("confidence").asInt(50);
-            String desc1    = node1.path("description").asText("");
+            // Refine the box onto real content pixels before computing the tap point
+            box = snapToContent(pageCapture, box, logger);
 
-            logger.info(String.format(
-                    "[Iteration 1] AI result — bbox: (%d,%d)-(%d,%d) | cx/cy: (%d,%d) | " +
-                            "AI image dims: %dx%d | confidence: %d | desc: '%s'",
-                    aiX1, aiY1, aiX2, aiY2, aiCx, aiCy, imageWidth, imageHeight, conf1, desc1));
+            int tapX = (box[0] + box[2]) / 2;
+            int tapY = (box[1] + box[3]) / 2;
+            logger.info(String.format("Tap centre (capture px): (%d,%d)", tapX, tapY));
 
-            if (imageWidth <= 0 || imageHeight <= 0) {
-                setErrorMessage(String.format(
-                        "AI returned invalid image dimensions (imageWidth=%d, imageHeight=%d).",
-                        imageWidth, imageHeight));
-                finalAnnotatedFile = ScreenshotUtils.saveScreenshotToFile(pageCapture, "ai_click_failed");
-                ScreenshotUtils.uploadScreenshotToS3(testStepResult, finalAnnotatedFile, logger);
-                return Result.FAILED;
-            }
+            // Upload the annotated screenshot before tapping, for diagnostics either way
+            BufferedImage annotated = AiActionUtils.drawFinalAnnotation(
+                    pageCapture, box[0], box[1], box[2], box[3], tapX, tapY);
+            annotatedFile = ScreenshotUtils.saveScreenshotToFile(annotated, "ai_click_elem_result");
+            ScreenshotUtils.uploadScreenshotToS3(testStepResult, annotatedFile, logger);
 
-            int[] cap = AiActionUtils.scaleAiToCapture(aiX1, aiY1, aiX2, aiY2, imageWidth, imageHeight, captureW, captureH);
+            // Convert physical screenshot pixels to logical tap coordinates
+            int[] logical = toLogical(captureW, tapX, tapY);
 
-            // Use AI's reported visual center (cx/cy) when present; fall back to bbox midpoint.
-            int tapX, tapY;
-            if (aiCx > 0 && aiCy > 0) {
-                tapX = (int) Math.round((double) aiCx / imageWidth  * captureW);
-                tapY = (int) Math.round((double) aiCy / imageHeight * captureH);
-            } else {
-                tapX = (cap[0] + cap[2]) / 2;
-                tapY = (cap[1] + cap[3]) / 2;
-            }
-            // Clamp to bbox so the tap always lands within the detected element
-            tapX = Math.max(cap[0], Math.min(cap[2], tapX));
-            tapY = Math.max(cap[1], Math.min(cap[3], tapY));
-
-            logger.info(String.format(
-                    "[Iteration 1] Device bbox: (%d,%d)-(%d,%d)  tap: (%d,%d)",
-                    cap[0], cap[1], cap[2], cap[3], tapX, tapY));
-
-            BufferedImage annotated1 = AiActionUtils.drawHighlight(
-                    pageCapture, cap[0], cap[1], cap[2], cap[3], tapX, tapY, Color.MAGENTA);
-            annotatedJpegFile = AiActionUtils.captureAsJpeg(annotated1, "ai_mobileweb_annotated", logger);
-
-            // ──────────────────────────────────────────────────────────────────────
-            // ITERATION 2 — Verify the GREEN DOT in the annotated screenshot
-            // ──────────────────────────────────────────────────────────────────────
-            logger.info(String.format(
-                    "[Iteration 2] Verifying green-dot at (%d,%d)...", tapX, tapY));
-            String verifyPrompt = VERIFY_PROMPT_PART1 + query + VERIFY_PROMPT_PART2_STEPS;
-            String aiResponse2  = AiActionUtils.invokeAiWithFiles(
-                    ai, List.of(screenshotFile, annotatedJpegFile), verifyPrompt, "", logger);
-            JsonNode node2 = AiActionUtils.parseAiJson(aiResponse2, logger);
-
-            String finalDesc = desc1;
-
-            if (node2 != null) {
-                boolean accurate = node2.path("accurate").asBoolean(true);
-                int     rawX     = node2.path("click_x").asInt(0);
-                int     rawY     = node2.path("click_y").asInt(0);
-                int     imgW2    = node2.path("imageWidth").asInt(0);
-                int     imgH2    = node2.path("imageHeight").asInt(0);
-                String  reason   = node2.path("reason").asText("");
-
-                if (rawX > 0 && rawY > 0 && imgW2 > 0 && imgH2 > 0) {
-                    int prevX = tapX;
-                    int prevY = tapY;
-
-                    if (accurate) {
-                        // Dot confirmed correct — use the geometric center of the Iteration 1 bbox.
-                        tapX = (cap[0] + cap[2]) / 2;
-                        tapY = (cap[1] + cap[3]) / 2;
-                    } else {
-                        // Dot is on the wrong element — use Iteration 2's corrected coordinates,
-                        // clamped to the Iteration 1 bbox as a safety bound.
-                        double sx2 = (double) captureW / imgW2;
-                        double sy2 = (double) captureH / imgH2;
-                        tapX = (int) Math.round(rawX * sx2);
-                        tapY = (int) Math.round(rawY * sy2);
-                        tapX = Math.max(cap[0], Math.min(cap[2], tapX));
-                        tapY = Math.max(cap[1], Math.min(cap[3], tapY));
-                    }
-
-                    int dx = tapX - prevX;
-                    int dy = tapY - prevY;
-                    boolean corrected = Math.abs(dx) > 2 || Math.abs(dy) > 2;
-                    finalDesc = reason;
-
-                    logger.info(String.format(
-                            "[Iteration 2] accurate: %b | corrected: %b | " +
-                                    "dot was (%d,%d) → corrected to (%d,%d) | delta: dx=%d dy=%d | reason: '%s'",
-                            accurate, corrected, prevX, prevY, tapX, tapY, dx, dy, reason));
-                } else {
-                    logger.info("[Iteration 2] Invalid coordinates in response — using Iteration 1 result.");
-                }
-            } else {
-                logger.info("[Iteration 2] No usable result — using Iteration 1 coordinates.");
-            }
-
-            // Final annotation: bbox rectangle + crosshair + green dot (no misleading arrow)
-            BufferedImage finalAnnotated = AiActionUtils.drawFinalAnnotation(
-                    pageCapture, cap[0], cap[1], cap[2], cap[3], tapX, tapY);
-            finalAnnotatedFile = ScreenshotUtils.saveScreenshotToFile(finalAnnotated, "ai_click_elem_result");
-            ScreenshotUtils.uploadScreenshotToS3(testStepResult, finalAnnotatedFile, logger);
-
-            // iOS screenshots are physical pixels; PointerInput expects logical UIKit points.
-            String platform = (String) ((HasCapabilities) driver).getCapabilities().getCapability("platformName");
-            boolean isIos = "iOS".equalsIgnoreCase(platform);
-
-            int finalTapX = tapX;
-            int finalTapY = tapY;
-            if (isIos) {
-                Dimension windowSize = driver.manage().window().getSize();
-                finalTapX = (int) Math.round((double) tapX * windowSize.width  / captureW);
-                finalTapY = (int) Math.round((double) tapY * windowSize.height / captureH);
-                logger.info(String.format(
-                        "iOS: physical (%d,%d) → logical (%d,%d)  window=%dx%d",
-                        tapX, tapY, finalTapX, finalTapY, windowSize.width, windowSize.height));
-            }
-
-            logger.info(String.format("Tapping at (%d,%d)  confidence=%d", finalTapX, finalTapY, conf1));
-            PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
-            Sequence tap = new Sequence(finger, 0);
-            tap.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), finalTapX, finalTapY));
-            tap.addAction(finger.createPointerDown(0));
-            tap.addAction(new Pause(finger, Duration.ofMillis(100)));
-            tap.addAction(finger.createPointerUp(0));
-            ((Interactive) driver).perform(Collections.singletonList(tap));
+            logger.info(String.format("Tapping at (%d,%d)  confidence=%d",
+                    logical[0], logical[1], result.confidence));
+            tap(logical[0], logical[1]);
 
             setSuccessMessage(String.format(
                     "Successfully tapped '%s' at (%d,%d) | bbox (%d,%d)-(%d,%d) | confidence=%d | %s",
-                    query, finalTapX, finalTapY, cap[0], cap[1], cap[2], cap[3], conf1, finalDesc));
+                    query, logical[0], logical[1], box[0], box[1], box[2], box[3],
+                    result.confidence, result.description));
             return Result.SUCCESS;
 
         } catch (Exception e) {
@@ -271,9 +108,232 @@ public class ClickOnImageUsingAi extends WebAction {
             setErrorMessage("Failed to tap using AI. Error: " + e.getMessage());
             return Result.FAILED;
         } finally {
-            AiActionUtils.deleteQuietly(screenshotFile);
-            AiActionUtils.deleteQuietly(annotatedJpegFile);
-            AiActionUtils.deleteQuietly(finalAnnotatedFile);
+            AiActionUtils.deleteQuietly(annotatedFile);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Helpers
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /** Reads the current screenshot, tolerating iOS Appium returning a base64 payload. */
+    private BufferedImage readScreenshot() throws Exception {
+        byte[] bytes;
+        try {
+            bytes = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
+        } catch (Exception ex) {
+            // Some iOS driver/WDA combos need BASE64 instead of raw bytes
+            String base64 = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BASE64);
+            bytes = java.util.Base64.getDecoder().decode(base64);
+        }
+        return ImageIO.read(new ByteArrayInputStream(bytes));
+    }
+
+    /** Locates {@code query} in {@code source}; returns null on no response, found=false if absent. */
+    private LocateResult locate(BufferedImage source, String query) throws Exception {
+        int srcW = source.getWidth();
+        int srcH = source.getHeight();
+
+        // Resize before sending so we control the pixel space the AI reasons in
+        int[] sent = fitWithinAiLimits(srcW, srcH);
+        int sentW = sent[0];
+        int sentH = sent[1];
+        BufferedImage aiImage = AiActionUtils.resizeImage(source, sentW, sentH);
+        logger.info(String.format("Locate: source %dx%d → sent %dx%d", srcW, srcH, sentW, sentH));
+
+        File file = AiActionUtils.captureAsJpeg(aiImage, "ai_mobileweb_capture", logger);
+        try {
+            String response = AiActionUtils.invokeAi(
+                    ai, file, AiActionUtils.LOCATE_PROMPT_MOBILE_WEB, query, logger);
+            JsonNode node = AiActionUtils.parseAiJson(response, logger);
+            if (node == null) {
+                return null;
+            }
+            if (!node.path("found").asBoolean(false)) {
+                return new LocateResult(false, null, 0, node.path("description").asText("element not found"));
+            }
+
+            int x1 = node.path("x1").asInt(0);
+            int y1 = node.path("y1").asInt(0);
+            int x2 = node.path("x2").asInt(0);
+            int y2 = node.path("y2").asInt(0);
+            int iw = node.path("imageWidth").asInt(0);
+            int ih = node.path("imageHeight").asInt(0);
+            int confidence = node.path("confidence").asInt(50);
+            String desc = node.path("description").asText("");
+
+            int refW = sentW;
+            int refH = sentH;
+            // Only trust the AI's reported dims if they're in a plausible range vs what we sent
+            boolean plausible = iw > 0 && ih > 0
+                    && iw >= sentW / 3 && iw <= sentW * 3
+                    && ih >= sentH / 3 && ih <= sentH * 3;
+            if (plausible) {
+                refW = (iw + sentW) / 2;
+                refH = (ih + sentH) / 2;
+            }
+            logger.info(String.format(
+                    "Locate: AI bbox (%d,%d)-(%d,%d) reported %dx%d → scaling denom %dx%d conf=%d desc='%s'",
+                    x1, y1, x2, y2, iw, ih, refW, refH, confidence, desc));
+
+            int[] box = AiActionUtils.scaleAiToCapture(x1, y1, x2, y2, refW, refH, srcW, srcH);
+            return new LocateResult(true, box, confidence, desc);
+        } finally {
+            AiActionUtils.deleteQuietly(file);
+        }
+    }
+
+    /** Largest size within Claude's vision limits that preserves aspect ratio. */
+    private static int[] fitWithinAiLimits(int w, int h) {
+        double scale = 1.0;
+        int longEdge = Math.max(w, h);
+        if (longEdge > MAX_IMAGE_EDGE) {
+            scale = (double) MAX_IMAGE_EDGE / longEdge;
+        }
+        double area = (w * scale) * (h * scale);
+        if (area > MAX_IMAGE_AREA) {
+            scale *= Math.sqrt(MAX_IMAGE_AREA / area);
+        }
+        int nw = Math.max(1, (int) Math.round(w * scale));
+        int nh = Math.max(1, (int) Math.round(h * scale));
+        return new int[]{nw, nh};
+    }
+
+    /** Snaps an approximate AI box onto the real content pixels around it; safe no-op on failure. */
+    private static int[] snapToContent(BufferedImage img, int[] box, com.testsigma.sdk.Logger logger) {
+        int imgW = img.getWidth();
+        int imgH = img.getHeight();
+        int x1 = Math.max(0, Math.min(box[0], imgW));
+        int y1 = Math.max(0, Math.min(box[1], imgH));
+        int x2 = Math.max(0, Math.min(box[2], imgW));
+        int y2 = Math.max(0, Math.min(box[3], imgH));
+        int w = Math.max(1, x2 - x1);
+        int h = Math.max(1, y2 - y1);
+
+        // Search window padded more upward than sideways (drift is vertical, not horizontal)
+        int padX = Math.max(w / 10, 10);
+        int padUp = Math.max(h * 2, 40);
+        int padDown = Math.max(h, 20);
+        int wx1 = Math.max(0, x1 - padX);
+        int wy1 = Math.max(0, y1 - padUp);
+        int wx2 = Math.min(imgW, x2 + padX);
+        int wy2 = Math.min(imgH, y2 + padDown);
+        int ww = wx2 - wx1;
+        int wh = wy2 - wy1;
+        if (ww < 4 || wh < 4) {
+            return box;
+        }
+
+        // Background colour = average of the window's top/bottom border rows
+        long sr = 0, sg = 0, sb = 0;
+        int n = 0;
+        for (int x = wx1; x < wx2; x++) {
+            int top = img.getRGB(x, wy1);
+            int bot = img.getRGB(x, wy2 - 1);
+            sr += ((top >> 16) & 0xFF) + ((bot >> 16) & 0xFF);
+            sg += ((top >> 8) & 0xFF) + ((bot >> 8) & 0xFF);
+            sb += (top & 0xFF) + (bot & 0xFF);
+            n += 2;
+        }
+        int bgR = (int) (sr / n);
+        int bgG = (int) (sg / n);
+        int bgB = (int) (sb / n);
+
+        final int COLOR_DIST = 60;                     // channel-sum distance from background
+        int minRowPixels = Math.max(2, ww / 100);      // ignore isolated speckle rows
+
+        int top = -1, bot = -1, left = -1, right = -1;
+        for (int yy = 0; yy < wh; yy++) {
+            int rowCount = 0;
+            for (int xx = 0; xx < ww; xx++) {
+                int rgb = img.getRGB(wx1 + xx, wy1 + yy);
+                int dist = Math.abs(((rgb >> 16) & 0xFF) - bgR)
+                        + Math.abs(((rgb >> 8) & 0xFF) - bgG)
+                        + Math.abs((rgb & 0xFF) - bgB);
+                if (dist > COLOR_DIST) {
+                    rowCount++;
+                    if (left < 0 || xx < left) left = xx;
+                    if (xx > right) right = xx;
+                }
+            }
+            if (rowCount >= minRowPixels) {
+                if (top < 0) top = yy;
+                bot = yy;
+            }
+        }
+
+        if (top < 0 || left < 0) {
+            return box;                                 // nothing distinct found
+        }
+        if ((bot - top) >= wh * 0.95 || (right - left) >= ww * 0.95) {
+            return box;                                 // content fills window → unreliable
+        }
+
+        int[] refined = {wx1 + left, wy1 + top, wx1 + right + 1, wy1 + bot + 1};
+        if (refined[2] - refined[0] < 3 || refined[3] - refined[1] < 3) {
+            return box;                                 // too small to trust
+        }
+        if (logger != null) {
+            logger.info(String.format("snapToContent: (%d,%d)-(%d,%d) → (%d,%d)-(%d,%d)",
+                    box[0], box[1], box[2], box[3], refined[0], refined[1], refined[2], refined[3]));
+        }
+        return refined;
+    }
+
+    /** Converts a physical screenshot point to logical tap coordinates (iOS/Android only). */
+    private int[] toLogical(int captureW, int tapX, int tapY) {
+        Object platformCap = ((HasCapabilities) driver).getCapabilities().getCapability("platformName");
+        String platform = platformCap != null ? platformCap.toString() : "";
+        boolean isMobile = "iOS".equalsIgnoreCase(platform) || "ANDROID".equalsIgnoreCase(platform);
+        if (!isMobile) {
+            return new int[]{tapX, tapY};
+        }
+        Dimension windowSize = driver.manage().window().getSize();
+        double pixelRatio = windowSize.width > 0 ? (double) captureW / windowSize.width : 1.0;
+        int lx = (int) Math.round(tapX / pixelRatio);
+        int ly = (int) Math.round(tapY / pixelRatio);
+        logger.info(String.format(
+                "%s: physical (%d,%d) → logical (%d,%d)  window=%dx%d  pixelRatio=%.4f",
+                platform, tapX, tapY, lx, ly, windowSize.width, windowSize.height, pixelRatio));
+        return new int[]{lx, ly};
+    }
+
+    /** Performs a single tap at the given logical coordinates using W3C pointer actions. */
+    private void tap(int x, int y) {
+        PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
+        Sequence seq = new Sequence(finger, 0);
+        seq.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), x, y));
+        seq.addAction(finger.createPointerDown(0));
+        seq.addAction(new Pause(finger, Duration.ofMillis(100))); // brief hold so it registers as a tap
+        seq.addAction(finger.createPointerUp(0));
+        ((Interactive) driver).perform(Collections.singletonList(seq));
+    }
+
+    /** Uploads the plain screenshot for context and returns a FAILED result with the given message. */
+    private Result fail(BufferedImage capture, String message) {
+        try {
+            File failFile = ScreenshotUtils.saveScreenshotToFile(capture, "ai_click_failed");
+            ScreenshotUtils.uploadScreenshotToS3(testStepResult, failFile, logger);
+            AiActionUtils.deleteQuietly(failFile);
+        } catch (Exception ignore) {
+            // best-effort diagnostic upload only
+        }
+        setErrorMessage(message);
+        return Result.FAILED;
+    }
+
+    /** Result of a locate call; {@code box} is [x1,y1,x2,y2] in the located image's pixels. */
+    private static final class LocateResult {
+        final boolean found;
+        final int[] box;
+        final int confidence;
+        final String description;
+
+        LocateResult(boolean found, int[] box, int confidence, String description) {
+            this.found = found;
+            this.box = box;
+            this.confidence = confidence;
+            this.description = description;
         }
     }
 }

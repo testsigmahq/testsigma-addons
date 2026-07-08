@@ -96,55 +96,72 @@ public class AiActionUtils {
     // ── Store prompts (per platform) ──
 
     private static final String STORE_STEP2 =
-            "STEP 2 — Extract the requested content:\n" +
-                    "  Carefully examine the screenshot for the content described in the prompt.\n" +
-                    "  Consider text, numbers, labels, values, dates, and any visible data on the page.\n" +
-                    "  If the requested content is found, set \"found\" to true, provide the exact extracted " +
-                    "text or value in \"output\", and provide the bounding box of the relevant area.\n" +
-                    "  If the content is NOT found, set \"found\" to false and leave \"output\" empty.\n\n";
+            "STEP 2 — Produce the requested output:\n" +
+                    "  The screenshot is OPTIONAL context — the prompt may or may not be about it. Always answer " +
+                    "the prompt to the best of your ability. Never refuse just because the prompt is unrelated to " +
+                    "the screenshot or because the screenshot is blank or empty.\n" +
+                    "  If the answer is visible on screen, extract it exactly as it appears, set \"found\" to true, " +
+                    "put the value in \"output\", and provide the bounding box of the relevant area.\n" +
+                    "  If the answer is NOT on the screen (the screenshot is blank, empty, or simply not relevant), " +
+                    "still answer the prompt directly — for example a math calculation, a unit/format conversion, a " +
+                    "data transformation, generating a value, or a general question answerable from the prompt text " +
+                    "or your own knowledge. In that case set \"found\" to true, put the result in \"output\", and " +
+                    "use 0 for all bounding box coordinates (x1, y1, x2, y2) since there is nothing on screen to " +
+                    "highlight.\n" +
+                    "  Only set \"found\" to false in the rare case where the prompt asks for specific page content " +
+                    "that is missing AND there is genuinely no way to compute or answer it; then leave \"output\" " +
+                    "empty.\n\n";
 
     private static final String STORE_OUTPUT_FORMAT =
             "OUTPUT FORMAT — strict JSON only, no markdown, no explanation:\n" +
-                    "If found:\n" +
-                    "  {\"found\": true, \"output\": \"<exact extracted text or value>\", " +
+                    "If you have an answer (read from the screenshot OR computed/derived/answered from the prompt):\n" +
+                    "  {\"found\": true, \"output\": \"<the extracted, computed, or derived answer>\", " +
                     "\"x1\": <int>, \"y1\": <int>, \"x2\": <int>, \"y2\": <int>, " +
                     "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
-                    "\"confidence\": <0-100>, \"description\": \"<what was found and where>\"}\n" +
-                    "If NOT found:\n" +
+                    "\"confidence\": <0-100>, \"description\": \"<what was found, or how it was computed>\"}\n" +
+                    "  (When the answer was computed/derived/answered rather than read from the screenshot, set " +
+                    "x1=y1=x2=y2=0.)\n" +
+                    "If there is genuinely no answer:\n" +
                     "  {\"found\": false, \"output\": \"\", " +
                     "\"x1\": 0, \"y1\": 0, \"x2\": 0, \"y2\": 0, " +
                     "\"imageWidth\": <int>, \"imageHeight\": <int>, " +
-                    "\"confidence\": 0, \"description\": \"<why the content was not found>\"}\n\n" +
+                    "\"confidence\": 0, \"description\": \"<why no answer could be produced>\"}\n\n" +
                     "EXTRACTION PROMPT: ";
 
+    private static final String STORE_INTRO_SUFFIX =
+            " A screenshot is provided as optional context. If the prompt asks about something visible in it, " +
+                    "extract that exactly as it appears; otherwise (including when the screenshot is blank or " +
+                    "unrelated) answer the prompt directly. Always produce an answer when one can reasonably be " +
+                    "given.\n\n";
+
     public static final String STORE_PROMPT_WEB =
-            "You are a UI content extraction assistant. Given a web page screenshot, extract the specific " +
-                    "content or value described in the prompt and return it exactly as it appears on screen.\n\n" +
+            "You are an assistant that answers the user's prompt and stores the result into a variable." +
+                    STORE_INTRO_SUFFIX +
                     LOCATE_STEP1 + STORE_STEP2 + STORE_OUTPUT_FORMAT;
 
     public static final String STORE_PROMPT_ANDROID =
-            "You are a UI content extraction assistant. Given an Android device screenshot, extract the specific " +
-                    "content or value described in the prompt and return it exactly as it appears on screen.\n\n" +
+            "You are an assistant that answers the user's prompt and stores the result into a variable." +
+                    STORE_INTRO_SUFFIX +
                     LOCATE_STEP1 + STORE_STEP2 + STORE_OUTPUT_FORMAT;
 
     public static final String STORE_PROMPT_IOS =
-            "You are a UI content extraction assistant. Given an iOS device screenshot, extract the specific " +
-                    "content or value described in the prompt and return it exactly as it appears on screen.\n\n" +
+            "You are an assistant that answers the user's prompt and stores the result into a variable." +
+                    STORE_INTRO_SUFFIX +
                     LOCATE_STEP1 + STORE_STEP2 + STORE_OUTPUT_FORMAT;
 
     public static final String STORE_PROMPT_MOBILE_WEB =
-            "You are a UI content extraction assistant. Given a mobile web page screenshot, extract the specific " +
-                    "content or value described in the prompt and return it exactly as it appears on screen.\n\n" +
+            "You are an assistant that answers the user's prompt and stores the result into a variable." +
+                    STORE_INTRO_SUFFIX +
                     LOCATE_STEP1 + STORE_STEP2 + STORE_OUTPUT_FORMAT;
 
     public static final String STORE_PROMPT_SALESFORCE =
-            "You are a UI content extraction assistant. Given a Salesforce page screenshot, extract the specific " +
-                    "content or value described in the prompt and return it exactly as it appears on screen.\n\n" +
+            "You are an assistant that answers the user's prompt and stores the result into a variable." +
+                    STORE_INTRO_SUFFIX +
                     LOCATE_STEP1 + STORE_STEP2 + STORE_OUTPUT_FORMAT;
 
     public static final String STORE_PROMPT_DESKTOP =
-            "You are a UI content extraction assistant. Given a desktop application screenshot, extract the specific " +
-                    "content or value described in the prompt and return it exactly as it appears on screen.\n\n" +
+            "You are an assistant that answers the user's prompt and stores the result into a variable." +
+                    STORE_INTRO_SUFFIX +
                     LOCATE_STEP1 + STORE_STEP2 + STORE_OUTPUT_FORMAT;
 
     // ── Locate prompts (per platform) ──
@@ -209,6 +226,11 @@ public class AiActionUtils {
                     LOCATE_OUTPUT_FORMAT;
 
     // ── Verify prompts (per platform) ──
+
+    public static final String VERIFY_PROMPT_PDF =
+            "You are a document verification assistant. Given an image of a single PDF page, determine whether " +
+                    "the described content or condition is present and visible on that page.\n\n" +
+                    VERIFY_STEP1 + VERIFY_STEP2 + VERIFY_OUTPUT_FORMAT;
 
     public static final String VERIFY_PROMPT_WEB =
             "You are a UI verification assistant. Given a web page screenshot, determine whether " +
