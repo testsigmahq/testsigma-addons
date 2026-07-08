@@ -13,16 +13,13 @@ import com.testsigma.sdk.annotation.TestStepResult;
 import lombok.Data;
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.HasCapabilities;
-import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.interactions.Interactive;
 import org.openqa.selenium.interactions.Pause;
 import org.openqa.selenium.interactions.PointerInput;
 import org.openqa.selenium.interactions.Sequence;
 
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.time.Duration;
 import java.util.Collections;
@@ -45,9 +42,6 @@ public class ClickOnImageUsingAi extends WebAction {
 
     @TestStepResult
     private com.testsigma.sdk.TestStepResult testStepResult;
-
-    private static final int  MAX_IMAGE_EDGE = 1536;        // safely under Claude's ~1568 px long-edge cap
-    private static final long MAX_IMAGE_AREA = 1_150_000L;  // Claude's ~1.15 MP cap
 
     @Override
     public Result execute() {
@@ -118,15 +112,7 @@ public class ClickOnImageUsingAi extends WebAction {
 
     /** Reads the current screenshot, tolerating iOS Appium returning a base64 payload. */
     private BufferedImage readScreenshot() throws Exception {
-        byte[] bytes;
-        try {
-            bytes = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
-        } catch (Exception ex) {
-            // Some iOS driver/WDA combos need BASE64 instead of raw bytes
-            String base64 = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BASE64);
-            bytes = java.util.Base64.getDecoder().decode(base64);
-        }
-        return ImageIO.read(new ByteArrayInputStream(bytes));
+        return AiActionUtils.captureScreenshotWithFallback((TakesScreenshot) driver, logger);
     }
 
     /** Locates {@code query} in {@code source}; returns null on no response, found=false if absent. */
@@ -135,7 +121,7 @@ public class ClickOnImageUsingAi extends WebAction {
         int srcH = source.getHeight();
 
         // Resize before sending so we control the pixel space the AI reasons in
-        int[] sent = fitWithinAiLimits(srcW, srcH);
+        int[] sent = AiActionUtils.fitWithinAiLimits(srcW, srcH);
         int sentW = sent[0];
         int sentH = sent[1];
         BufferedImage aiImage = AiActionUtils.resizeImage(source, sentW, sentH);
@@ -181,22 +167,6 @@ public class ClickOnImageUsingAi extends WebAction {
         } finally {
             AiActionUtils.deleteQuietly(file);
         }
-    }
-
-    /** Largest size within Claude's vision limits that preserves aspect ratio. */
-    private static int[] fitWithinAiLimits(int w, int h) {
-        double scale = 1.0;
-        int longEdge = Math.max(w, h);
-        if (longEdge > MAX_IMAGE_EDGE) {
-            scale = (double) MAX_IMAGE_EDGE / longEdge;
-        }
-        double area = (w * scale) * (h * scale);
-        if (area > MAX_IMAGE_AREA) {
-            scale *= Math.sqrt(MAX_IMAGE_AREA / area);
-        }
-        int nw = Math.max(1, (int) Math.round(w * scale));
-        int nh = Math.max(1, (int) Math.round(h * scale));
-        return new int[]{nw, nh};
     }
 
     /** Snaps an approximate AI box onto the real content pixels around it; safe no-op on failure. */
