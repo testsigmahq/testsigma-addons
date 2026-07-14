@@ -9,12 +9,21 @@ import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 
+import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.util.Base64;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -25,6 +34,12 @@ public class AiActionUtils {
 
     /** Used for verify and store (data extraction) actions (Anthropic direct). */
     public static final String AI_MODEL_ANTHROPIC = "claude-opus-4-8";
+
+    /** Claude's real vision-input limits — sending anything larger makes it silently downscale
+     *  internally, so callers should resize to this via {@link #fitWithinAiLimits} first and
+     *  reason in that known pixel space rather than trusting whatever it echoes back. */
+    public static final int MAX_IMAGE_EDGE = 1536;
+    public static final long MAX_IMAGE_AREA = 1_150_000L;
 
     private static final String CUSTOM_INSTRUCTIONS =
             "<custom_instructions>\n" +
@@ -372,6 +387,63 @@ public class AiActionUtils {
         return file;
     }
 
+    /**
+     * Same as {@link #captureAsJpeg(BufferedImage, String, Logger)} but writes at an explicit
+     * JPEG compression quality (0.0–1.0). The default ImageIO JPEG writer settings noticeably
+     * soften small icons/text, which matters for zoomed-crop refine/verify passes that need the
+     * AI to read fine detail precisely.
+     */
+    public static File captureAsJpeg(BufferedImage image, String prefix, float quality, Logger logger) throws Exception {
+        BufferedImage rgb = image.getType() == BufferedImage.TYPE_INT_RGB ? image : toRgb(image);
+        File file = File.createTempFile(prefix, ".jpg");
+        Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("jpg");
+        ImageWriter writer = writers.next();
+        ImageWriteParam param = writer.getDefaultWriteParam();
+        param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+        param.setCompressionQuality(quality);
+        try (ImageOutputStream ios = ImageIO.createImageOutputStream(file)) {
+            writer.setOutput(ios);
+            writer.write(null, new IIOImage(rgb, null, null), param);
+        } finally {
+            writer.dispose();
+        }
+        logger.info(String.format("JPEG written (quality=%.2f): %s (size=%d bytes, dims=%dx%d)",
+                quality, file.getAbsolutePath(), file.length(), image.getWidth(), image.getHeight()));
+        return file;
+    }
+
+    /**
+     * Reads the current screenshot, tolerating iOS Appium/WDA combos where BYTES capture is
+     * unreliable by falling back to BASE64.
+     */
+    public static BufferedImage captureScreenshotWithFallback(TakesScreenshot driver, Logger logger) throws Exception {
+        byte[] bytes;
+        try {
+            bytes = driver.getScreenshotAs(OutputType.BYTES);
+        } catch (Exception ex) {
+            logger.info("BYTES screenshot capture failed (" + ex.getMessage() + "); retrying with BASE64.");
+            String base64 = driver.getScreenshotAs(OutputType.BASE64);
+            bytes = Base64.getDecoder().decode(base64);
+        }
+        return ImageIO.read(new ByteArrayInputStream(bytes));
+    }
+
+    /** Largest size within Claude's real vision limits ({@link #MAX_IMAGE_EDGE}/{@link #MAX_IMAGE_AREA}) that preserves aspect ratio. */
+    public static int[] fitWithinAiLimits(int w, int h) {
+        double scale = 1.0;
+        int longEdge = Math.max(w, h);
+        if (longEdge > MAX_IMAGE_EDGE) {
+            scale = (double) MAX_IMAGE_EDGE / longEdge;
+        }
+        double area = (w * scale) * (h * scale);
+        if (area > MAX_IMAGE_AREA) {
+            scale *= Math.sqrt(MAX_IMAGE_AREA / area);
+        }
+        int nw = Math.max(1, (int) Math.round(w * scale));
+        int nh = Math.max(1, (int) Math.round(h * scale));
+        return new int[]{nw, nh};
+    }
+
     /** Builds the full AI prompt and invokes the AI service with a single screenshot. */
     public static String invokeAi(AI ai, File screenshotFile,
                                   String basePrompt, String query,
@@ -384,6 +456,19 @@ public class AiActionUtils {
                                                 String basePrompt, String query,
                                                 Logger logger) throws Exception {
         return invokeAiWithFilesAnthropicFirst(ai, List.of(screenshotFile), basePrompt, query, logger);
+    }
+
+    /**
+     * Same as {@link #invokeAiAnthropicFirst(AI, File, String, String, Logger)} but states the
+     * attached image's exact pixel dimensions up front in the prompt, so the model doesn't have
+     * to (mis-)measure them itself — needed whenever the caller already resized the image and
+     * must reason about the AI's returned coordinates in that exact known pixel space.
+     */
+    public static String invokeAiAnthropicFirst(AI ai, File screenshotFile,
+                                                String basePrompt, String query,
+                                                int imageWidth, int imageHeight,
+                                                Logger logger) throws Exception {
+        return invokeAiWithFilesAnthropicFirst(ai, List.of(screenshotFile), basePrompt, query, imageWidth, imageHeight, logger);
     }
 
     /**
@@ -413,6 +498,21 @@ public class AiActionUtils {
             logger.info("Fallback AI response: " + response);
         }
         return response;
+    }
+
+    /** Same as {@link #invokeAiWithFilesAnthropicFirst(AI, List, String, String, Logger)} but states
+     *  the attached images' exact known pixel dimensions up front in the prompt (see
+     *  {@link #invokeAiAnthropicFirst(AI, File, String, String, int, int, Logger)}). */
+    public static String invokeAiWithFilesAnthropicFirst(AI ai, List<File> files,
+                                                         String basePrompt, String query,
+                                                         int imageWidth, int imageHeight,
+                                                         Logger logger) throws Exception {
+        return invokeAiWithFilesAnthropicFirst(ai, files, withKnownDimensions(basePrompt, imageWidth, imageHeight), query, logger);
+    }
+
+    private static String withKnownDimensions(String basePrompt, int width, int height) {
+        return String.format("IMAGE DIMENSIONS: this image is exactly %dx%d pixels — use these " +
+                "exact values, do not re-measure or guess them.\n\n", width, height) + basePrompt;
     }
 
     /**
