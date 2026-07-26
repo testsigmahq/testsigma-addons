@@ -1,11 +1,8 @@
 package com.testsigma.addons.windowsAdvanced;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.testsigma.addons.util.Constants;
-import com.testsigma.addons.util.OCRResponse;
-import com.testsigma.addons.util.ScreenshotUtils;
+import com.testsigma.addons.util.*;
 import com.testsigma.sdk.ApplicationType;
-import com.testsigma.addons.util.OCRTextPoint;
 import com.testsigma.sdk.Result;
 import com.testsigma.sdk.WindowsAdvancedAction;
 import com.testsigma.sdk.annotation.Action;
@@ -22,16 +19,15 @@ import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-@Action(actionText = "Click on text text-to-click with maximum wait time wait-time-in-seconds seconds",
+@Action(actionText = "Click on the sentence sentence-to-click with maximum wait time wait-time-in-seconds seconds",
         description = "This action waits for the specified text to appear on the screen and then clicks on it. " +
-                "It uses OCR to locate the text within the screen and performs a mouse click at the center of the text area. " +
                 "This works only for local executions",
         applicationType = ApplicationType.WINDOWS_ADVANCED,
-        displayName = "Click on text with wait",
+        displayName = "Click on sentence with wait",
         useCustomScreenshot = true)
-public class ClickOnTextWithWait extends WindowsAdvancedAction {
+public class ClickOnTextWithSpacesAndWait extends WindowsAdvancedAction {
 
-    @TestData(reference = "text-to-click")
+    @TestData(reference = "sentence-to-click")
     private com.testsigma.sdk.TestData textToClick;
 
     @TestData(reference = "wait-time-in-seconds")
@@ -49,23 +45,26 @@ public class ClickOnTextWithWait extends WindowsAdvancedAction {
     protected Result execute() throws NoSuchElementException {
         logger.info("=== Click On Text With Wait: Starting Execution ===");
 
-        try {            
+        try {
             String targetText = textToClick.getValue().toString();
-            int timeoutMs = Integer.parseInt(maxWaitSeconds.getValue().toString()) * 1000; // Convert seconds to milliseconds
+            // Convert seconds to milliseconds
+            int timeoutMs = Integer.parseInt(maxWaitSeconds.getValue().toString()) * 1000;
 
-            logger.info("Looking for text to click: '" + targetText + "' with max wait time: " + maxWaitSeconds.getValue() + " seconds");
+            logger.info("Looking for text to click: '" + targetText + "' with max wait time: "
+                    + maxWaitSeconds.getValue() + " seconds");
 
             long startTime = System.currentTimeMillis();
             long endTime = startTime + timeoutMs;
-
+            OCRUtils ocrUtils = new OCRUtils();
+            Robot robot = new Robot();
             while (System.currentTimeMillis() < endTime) {
                 logger.info("Polling attempt - checking for text: '" + targetText + "'");
 
                 // Capture the current screen
-                Robot robot = new Robot();
                 Rectangle screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
                 BufferedImage screenCapture = robot.createScreenCapture(screenRect);
-                logger.info("Screen capture dimensions: " + screenCapture.getWidth() + "x" + screenCapture.getHeight());
+                logger.info("Screen capture dimensions: " + screenCapture.getWidth() + "x"
+                        + screenCapture.getHeight());
 
                 // Save the screenshot to a temporary file
                 File screenshotFile = saveScreenshotToFile(screenCapture, "click_text_screenshot");
@@ -75,24 +74,31 @@ public class ClickOnTextWithWait extends WindowsAdvancedAction {
                 logger.info("Found " + textPoints.size() + " text elements");
 
                 // Find the matching text
-                OCRTextPoint targetTextPoint = findMatchingText(textPoints, targetText);
+                OCRTextPoint targetTextPoint = ocrUtils.findMatchingTextForSentence(textPoints, targetText, logger);
                 if (targetTextPoint != null) {
                     // Text found - perform click and return success
-                    logger.info("Found Textpoint with text = " + targetTextPoint.getText() + ", x1 = " + targetTextPoint.getX1() +
-                            ", y1 = " + targetTextPoint.getY1() + ", x2 = " + targetTextPoint.getX2() + ", y2 = " + targetTextPoint.getY2());
+                    logger.info("Found Text point with text = " + targetTextPoint.getText()
+                            + ", x1 = " + targetTextPoint.getX1() + ", y1 = " + targetTextPoint.getY1() +
+                            ", x2 = " + targetTextPoint.getX2() + ", y2 = " + targetTextPoint.getY2());
 
                     int clickX = (int) targetTextPoint.getCenterX();
                     int clickY = (int) targetTextPoint.getCenterY();
                     logger.info("Clicking on text at coordinates: (" + clickX + ", " + clickY + ")");
 
-                    performClickWithRobot(clickX, clickY);
-                    logger.info("Successfully clicked on text: '" + targetText + "' at coordinates (" + clickX + ", " + clickY + ")");
+                    performClickWithRobot(robot, clickX, clickY);
+                    logger.info("Successfully clicked on text: '" + targetText +
+                            "' at coordinates (" + clickX + ", " + clickY + ")");
 
                     setSuccessMessage(String.format(
                             "Successfully clicked on text: <b>%s</b> at coordinates: x-<b>%d</b>, y-<b>%d</b>",
                             targetText, clickX, clickY
                     ));
-
+                    // wait for one second before taking screenshot
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ie) {
+                        // Ignore
+                    }
                     // Upload final screenshot to S3
                     ScreenshotUtils.uploadScreenshotToS3(testStepResult, screenshotFile, logger);
                     return Result.SUCCESS;
@@ -115,7 +121,8 @@ public class ClickOnTextWithWait extends WindowsAdvancedAction {
             setErrorMessage("Text '" + targetText + "' was not found on the screen within " +
                     maxWaitSeconds.getValue() + " seconds. Unable to perform click.");
             // Capture and upload screenshot even on failure
-            ScreenshotUtils.captureAndUploadScreenshot(testStepResult, "click_text_wait_failure_screenshot", logger);
+            ScreenshotUtils.captureAndUploadScreenshot(testStepResult,
+                    "click_text_wait_failure_screenshot", logger);
             return Result.FAILED;
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -123,11 +130,14 @@ public class ClickOnTextWithWait extends WindowsAdvancedAction {
             logger.debug("Exception during click operation: " + e.getMessage());
             setErrorMessage("Error during click operation: " + e.getMessage());
             // Capture and upload screenshot even on failure
-            ScreenshotUtils.captureAndUploadScreenshot(testStepResult, "click_text_wait_failure_screenshot", logger);
+            ScreenshotUtils.captureAndUploadScreenshot(testStepResult,
+                    "click_text_wait_failure_screenshot", logger);
             return Result.FAILED;
         }
     }
 
+    // i have not moved these three methods to utility class as i am facing some issue with files being passed as
+    // argument to utility classes.
     /**
      * Extracts text points from the screenshot using OCR API
      */
@@ -186,50 +196,9 @@ public class ClickOnTextWithWait extends WindowsAdvancedAction {
     }
 
     /**
-     * Finds the matching text in the list of text points
-     */
-    private OCRTextPoint findMatchingText(List<OCRTextPoint> textPoints, String targetText) {
-        logger.info("Searching for text: '" + targetText + "'");
-
-        // First try exact match
-        for (OCRTextPoint textPoint : textPoints) {
-            if (textPoint.getText().equals(targetText)) {
-                logger.info("Found exact match: " + textPoint.getText());
-                return textPoint;
-            }
-        }
-
-        // Then try case-insensitive match
-        for (OCRTextPoint textPoint : textPoints) {
-            if (textPoint.getText().equalsIgnoreCase(targetText)) {
-                logger.info("Found case-insensitive match: " + textPoint.getText());
-                return textPoint;
-            }
-        }
-
-        // Finally try contains match
-        for (OCRTextPoint textPoint : textPoints) {
-            if (textPoint.getText().toLowerCase().contains(targetText.toLowerCase())) {
-                logger.info("Found contains match: " + textPoint.getText());
-                return textPoint;
-            }
-        }
-
-        logger.warn("No matching text found for: '" + targetText + "'");
-        logger.info("Available text elements:");
-        for (OCRTextPoint textPoint : textPoints) {
-            logger.info("  - '" + textPoint.getText() + "'");
-        }
-
-        return null;
-    }
-
-    /**
      * Performs click using Robot with appropriate delays
      */
-    private void performClickWithRobot(int x, int y) throws Exception {
-        Robot robot = new Robot();
-
+    private void performClickWithRobot(Robot robot, int x, int y) throws Exception {
         // Move mouse to the target location
         logger.info("Moving mouse to coordinates (" + x + ", " + y + ")");
         robot.mouseMove(x, y);
@@ -247,7 +216,6 @@ public class ClickOnTextWithWait extends WindowsAdvancedAction {
 
         logger.info("Click completed successfully");
     }
-
 
 
     /**

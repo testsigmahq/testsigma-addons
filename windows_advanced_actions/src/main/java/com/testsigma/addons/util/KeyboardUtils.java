@@ -1,11 +1,104 @@
-package com.testsigma.addons.windowsAdvanced.utils;
+package com.testsigma.addons.util;
 
+import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Utility class for keyboard operations and key code mappings
  */
 public class KeyboardUtils {
+
+    private static final Map<Character, int[]> SPECIAL_CHAR_MAP = new HashMap<>();
+
+    static {
+        // Shifted characters: maps character -> [physicalKeyCode, needsShift (1=yes)]
+        SPECIAL_CHAR_MAP.put('!', new int[]{KeyEvent.VK_1, 1});
+        SPECIAL_CHAR_MAP.put('@', new int[]{KeyEvent.VK_2, 1});
+        SPECIAL_CHAR_MAP.put('#', new int[]{KeyEvent.VK_3, 1});
+        SPECIAL_CHAR_MAP.put('$', new int[]{KeyEvent.VK_4, 1});
+        SPECIAL_CHAR_MAP.put('%', new int[]{KeyEvent.VK_5, 1});
+        SPECIAL_CHAR_MAP.put('^', new int[]{KeyEvent.VK_6, 1});
+        SPECIAL_CHAR_MAP.put('&', new int[]{KeyEvent.VK_7, 1});
+        SPECIAL_CHAR_MAP.put('*', new int[]{KeyEvent.VK_8, 1});
+        SPECIAL_CHAR_MAP.put('(', new int[]{KeyEvent.VK_9, 1});
+        SPECIAL_CHAR_MAP.put(')', new int[]{KeyEvent.VK_0, 1});
+        SPECIAL_CHAR_MAP.put('_', new int[]{KeyEvent.VK_MINUS, 1});
+        SPECIAL_CHAR_MAP.put('+', new int[]{KeyEvent.VK_EQUALS, 1});
+        SPECIAL_CHAR_MAP.put('{', new int[]{KeyEvent.VK_OPEN_BRACKET, 1});
+        SPECIAL_CHAR_MAP.put('}', new int[]{KeyEvent.VK_CLOSE_BRACKET, 1});
+        SPECIAL_CHAR_MAP.put('|', new int[]{KeyEvent.VK_BACK_SLASH, 1});
+        SPECIAL_CHAR_MAP.put(':', new int[]{KeyEvent.VK_SEMICOLON, 1});
+        SPECIAL_CHAR_MAP.put('"', new int[]{KeyEvent.VK_QUOTE, 1});
+        SPECIAL_CHAR_MAP.put('<', new int[]{KeyEvent.VK_COMMA, 1});
+        SPECIAL_CHAR_MAP.put('>', new int[]{KeyEvent.VK_PERIOD, 1});
+        SPECIAL_CHAR_MAP.put('?', new int[]{KeyEvent.VK_SLASH, 1});
+        SPECIAL_CHAR_MAP.put('~', new int[]{KeyEvent.VK_BACK_QUOTE, 1});
+
+        // Unshifted special characters
+        SPECIAL_CHAR_MAP.put('-', new int[]{KeyEvent.VK_MINUS, 0});
+        SPECIAL_CHAR_MAP.put('=', new int[]{KeyEvent.VK_EQUALS, 0});
+        SPECIAL_CHAR_MAP.put('[', new int[]{KeyEvent.VK_OPEN_BRACKET, 0});
+        SPECIAL_CHAR_MAP.put(']', new int[]{KeyEvent.VK_CLOSE_BRACKET, 0});
+        SPECIAL_CHAR_MAP.put('\\', new int[]{KeyEvent.VK_BACK_SLASH, 0});
+        SPECIAL_CHAR_MAP.put(';', new int[]{KeyEvent.VK_SEMICOLON, 0});
+        SPECIAL_CHAR_MAP.put('\'', new int[]{KeyEvent.VK_QUOTE, 0});
+        SPECIAL_CHAR_MAP.put(',', new int[]{KeyEvent.VK_COMMA, 0});
+        SPECIAL_CHAR_MAP.put('.', new int[]{KeyEvent.VK_PERIOD, 0});
+        SPECIAL_CHAR_MAP.put('/', new int[]{KeyEvent.VK_SLASH, 0});
+        SPECIAL_CHAR_MAP.put('`', new int[]{KeyEvent.VK_BACK_QUOTE, 0});
+        SPECIAL_CHAR_MAP.put(' ', new int[]{KeyEvent.VK_SPACE, 0});
+        SPECIAL_CHAR_MAP.put('\t', new int[]{KeyEvent.VK_TAB, 0});
+        SPECIAL_CHAR_MAP.put('\n', new int[]{KeyEvent.VK_ENTER, 0});
+    }
+
+    /**
+     * Types a single character using the Robot class, correctly handling
+     * uppercase letters, digits, and all special characters (US keyboard layout).
+     */
+    public static void typeCharacter(Robot robot, char character) {
+        if (Character.isLetter(character)) {
+            int keyCode = KeyEvent.getExtendedKeyCodeForChar(Character.toUpperCase(character));
+            boolean upperCase = Character.isUpperCase(character);
+            if (upperCase) {
+                robot.keyPress(KeyEvent.VK_SHIFT);
+            }
+            robot.keyPress(keyCode);
+            sleep(10);
+            robot.keyRelease(keyCode);
+            if (upperCase) {
+                robot.keyRelease(KeyEvent.VK_SHIFT);
+            }
+            return;
+        }
+
+        if (Character.isDigit(character)) {
+            int keyCode = KeyEvent.getExtendedKeyCodeForChar(character);
+            robot.keyPress(keyCode);
+            sleep(10);
+            robot.keyRelease(keyCode);
+            return;
+        }
+
+        int[] mapping = SPECIAL_CHAR_MAP.get(character);
+        if (mapping != null) {
+            int keyCode = mapping[0];
+            boolean needsShift = mapping[1] == 1;
+            if (needsShift) {
+                robot.keyPress(KeyEvent.VK_SHIFT);
+            }
+            robot.keyPress(keyCode);
+            sleep(10);
+            robot.keyRelease(keyCode);
+            if (needsShift) {
+                robot.keyRelease(KeyEvent.VK_SHIFT);
+            }
+            return;
+        }
+
+        throw new IllegalArgumentException("Cannot type character: " + character);
+    }
 
     // Allowed values for modifier keys
     public static final String[] MODIFIER_KEYS = {"Alt", "BackSpace", "CapsLock", "Ctrl", "Delete", "Down", "Enter",

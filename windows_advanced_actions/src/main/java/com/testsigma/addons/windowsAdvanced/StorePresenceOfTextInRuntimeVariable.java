@@ -14,24 +14,28 @@ import java.io.File;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-@Action(actionText = "verify that the text text-to-verify is present in opened application " +
-        "and store result in runtime variable result-variable-name",
-        description = "This action verifies that the specified text is present in the opened application" +
-                " using OCR API capabilities. " +
+
+@Action(actionText = "verify that the text text-to-verify is present in opened application and" +
+        " store result in runtime variable variable-to-store-result",
+        description = "This action stores true if text is present in the screen else it stores false in the variable " +
+                "using OCR API capabilities. " +
                 "This works only for local executions",
         applicationType = com.testsigma.sdk.ApplicationType.WINDOWS_ADVANCED,
-        displayName = "Verify if text is present in the application and store result",
+        displayName = "Store the presence of text in runtime variable",
         useCustomScreenshot = true)
-public class VerifyTextInApplication extends WindowsAdvancedAction {
+public class StorePresenceOfTextInRuntimeVariable extends WindowsAdvancedAction {
 
     @TestData(reference = "text-to-verify")
     private com.testsigma.sdk.TestData testData;
 
-    @TestData(reference = "result-variable-name", isRuntimeVariable = true)
+    @TestData(reference = "variable-to-store-result", isRuntimeVariable = true)
     private com.testsigma.sdk.TestData testData1;
 
     @TestStepResult
     private com.testsigma.sdk.TestStepResult testStepResult;
+
+    @RunTimeData
+    private com.testsigma.sdk.RunTimeData runTimeData;
 
     @Override
     protected Result execute() throws NoSuchElementException {
@@ -58,20 +62,23 @@ public class VerifyTextInApplication extends WindowsAdvancedAction {
 
             if (textFound) {
                 logger.info("Text found in application. Step passed.");
-                setSuccessMessage("Text '" + expectedText + "' was found in the application.");
-                return Result.SUCCESS;
+                runTimeData.setValue("true");
+                runTimeData.setKey(testData1.getValue().toString());
             } else {
                 logger.debug("Text not found in application. Step failed.");
-                setErrorMessage("Text '" + expectedText + "' was not found in the application.");
-                return Result.FAILED;
+                runTimeData.setValue("false");
+                runTimeData.setKey(testData1.getValue().toString());
             }
-
         } catch (Exception e) {
             logger.debug("Exception during OCR text verification: " + e.getMessage());
             setErrorMessage("Error during text verification: " + e.getMessage());
-            ScreenshotUtils.captureAndUploadScreenshot(testStepResult, "verify_text_failure_screenshot", logger);
+            ScreenshotUtils.captureAndUploadScreenshot(testStepResult,
+                    "verify_text_failure_screenshot", logger);
             return Result.FAILED;
         }
+        setSuccessMessage("Successfully stored the presence of the text " + testData.getValue().toString() +
+                " in the variable " + testData1.getValue().toString());
+        return Result.SUCCESS;
     }
 
     private File saveScreenshotToFile(BufferedImage screenshot, String fileName) throws Exception {

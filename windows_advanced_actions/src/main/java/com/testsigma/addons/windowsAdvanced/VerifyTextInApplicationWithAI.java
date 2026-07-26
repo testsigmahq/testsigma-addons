@@ -14,21 +14,17 @@ import java.io.File;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-@Action(actionText = "verify that the text text-to-verify is present in opened application " +
-        "and store result in runtime variable result-variable-name",
+
+@Action(actionText = "verify that the text text-to-verify is present in the screen",
         description = "This action verifies that the specified text is present in the opened application" +
-                " using OCR API capabilities. " +
                 "This works only for local executions",
         applicationType = com.testsigma.sdk.ApplicationType.WINDOWS_ADVANCED,
-        displayName = "Verify if text is present in the application and store result",
+        displayName = "Verify if text is present in application",
         useCustomScreenshot = true)
-public class VerifyTextInApplication extends WindowsAdvancedAction {
+public class VerifyTextInApplicationWithAI extends WindowsAdvancedAction {
 
     @TestData(reference = "text-to-verify")
     private com.testsigma.sdk.TestData testData;
-
-    @TestData(reference = "result-variable-name", isRuntimeVariable = true)
-    private com.testsigma.sdk.TestData testData1;
 
     @TestStepResult
     private com.testsigma.sdk.TestStepResult testStepResult;

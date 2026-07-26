@@ -1,9 +1,8 @@
 package com.testsigma.addons.windowsAdvanced;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testsigma.addons.util.Constants;
-import com.testsigma.addons.util.ResponseObjectForFindImage;
-import com.testsigma.addons.util.ScreenshotUtils;
 import com.testsigma.sdk.Result;
 import com.testsigma.sdk.WindowsAdvancedAction;
 import com.testsigma.sdk.annotation.Action;
@@ -16,21 +15,20 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
-@Action(actionText = "Wait until image image-url is present on screen with timeout wait-time-in-seconds seconds with threshold threshold",
+@Action(actionText = "Wait until image image-url is present on screen with timeout wait-time-in-seconds seconds with threshold threshold-value",
         description = "This action waits until the specified image appears on the screen within the given timeout. "
                 + "It does not click the image; it only verifies that the image is present. "
                 + "It takes an image URL (S3 URL or local file path), polls the screen every 1.5 seconds. "
-                + "Threshold (0 to 1) controls match sensitivity. This works only for local executions.",
+                + "Threshold (0 to 1) controls match sensitivity. Uses visual testing API for image detection.",
         applicationType = com.testsigma.sdk.ApplicationType.WINDOWS_ADVANCED,
-        displayName = "Wait until image is present on screen",
+        displayName = "Wait until image is present (Find Image API)",
         useCustomScreenshot = true)
-public class WaitUntilImagePresent extends WindowsAdvancedAction {
+public class WaitUntilImagePresentWithFindImage extends WindowsAdvancedAction {
 
     @TestData(reference = "image-url")
     private com.testsigma.sdk.TestData imageUrl;
@@ -38,104 +36,93 @@ public class WaitUntilImagePresent extends WindowsAdvancedAction {
     @TestData(reference = "wait-time-in-seconds")
     private com.testsigma.sdk.TestData timeoutSeconds;
 
-    @TestData(reference = "threshold")
-    private com.testsigma.sdk.TestData threshold;
+    @TestData(reference = "threshold-value")
+    private com.testsigma.sdk.TestData thresholdValue;
 
     @TestStepResult
     private com.testsigma.sdk.TestStepResult testStepResult;
 
-    private final ObjectMapper mapper = new ObjectMapper();
     private static final int POLLING_INTERVAL_MS = 1500;
+    private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
     protected Result execute() {
-        logger.info("=== Wait Until Image Present: Starting Execution ===");
+        logger.info("=== Wait Until Image Present (Find Image API): Starting Execution ===");
 
         try {
             String imageUrlValue = imageUrl.getValue().toString();
             int timeoutMs = Integer.parseInt(timeoutSeconds.getValue().toString()) * 1000;
-            String thresholdStr = threshold.getValue().toString().trim();
-            double thresholdValue = Double.parseDouble(thresholdStr);
-            if (thresholdValue < 0 || thresholdValue > 1) {
+            String thresholdStr = thresholdValue.getValue().toString().trim();
+            double threshold = Double.parseDouble(thresholdStr);
+            if (threshold < 0 || threshold > 1) {
                 setErrorMessage("Threshold must be between 0 and 1. Got: " + thresholdStr);
-                ScreenshotUtils.captureAndUploadScreenshot(testStepResult, "wait_image_failure_screenshot", logger);
                 return Result.FAILED;
             }
 
-            logger.info("Waiting for image from URL: " + imageUrlValue + " with timeout: "
-                    + timeoutSeconds.getValue() + " seconds, threshold: " + thresholdStr);
+            logger.info("Waiting for image: " + imageUrlValue + " | timeout: "
+                    + timeoutSeconds.getValue() + "s | threshold: " + thresholdStr);
 
             File searchImageFile = urlToFileConverter("target_image", imageUrlValue);
-            long startTime = System.currentTimeMillis();
-            long endTime = startTime + timeoutMs;
+            Robot robot = new Robot();
+            long endTime = System.currentTimeMillis() + timeoutMs;
 
             while (System.currentTimeMillis() < endTime) {
+                logger.info("Polling attempt - capturing fresh screenshot");
 
-                logger.info("Polling attempt - checking for image on screen");
+                Rectangle screenSize = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
+                BufferedImage screenCapture = robot.createScreenCapture(screenSize);
+                File screenshotFile = new File(System.getProperty("java.io.tmpdir"),
+                        "screenshot" + System.currentTimeMillis() + ".png");
+                ImageIO.write(screenCapture, "png", screenshotFile);
+                logger.info("Screenshot saved to: " + screenshotFile.getAbsolutePath());
 
-                Robot robot = new Robot();
-                Rectangle screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
-                BufferedImage screenCapture = robot.createScreenCapture(screenRect);
-                File baseImageFile = saveScreenshotToFile(screenCapture, "wait_image_screenshot");
+                boolean isFound = callFindImageApi(screenshotFile, searchImageFile, thresholdStr);
 
-                int[] center = findImageCoordinates(baseImageFile, searchImageFile, thresholdStr);
-
-                if (center != null) {
-                    int centerX = center[0];
-                    int centerY = center[1];
-                    logger.info("Image found at center (" + centerX + ", " + centerY + "). Wait successful.");
-                    setSuccessMessage("Image found on screen at coordinates (" + centerX + ", " + centerY + ").");
-                    ScreenshotUtils.uploadScreenshotToS3(testStepResult, baseImageFile, logger);
+                if (isFound) {
+                    logger.info("Image found on screen. Wait successful.");
                     return Result.SUCCESS;
                 }
 
-                if (baseImageFile.exists()) {
-                    baseImageFile.delete();
-                }
-
                 long remainingTime = endTime - System.currentTimeMillis();
-                if (remainingTime > POLLING_INTERVAL_MS) {
-                    logger.info("Image not found yet. Waiting " + (POLLING_INTERVAL_MS / 1000)
-                            + " second before next attempt. Remaining time: " + (remainingTime / 1000) + " seconds");
-                    Thread.sleep(POLLING_INTERVAL_MS);
-                } else {
-                    break;
+                if (remainingTime > 0) {
+                    long sleepTime = Math.min(POLLING_INTERVAL_MS, remainingTime);
+                    logger.info("Image not found yet. Waiting " + sleepTime + "ms. Remaining: " + remainingTime + "ms");
+                    Thread.sleep(sleepTime);
                 }
             }
 
-            logger.debug("Timeout reached. Image was not found on the screen within "
-                    + timeoutSeconds.getValue() + " seconds.");
+            logger.debug("Timeout reached. Image was not found within " + timeoutSeconds.getValue() + " seconds.");
             setErrorMessage("Image was not found on the screen within " + timeoutSeconds.getValue() + " seconds.");
-            ScreenshotUtils.captureAndUploadScreenshot(testStepResult, "wait_image_failure_screenshot", logger);
             return Result.FAILED;
 
         } catch (NumberFormatException e) {
             logger.debug("Invalid number format: " + e.getMessage());
             setErrorMessage("Invalid input. Timeout must be a number (seconds). Threshold must be a number between 0 and 1.");
-            ScreenshotUtils.captureAndUploadScreenshot(testStepResult, "wait_image_failure_screenshot", logger);
             return Result.FAILED;
         } catch (Exception e) {
             logger.debug("Exception during wait operation: " + e.getMessage());
             setErrorMessage("Error during wait operation: " + e.getMessage());
-            ScreenshotUtils.captureAndUploadScreenshot(testStepResult, "wait_image_failure_screenshot", logger);
             return Result.FAILED;
         }
     }
 
     /**
-     * Finds the image on the screen and returns the center coordinates, or null if not found.
-     * @param thresholdStr threshold for image match (0 to 1), from user input
+     * Calls the visual testing API to check whether the search image is present
+     * in the base screenshot. Returns true if found, false otherwise.
+     * Sets success/error message accordingly.
      */
-    private int[] findImageCoordinates(File baseImageFile, File searchImageFile, String thresholdStr) {
+    private boolean callFindImageApi(File baseImageFile, File searchImageFile, String threshold) {
         try {
+            logger.info("Calling visual testing API | base: " + baseImageFile + " | search: " + searchImageFile);
             OkHttpClient client = new OkHttpClient();
+
             RequestBody requestBody = new MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
                     .addFormDataPart("baseImageFile", baseImageFile.getName(),
                             RequestBody.create(baseImageFile, MediaType.parse("image/png")))
                     .addFormDataPart("searchImageFile", searchImageFile.getName(),
                             RequestBody.create(searchImageFile, MediaType.parse("image/png")))
-                    .addFormDataPart("threshold", thresholdStr)
+                    .addFormDataPart("threshold", threshold)
                     .addFormDataPart("scale", "40")
                     .addFormDataPart("occurance", "1")
                     .build();
@@ -147,42 +134,46 @@ public class WaitUntilImagePresent extends WindowsAdvancedAction {
                     .build();
 
             Response response = client.newCall(request).execute();
-            if (!response.isSuccessful() || response.body() == null) {
-                return null;
+
+            if (response.isSuccessful() && response.body() != null) {
+                String responseBody = response.body().string();
+                logger.info("API response: " + responseBody);
+                JsonNode jsonNode = mapper.readTree(responseBody);
+
+                boolean isFound = jsonNode.path("isFound").asBoolean();
+                int x1 = jsonNode.path("x1").asInt();
+                int y1 = jsonNode.path("y1").asInt();
+                int x2 = jsonNode.path("x2").asInt();
+                int y2 = jsonNode.path("y2").asInt();
+
+                if (isFound) {
+                    int centerX = x1 + (x2 - x1) / 2;
+                    int centerY = y1 + (y2 - y1) / 2;
+                    logger.info("Image found at center (" + centerX + ", " + centerY + ")");
+                    setSuccessMessage(String.format(
+                            "Image found on screen. Coordinates: x1-%s, x2-%s, y1-%s, y2-%s",
+                            x1, x2, y1, y2));
+                } else {
+                    logger.info("Image not found in this poll attempt");
+                }
+                return isFound;
+
+            } else {
+                logger.info("API call failed or returned empty body. Code: "
+                        + (response.body() != null ? response.code() : "no body"));
+                return false;
             }
 
-            String responseBody = response.body().string();
-            ResponseObjectForFindImage responseObject = mapper.readValue(responseBody, ResponseObjectForFindImage.class);
-
-            if (Boolean.TRUE.equals(responseObject.getIsFound())) {
-                int x1 = responseObject.getX1();
-                int y1 = responseObject.getY1();
-                int x2 = responseObject.getX2();
-                int y2 = responseObject.getY2();
-                int centerX = (x1 + x2) / 2;
-                int centerY = (y1 + y2) / 2;
-                return new int[]{centerX, centerY};
-            }
-            return null;
-        } catch (IOException e) {
-            logger.debug("Exception while finding image: " + ExceptionUtils.getStackTrace(e));
-            return null;
         } catch (Exception e) {
-            logger.debug("Exception: " + ExceptionUtils.getStackTrace(e));
-            return null;
+            logger.info("Exception during API call: " + ExceptionUtils.getStackTrace(e));
+            return false;
         }
-    }
-
-    private static File saveScreenshotToFile(BufferedImage screenshot, String fileName) throws Exception {
-        File tempFile = File.createTempFile(fileName, ".png");
-        ImageIO.write(screenshot, "PNG", tempFile);
-        return tempFile;
     }
 
     private File urlToFileConverter(String fileName, String url) {
         try {
             if (url.startsWith("https://") || url.startsWith("http://")) {
-                logger.info("Given is s3 url ...File name:" + fileName);
+                logger.info("Downloading image from URL: " + url);
                 URL urlObject = new URL(url);
                 String baseName = fileName;
                 String extension = "";
@@ -206,7 +197,7 @@ public class WaitUntilImagePresent extends WindowsAdvancedAction {
                 logger.info("Temp file created: " + tempFile.getName() + " at " + tempFile.getAbsolutePath());
                 return tempFile;
             } else {
-                logger.info("Given is local file path..");
+                logger.info("Using local file path: " + url);
                 return new File(url);
             }
         } catch (Exception e) {
