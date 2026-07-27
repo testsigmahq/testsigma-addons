@@ -9,13 +9,9 @@ import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.TestStepResult;
 import lombok.Data;
-import org.openqa.selenium.OutputType;
-import org.openqa.selenium.TakesScreenshot;
 
-import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 
 @Data
@@ -54,8 +50,7 @@ public class StoreOutputFromAiPrompt extends WindowsAdvancedAction {
             String variableName = runtimeVariable.getValue().toString();
             logger.info("AI prompt: " + prompt + " | target variable: " + variableName);
 
-            byte[] screenshotBytes = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
-            BufferedImage pageCapture = ImageIO.read(new ByteArrayInputStream(screenshotBytes));
+            BufferedImage pageCapture = captureScreenshotWithRobot();
             int captureW = pageCapture.getWidth();
             int captureH = pageCapture.getHeight();
             logger.info("Viewport screenshot size: " + captureW + "x" + captureH);
@@ -122,5 +117,19 @@ public class StoreOutputFromAiPrompt extends WindowsAdvancedAction {
             AiActionUtils.deleteQuietly(screenshotFile);
             AiActionUtils.deleteQuietly(finalAnnotatedFile);
         }
+    }
+
+    private BufferedImage captureScreenshotWithRobot() throws AWTException {
+        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+        Robot robot = new Robot();
+        BufferedImage shot = robot.createScreenCapture(new Rectangle(screen));
+        if (shot.getWidth() != screen.width || shot.getHeight() != screen.height) {
+            logger.info(String.format(
+                    "Robot capture %dx%d differs from logical screen %dx%d (HiDPI) — resizing to " +
+                            "logical size so coordinates match the AI coords.",
+                    shot.getWidth(), shot.getHeight(), screen.width, screen.height));
+            shot = AiActionUtils.resizeImage(shot, screen.width, screen.height);
+        }
+        return shot;
     }
 }
