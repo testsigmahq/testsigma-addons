@@ -2,6 +2,7 @@ package com.testsigma.addons.windowsAdvanced;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testsigma.addons.util.Constants;
+import com.testsigma.addons.util.FindImageUtils;
 import com.testsigma.addons.util.ResponseObjectForFindImage;
 import com.testsigma.addons.util.ScreenshotUtils;
 import com.testsigma.sdk.Result;
@@ -129,30 +130,7 @@ public class ClickOnImageWithTimeout extends WindowsAdvancedAction {
      */
     private int[] findImageCoordinates(File baseImageFile, File searchImageFile, String thresholdStr) {
         try {
-            OkHttpClient client = new OkHttpClient();
-            RequestBody requestBody = new MultipartBody.Builder()
-                    .setType(MultipartBody.FORM)
-                    .addFormDataPart("baseImageFile", baseImageFile.getName(),
-                            RequestBody.create(baseImageFile, MediaType.parse("image/png")))
-                    .addFormDataPart("searchImageFile", searchImageFile.getName(),
-                            RequestBody.create(searchImageFile, MediaType.parse("image/png")))
-                    .addFormDataPart("threshold", thresholdStr)
-                    .addFormDataPart("scale", "40")
-                    .addFormDataPart("occurance", "1")
-                    .build();
-
-            Request request = new Request.Builder()
-                    .url(Constants.VISUAL_SERVER_FIND_IMAGE_ENDPOINT)
-                    .post(requestBody)
-                    .addHeader("Authorization", "Bearer " + Constants.API_TOKEN)
-                    .build();
-
-            Response response = client.newCall(request).execute();
-            if (!response.isSuccessful() || response.body() == null) {
-                return null;
-            }
-
-            String responseBody = response.body().string();
+            String responseBody = FindImageUtils.findImageResponseBody(baseImageFile, searchImageFile, thresholdStr, logger);
             ResponseObjectForFindImage responseObject = mapper.readValue(responseBody, ResponseObjectForFindImage.class);
 
             if (Boolean.TRUE.equals(responseObject.getIsFound())) {

@@ -1,7 +1,7 @@
-package com.testsigma.addons.windowsAdvanced.utils;
+package com.testsigma.addons.util;
 
-import com.testsigma.sdk.TestStepResult;
 import com.testsigma.sdk.Logger;
+import com.testsigma.sdk.TestStepResult;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -36,8 +36,17 @@ public class ScreenshotUtils {
      */
     public static boolean captureAndUploadScreenshot(TestStepResult testStepResult, String screenshotName, Logger logger) {
         try {
+            // Wait for 1 second before capturing screenshot to ensure UI is stable
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException interruptedException) {
+                logger.info("ignored the interrupted exception during screenshot capture wait: "
+                        + ExceptionUtils.getStackTrace(interruptedException));
+            }
+            
             // Capture the current screen
             Robot robot = new Robot();
+            
             Rectangle screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
             BufferedImage screenCapture = robot.createScreenCapture(screenRect);
             
@@ -114,8 +123,11 @@ public class ScreenshotUtils {
      * @return BufferedImage of the screen capture
      * @throws Exception if screenshot capture fails
      */
-    public static BufferedImage captureScreenshot(Logger logger) throws Exception {
+   /* public static BufferedImage captureScreenshot(Logger logger) throws Exception {
         try {
+            // Wait for 1 second before capturing screenshot to ensure UI is stable
+            Thread.sleep(1000);
+            
             Robot robot = new Robot();
             Rectangle screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
             BufferedImage screenCapture = robot.createScreenCapture(screenRect);
@@ -125,7 +137,7 @@ public class ScreenshotUtils {
             logger.info("Error capturing screenshot: " + e.getMessage());
             throw e;
         }
-    }
+    }*/
     
     /**
      * Saves a screenshot to a temporary file with logging
@@ -136,7 +148,7 @@ public class ScreenshotUtils {
      * @return The temporary file
      * @throws Exception if file creation fails
      */
-    public static File saveScreenshotToFile(BufferedImage screenshot, String fileName, Logger logger) throws Exception {
+/*    public static File saveScreenshotToFile(BufferedImage screenshot, String fileName, Logger logger) throws Exception {
         try {
             File tempFile = File.createTempFile(fileName, ".png");
             ImageIO.write(screenshot, "PNG", tempFile);
@@ -146,40 +158,40 @@ public class ScreenshotUtils {
             logger.info("Failed to save screenshot to file: " + e.getMessage());
             throw new RuntimeException("Unable to save screenshot for processing.", e);
         }
-    }
+    }*/
     
-    /**
-     * Captures screenshot and uploads it to S3 using S3 URL
-     * 
-     * @param s3Url The S3 URL to upload to
-     * @param fileName The base filename for the screenshot
-     * @param logger The logger instance
-     * @return true if successful, false otherwise
-     */
-    public static boolean captureAndUploadScreenshot(String s3Url, String fileName, Logger logger) {
-        try {
-            // Capture screenshot
-            BufferedImage screenshot = captureScreenshot(logger);
-            
-            // Save to file
-            File screenshotFile = saveScreenshotToFile(screenshot, fileName, logger);
-            
-            // Upload to S3
-            boolean uploadResult = uploadFile(s3Url, screenshotFile.getAbsolutePath(), logger);
-            
-            // Clean up temporary file
-            if (screenshotFile.exists()) {
-                screenshotFile.delete();
-            }
-            
-            return uploadResult;
-            
-        } catch (Exception e) {
-            logger.info("Error in captureAndUploadScreenshot: " + ExceptionUtils.getStackTrace(e));
-            return false;
-        }
-    }
-    
+//    /**
+//     * Captures screenshot and uploads it to S3 using S3 URL
+//     *
+//     * @param s3Url The S3 URL to upload to
+//     * @param fileName The base filename for the screenshot
+//     * @param logger The logger instance
+//     * @return true if successful, false otherwise
+//     */
+//    public static boolean captureAndUploadScreenshot(String s3Url, String fileName, Logger logger) {
+//        try {
+//            // Capture screenshot
+//            BufferedImage screenshot = captureScreenshot(logger);
+//
+//            // Save to file
+//            File screenshotFile = saveScreenshotToFile(screenshot, fileName, logger);
+//
+//            // Upload to S3
+//            boolean uploadResult = uploadFile(s3Url, screenshotFile.getAbsolutePath(), logger);
+//
+//            // Clean up temporary file
+//            if (screenshotFile.exists()) {
+//                screenshotFile.delete();
+//            }
+//
+//            return uploadResult;
+//
+//        } catch (Exception e) {
+//            logger.info("Error in captureAndUploadScreenshot: " + ExceptionUtils.getStackTrace(e));
+//            return false;
+//        }
+//    }
+//
     /**
      * Uploads a file to S3 using the provided URL
      * 

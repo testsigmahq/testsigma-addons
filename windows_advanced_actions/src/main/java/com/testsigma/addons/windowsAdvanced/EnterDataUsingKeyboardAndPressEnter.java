@@ -12,6 +12,7 @@ import lombok.Data;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.awt.*;
+import java.awt.event.KeyEvent;
 
 
 @Data
@@ -19,10 +20,10 @@ import java.awt.*;
         description = "This action allows you to enter data into a field using the keyboard. " +
                 "This works only for local executions",
         applicationType = ApplicationType.WINDOWS_ADVANCED,
-        displayName = "Enter data on screen",
+        displayName = "Enter Data on screen and press Enter",
         useCustomScreenshot = true
 )
-public class EnterDataUsingKeyboard extends WindowsAdvancedAction {
+public class EnterDataUsingKeyboardAndPressEnter extends WindowsAdvancedAction {
     @TestData(reference = "test-data")
     private com.testsigma.sdk.TestData testData;
 
@@ -37,18 +38,22 @@ public class EnterDataUsingKeyboard extends WindowsAdvancedAction {
             Robot robot = new Robot();
             String text = testData.getValue().toString();
 
-            Thread.sleep(1000); // Wait 1 seconds to focus the target window
+            Thread.sleep(1000); // Wait 1 second to focus the target window
 
             for (char c : text.toCharArray()) {
                 KeyboardUtils.typeCharacter(robot, c);
-                Thread.sleep(100); // Delay between keystrokes (optional)
+                Thread.sleep(50); // Delay between keystrokes (optional)
             }
-            
-            setSuccessMessage("Given data entered successfully on the given image");
-            
+            logger.info("Pressing Enter key");
+            robot.keyPress(KeyEvent.VK_ENTER);
+            KeyboardUtils.sleep(30);
+            robot.keyRelease(KeyEvent.VK_ENTER);
+
+            setSuccessMessage("Given data entered successfully on the given image and Enter key pressed");
+
             // Capture and upload screenshot
             ScreenshotUtils.captureAndUploadScreenshot(testStepResult, "enter_data_screenshot", logger);
-            
+
         } catch (Exception e) {
             result = Result.FAILED;
             setErrorMessage("An error occurred while initializing the Robot class: " + e.getMessage());

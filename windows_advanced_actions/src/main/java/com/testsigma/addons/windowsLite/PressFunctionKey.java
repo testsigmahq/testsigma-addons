@@ -1,9 +1,10 @@
-package com.testsigma.addons.windowsAdvanced;
+package com.testsigma.addons.windowsLite;
 
-import com.testsigma.addons.util.ScreenshotUtils;
 import com.testsigma.addons.util.KeyboardUtils;
+import com.testsigma.addons.util.ScreenshotUtils;
+import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
-import com.testsigma.sdk.WindowsAdvancedAction;
+import com.testsigma.sdk.WindowsAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.TestStepResult;
@@ -18,11 +19,11 @@ import java.awt.event.KeyEvent;
 @Action(actionText = "Press Function Key key-type",
         description = "This action allows you to press a function key on the keyboard. " +
                 "This works only for local executions",
-        applicationType = com.testsigma.sdk.ApplicationType.WINDOWS_ADVANCED,
+        applicationType = ApplicationType.WINDOWS,
         displayName = "Press a Function Key",
         useCustomScreenshot = true
         )
-public class PressFunctionKey extends WindowsAdvancedAction {
+public class PressFunctionKey extends WindowsAction {
 
     @TestData(reference = "key-type",allowedValues = {"F1", "F2", "F3", "F4", "F5", "F6",
             "F7", "F8", "F9", "F10", "F11", "F12"})
@@ -36,7 +37,7 @@ public class PressFunctionKey extends WindowsAdvancedAction {
         Result result = Result.SUCCESS;
         try {
             // Instantiate the Robot Class
-            Robot robot = new java.awt.Robot();
+            Robot robot = new Robot();
             String key = keyType.getValue().toString();
 
             // Convert the function key to its corresponding KeyEvent constant
