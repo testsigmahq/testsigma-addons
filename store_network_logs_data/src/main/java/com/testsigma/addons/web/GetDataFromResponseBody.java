@@ -69,7 +69,15 @@ public class GetDataFromResponseBody extends WebAction {
             try {
                 parsedJson = mapper.readValue(responseBody, Object.class);
             } catch (JsonProcessingException e) {
-                throw new Exception("Response body is not a valid JSON. Error: " + e.getMessage());
+                logger.warn("Response body is not valid JSON, falling back to raw body. Error: " + e.getMessage());
+                runTimeData.setKey(variableName.getValue().toString());
+                runTimeData.setValue(responseBody);
+                String fallbackMessage = String.format(
+                        "Response body is not valid JSON; stored the raw response body in runtime variable '%s'.",
+                        variableName.getValue());
+                setSuccessMessage(fallbackMessage);
+                logger.info(fallbackMessage);
+                return Result.SUCCESS;
             }
 
             // Step 3: Get parameters
