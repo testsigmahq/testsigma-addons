@@ -2,6 +2,7 @@ package com.testsigma.addons.web.utilities;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.testsigma.sdk.Logger;
@@ -24,7 +25,7 @@ public class ResponseDataUtilities {
             throw new Exception(e);
         }
     }
-    
+
 
     private static JsonArray getResponseBodyData(Long runId, Logger logger) throws Exception {
         logger.info("Getting all data for runId: " + runId);
@@ -42,7 +43,7 @@ public class ResponseDataUtilities {
                 return data.getAsJsonArray("responseBody");
             }
         } catch (JsonParseException e) {
-            
+
             logger.info("Failed to parse data for runId: " + runId + " with exception: " + e.getMessage());
             throw new Exception(e);
         }
@@ -61,7 +62,7 @@ public class ResponseDataUtilities {
 
     public static String getResponseBody(Long runId, Logger logger) throws Exception {
         String responseBody = getResponseBodyData(runId, logger).getAsString();
-        
+
         return responseBody;
     }
 
@@ -84,7 +85,7 @@ public class ResponseDataUtilities {
                 logger.info("No request headers data found for runId: " + runId);
             }
         } catch (JsonParseException e) {
-            
+
             logger.info("Failed to parse request headers data for runId: " + runId + " with exception: " + e.getMessage());
             throw new Exception(e);
         }
@@ -128,9 +129,20 @@ public class ResponseDataUtilities {
         saveAllData(runId, allData, logger);
     }
 
+    public static void savePayloadData(Long runId, String payload, Logger logger) throws Exception {
+        try {
+            logger.info("Saving payload to separate file for runId: " + runId);
+            FileUtilities.writePayloadToFile(runId, payload);
+            logger.info("Payload saved successfully for runId: " + runId);
+        } catch (Exception e) {
+            logger.info("Failed to save payload for runId: " + runId + " - " + e.getMessage());
+            throw new Exception(e);
+        }
+    }
+
     public static String getRequestHeaders(Long runId, Logger logger) throws Exception {
         String requestHeaders = getRequestHeadersData(runId, logger).getAsString();
-        
+
         return requestHeaders;
     }
 
@@ -200,7 +212,7 @@ public class ResponseDataUtilities {
                 return statusCode;
             }
         } catch (JsonParseException e) {
-            
+
             logger.info("Failed to parse status code data for runId: " + runId + " with exception: " + e.getMessage());
             throw new Exception(e);
         }
@@ -209,27 +221,26 @@ public class ResponseDataUtilities {
     }
 
     public static JsonArray getPayloadData(Long runId, Logger logger) throws Exception {
-        logger.info("Getting all payload data for runId: " + runId);
-        String encodedData = FileUtilities.readFromFile(runId);
-        if (encodedData == null || encodedData.isEmpty()) {
+        logger.info("Getting payload data for runId: " + runId);
+        String payload = FileUtilities.readPayloadFromFile(runId);
+        if (payload == null || payload.isEmpty()) {
             logger.info("Payload data is not present for runId: " + runId);
             return new JsonArray();
         }
-
-        String json = new String(Base64.getDecoder().decode(encodedData));
+        logger.info("Got payload data for runId: " + runId + ", payload: " + payload);
         try {
-            JsonObject data = gson.fromJson(json, JsonObject.class);
-            if (data != null && data.has("payload")) {
-                logger.info("Got all payload data for runId: " + runId + ", data: " + data);
-                return data.getAsJsonArray("payload");
+            JsonElement parsed = gson.fromJson(payload, JsonElement.class);
+            if (parsed.isJsonArray()) {
+                return parsed.getAsJsonArray();
             }
+            JsonArray result = new JsonArray();
+            result.add(parsed);
+            return result;
         } catch (JsonParseException e) {
-            
-            logger.info("Failed to parse payload data for runId: " + runId + " with exception: " + e.getMessage());
-            throw new Exception(e);
+            JsonArray result = new JsonArray();
+            result.add(payload);
+            return result;
         }
-        logger.info("Failed to get any payload data for runId: " + runId);
-        throw new Exception("Failed to get any payload data for runId: " + runId);  
     }
 
     public static int getResponseTime(Long runId, Logger logger) throws Exception {
@@ -237,7 +248,7 @@ public class ResponseDataUtilities {
         String encodedData = FileUtilities.readFromFile(runId);
         if (encodedData == null || encodedData.isEmpty()) {
             logger.info("Response time data is not present for runId: " + runId);
-              throw new Exception("Failed to get any response time for runId: " + runId); 
+            throw new Exception("Failed to get any response time for runId: " + runId);
 
         }
 
@@ -250,13 +261,13 @@ public class ResponseDataUtilities {
                 return responseTime;
             }
         } catch (JsonParseException e) {
-            
-            logger.info("Failed to parse response time data for runId: " + runId + " with exception: " + e.getMessage());   
+
+            logger.info("Failed to parse response time data for runId: " + runId + " with exception: " + e.getMessage());
             throw new Exception(e);
         }
         logger.info("Failed to get any response time for runId: " + runId);
-        throw new Exception("Failed to get any response time for runId: " + runId); 
+        throw new Exception("Failed to get any response time for runId: " + runId);
 
-                
+
     }
 }

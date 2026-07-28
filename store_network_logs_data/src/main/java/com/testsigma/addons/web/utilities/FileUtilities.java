@@ -26,6 +26,36 @@ public class FileUtilities {
         }
     }
 
+    private static String getPayloadFileName(Long runId) {
+        return folderPath + "/" + runId + "_payload";
+    }
+
+    public static void writePayloadToFile(Long runId, String payload) throws Exception {
+        String fileName = getPayloadFileName(runId);
+        File file = new File(fileName);
+        try {
+            File parentDir = file.getParentFile();
+            if (parentDir != null && !parentDir.exists()) {
+                if (!parentDir.mkdirs()) {
+                    throw new IOException("Failed to create directory: " + parentDir);
+                }
+            }
+            FileUtils.writeStringToFile(file, payload, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new Exception(e);
+        }
+    }
+
+    public static String readPayloadFromFile(Long runId) {
+        String fileName = getPayloadFileName(runId);
+        File file = new File(fileName);
+        try {
+            return FileUtils.readFileToString(file, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
     public static void writeToFile(Long runId, String content) throws Exception {
         String fileName = getFileName(runId);
         File file = new File(fileName);
