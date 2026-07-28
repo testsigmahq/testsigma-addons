@@ -50,12 +50,10 @@ public class VerifyImageContent extends WindowsAdvancedAction {
             int logicalScreenH = logicalScreen.height;
             logger.info("Logical screen size (Toolkit): " + logicalScreenW + "x" + logicalScreenH);
 
-            // Robot.createScreenCapture returns physical pixels on HiDPI displays
-            Robot robot = new Robot();
-            BufferedImage desktopCapture = robot.createScreenCapture(new Rectangle(logicalScreen));
+            BufferedImage desktopCapture = captureScreenshotWithRobot();
             int captureW = desktopCapture.getWidth();
             int captureH = desktopCapture.getHeight();
-            logger.info("Robot desktop capture size (physical px): " + captureW + "x" + captureH);
+            logger.info("Robot desktop capture size: " + captureW + "x" + captureH);
 
             // Display scale factor: physical / logical
             double displayScaleX = (double) captureW / logicalScreen.width;
@@ -123,5 +121,19 @@ public class VerifyImageContent extends WindowsAdvancedAction {
             AiActionUtils.deleteQuietly(screenshotFile);
             AiActionUtils.deleteQuietly(finalAnnotatedFile);
         }
+    }
+
+    private BufferedImage captureScreenshotWithRobot() throws AWTException {
+        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+        Robot robot = new Robot();
+        BufferedImage shot = robot.createScreenCapture(new Rectangle(screen));
+        if (shot.getWidth() != screen.width || shot.getHeight() != screen.height) {
+            logger.info(String.format(
+                    "Robot capture %dx%d differs from logical screen %dx%d (HiDPI) — resizing to " +
+                            "logical size so coordinates match the AI coords.",
+                    shot.getWidth(), shot.getHeight(), screen.width, screen.height));
+            shot = AiActionUtils.resizeImage(shot, screen.width, screen.height);
+        }
+        return shot;
     }
 }

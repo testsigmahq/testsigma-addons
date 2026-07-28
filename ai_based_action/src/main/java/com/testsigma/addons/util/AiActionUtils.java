@@ -12,6 +12,7 @@ import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -23,6 +24,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -276,6 +278,23 @@ public class AiActionUtils {
             "You are a UI verification assistant. Given a desktop application screenshot, determine whether " +
                     "the described content or condition is present and visible.\n\n" +
                     VERIFY_STEP1 + VERIFY_STEP2 + VERIFY_OUTPUT_FORMAT;
+
+    // ── Element-text verify prompt (no screenshot; pure text-in/text-out) ──
+
+    public static final String VERIFY_ELEMENT_TEXT_PROMPT =
+            "You are a text verification assistant. You are given the ACTUAL TEXT extracted from a UI element " +
+                    "and a VERIFICATION PROMPT describing what that text should be or contain.\n\n" +
+                    "STEP 1 — Compare the actual element text against the verification prompt:\n" +
+                    "  Carefully read the actual element text and the verification prompt.\n" +
+                    "  Judge whether the actual text satisfies what the prompt describes — this may call for an " +
+                    "exact match, a partial/contains match, a format/pattern check, or any other condition the " +
+                    "prompt asks for.\n" +
+                    "  Base your judgement only on the given text; do not assume anything that isn't stated.\n\n" +
+                    "OUTPUT FORMAT — strict JSON only, no markdown, no explanation:\n" +
+                    "If the actual text satisfies the prompt:\n" +
+                    "  {\"verified\": true, \"confidence\": <0-100>, \"description\": \"<why it matches>\"}\n" +
+                    "If it does NOT satisfy the prompt:\n" +
+                    "  {\"verified\": false, \"confidence\": <0-100>, \"description\": \"<why it does not match>\"}\n\n";
 
     // ── Scroll-verify prompts (multi-screenshot) ──
 
@@ -542,6 +561,30 @@ public class AiActionUtils {
             logger.info("Fallback AI response: " + response);
         }
         return response;
+    }
+
+    /** Builds the full AI prompt and invokes the AI service with no attached files (pure text in/out). */
+    public static String invokeAiTextOnly(AI ai, String basePrompt, String query, Logger logger) throws Exception {
+        return invokeAiWithFiles(ai, Collections.emptyList(), basePrompt, query, logger);
+    }
+
+    /**
+     * Extracts the visible text of an element, falling back to common text-bearing attributes
+     * when {@code getText()} returns blank — native mobile elements (Android/iOS) frequently
+     * carry their label in an attribute (e.g. {@code content-desc}) rather than the DOM text node.
+     */
+    public static String extractElementText(WebElement webElement) {
+        String text = webElement.getText();
+        if (text != null && !text.trim().isEmpty()) {
+            return text.trim();
+        }
+        for (String attribute : new String[]{"text", "value", "innerText", "content-desc", "label"}) {
+            String attrValue = webElement.getAttribute(attribute);
+            if (attrValue != null && !attrValue.trim().isEmpty()) {
+                return attrValue.trim();
+            }
+        }
+        return text == null ? "" : text.trim();
     }
 
     private static boolean isBlankOrEmptyJson(String response) {
