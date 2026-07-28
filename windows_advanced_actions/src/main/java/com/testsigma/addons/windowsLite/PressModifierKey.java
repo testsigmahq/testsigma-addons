@@ -1,9 +1,10 @@
-package com.testsigma.addons.windowsAdvanced;
+package com.testsigma.addons.windowsLite;
 
-import com.testsigma.addons.util.ScreenshotUtils;
 import com.testsigma.addons.util.KeyboardUtils;
+import com.testsigma.addons.util.ScreenshotUtils;
+import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
-import com.testsigma.sdk.WindowsAdvancedAction;
+import com.testsigma.sdk.WindowsAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.TestStepResult;
@@ -16,10 +17,10 @@ import java.awt.*;
 @Action(actionText = "Press a modifier key key-type",
         description = "This action allows you to press a modifier key on the keyboard. " +
                 "This works only for local executions",
-        applicationType = com.testsigma.sdk.ApplicationType.WINDOWS_ADVANCED,
+        applicationType = ApplicationType.WINDOWS,
         displayName = "Press a Modifier Key",
         useCustomScreenshot = true)
-public class PressModifierKey extends WindowsAdvancedAction {
+public class PressModifierKey extends WindowsAction {
 
     @TestData(reference = "key-type", allowedValues = {"Alt", "BackSpace", "CapsLock", "Ctrl", "Delete", "Down",
             "Enter", "Esc", "Left", "Right", "Shift", "Tab", "Up", "WINDOW"})

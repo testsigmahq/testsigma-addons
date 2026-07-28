@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.testsigma.addons</groupId>
     <artifactId>windows_advanced_actions</artifactId>
-    <version>1.0.23</version>
+    <version>1.0.38</version>
     <packaging>jar</packaging>
 
     <properties>

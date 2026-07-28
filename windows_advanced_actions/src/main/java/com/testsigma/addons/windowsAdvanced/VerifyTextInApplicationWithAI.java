@@ -1,5 +1,7 @@
 package com.testsigma.addons.windowsAdvanced;
 
+import com.testsigma.addons.util.AiTextUtils;
+import com.testsigma.addons.util.ApproachConfig;
 import com.testsigma.addons.util.OCRTextPoint;
 import com.testsigma.addons.util.OCRUtils;
 import com.testsigma.addons.util.ScreenshotUtils;
@@ -14,28 +16,27 @@ import java.io.File;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-@Action(actionText = "verify that the text text-to-verify is present in opened application " +
-        "and store result in runtime variable result-variable-name",
+
+@Action(actionText = "verify that the text text-to-verify is present in the screen",
         description = "This action verifies that the specified text is present in the opened application" +
-                " using OCR API capabilities. " +
                 "This works only for local executions",
         applicationType = com.testsigma.sdk.ApplicationType.WINDOWS_ADVANCED,
-        displayName = "Verify if text is present in the application and store result",
+        displayName = "Verify if text is present in application",
         useCustomScreenshot = true)
-public class VerifyTextInApplication extends WindowsAdvancedAction {
+public class VerifyTextInApplicationWithAI extends WindowsAdvancedAction {
 
     @TestData(reference = "text-to-verify")
     private com.testsigma.sdk.TestData testData;
 
-    @TestData(reference = "result-variable-name", isRuntimeVariable = true)
-    private com.testsigma.sdk.TestData testData1;
-
     @TestStepResult
     private com.testsigma.sdk.TestStepResult testStepResult;
 
+    @AI
+    private com.testsigma.sdk.AI ai;
+
     @Override
     protected Result execute() throws NoSuchElementException {
-        logger.info("=== windows advanced OCR Text Verification: Starting Execution ===");
+        logger.info("=== Text Verification (" + ApproachConfig.current() + "): Starting Execution ===");
 
         try {
             String expectedText = testData.getValue().toString();
@@ -49,10 +50,16 @@ public class VerifyTextInApplication extends WindowsAdvancedAction {
             File screenshotFile = saveScreenshotToFile(screenCapture, "application_screenshot");
             logger.info("Screenshot saved to: " + screenshotFile.getAbsolutePath());
 
-            List<OCRTextPoint> textPoints = OCRUtils.extractTextPoints(screenshotFile, logger);
-            logger.info("Found " + textPoints.size() + " text elements via OCR");
-
-            boolean textFound = OCRUtils.searchForText(textPoints, expectedText, logger);
+            boolean textFound;
+            if (ApproachConfig.isAi()) {
+                logger.info("Using AI approach for text verification");
+                textFound = AiTextUtils.isTextPresent(ai, screenshotFile, expectedText, logger);
+            } else {
+                logger.info("Using visual-server (OCR) approach for text verification");
+                List<OCRTextPoint> textPoints = OCRUtils.extractTextPoints(screenshotFile, logger);
+                logger.info("Found " + textPoints.size() + " text elements via OCR");
+                textFound = OCRUtils.searchForText(textPoints, expectedText, logger);
+            }
 
             ScreenshotUtils.uploadScreenshotToS3(testStepResult, screenshotFile, logger);
 
