@@ -121,7 +121,7 @@ public class KeyUtil {
     }
 
     public void releaseKey(Robot robot, int keyCode) throws Exception {
-        robot.keyPress(keyCode);
+        robot.keyRelease(keyCode);
     }
 
     public void pressKey(Robot robot, int keyCode) throws Exception {

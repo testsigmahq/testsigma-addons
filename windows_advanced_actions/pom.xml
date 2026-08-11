@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.testsigma.addons</groupId>
     <artifactId>windows_advanced_actions</artifactId>
-    <version>1.0.38</version>
+    <version>1.0.40</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -79,7 +79,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.17.0</version>
+            <version>3.18.0</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
