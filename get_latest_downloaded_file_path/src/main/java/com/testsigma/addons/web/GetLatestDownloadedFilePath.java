@@ -17,7 +17,10 @@ import java.io.File;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-@Action(actionText = "Get latest downloaded file path and store in runtime variable variable-name", description = "Retrieves the local path of the most recently downloaded file from the browser (Chrome/Edge) and stores it in a runtime variable.", applicationType = ApplicationType.WEB)
+@Action(actionText = "Get latest downloaded file path and store in runtime variable variable-name",
+        description = "Retrieves the local path of the most recently downloaded file from the browser" +
+                " (Chrome/Edge) and stores it in a runtime variable.",
+        applicationType = ApplicationType.WEB)
 public class GetLatestDownloadedFilePath extends WebAction {
     @TestData(reference = "variable-name", isRuntimeVariable = true)
     private com.testsigma.sdk.TestData runtimeVariable;
