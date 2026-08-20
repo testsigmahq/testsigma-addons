@@ -74,7 +74,13 @@ public class PDFUtils {
                 HttpEntity entity = EntityBuilder.create().setFile(file).build();
                 httpPut.setEntity(entity);
                 HttpResponse response = httpclient.execute(httpPut);
-                logger.info("Upload completed");
+                int statusCode = response.getStatusLine().getStatusCode();
+                org.apache.http.util.EntityUtils.consumeQuietly(response.getEntity());
+                if (statusCode < 200 || statusCode >= 300) {
+                    logger.info("Upload failed with status code: " + statusCode);
+                    return false;
+                }
+                logger.info("Upload completed with status code: " + statusCode);
                 return true;
             } catch (Exception e) {
                 logger.info("Exception while uploading custom screenshot to s3: " + ExceptionUtils.getStackTrace(e));
@@ -127,42 +133,39 @@ public class PDFUtils {
     }
 
     public int getPdfPageCount(File pdfFile) {
-        try {
-            PDDocument document = Loader.loadPDF(pdfFile);
-            int numberOfPagesInPdf = document.getNumberOfPages();
-            document.close();
-            return numberOfPagesInPdf;
+        try (PDDocument document = Loader.loadPDF(pdfFile)) {
+            return document.getNumberOfPages();
         } catch (IOException e) {
             logger.info("Exception while getting the number of pages in the pdf: " + ExceptionUtils.getStackTrace(e));
-            return -1;
+            throw new RuntimeException("Unable to read the pdf " + pdfFile.getName()
+                    + ", make sure it is a valid and non-encrypted pdf file.", e);
         }
     }
 
     public void pdfToImage(String pdfFilePath, String imageOutputDir, String type, int index) {
+        File pdfFile = null;
+        boolean isTempDownload = false;
         try {
             logger.info(String.format("Converting page %d in pdf to image and storing in directory %s",
                     index, imageOutputDir));
 
-            File pdfFile;
             if (pdfFilePath.startsWith("http://") || pdfFilePath.startsWith("https://")) {
                 String tempFileName = "temp_" + System.currentTimeMillis() + ".pdf";
                 pdfFile = downloadFromUrl(pdfFilePath, tempFileName);
+                isTempDownload = true;
                 logger.info("Downloaded S3 URL to temporary file: " + pdfFile.getAbsolutePath());
             } else {
                 pdfFile = new File(pdfFilePath);
             }
 
-            PDDocument document = Loader.loadPDF(pdfFile);
-            PDFRenderer pdfRenderer = new PDFRenderer(document);
-            BufferedImage bim = pdfRenderer.renderImageWithDPI(index - 1, 300);
-            ImageIOUtil.writeImage(bim, String.format("%s/%s_page_%d.png", imageOutputDir, type, index), 300);
-            document.close();
-
-            if (pdfFilePath.startsWith("http")) {
-                boolean deleted = pdfFile.delete();
-                if (deleted) {
-                    logger.info("Temporary PDF file deleted successfully");
+            try (PDDocument document = Loader.loadPDF(pdfFile)) {
+                if (index < 1 || index > document.getNumberOfPages()) {
+                    throw new RuntimeException(String.format("Requested page %d is outside the pdf page range 1-%d",
+                            index, document.getNumberOfPages()));
                 }
+                PDFRenderer pdfRenderer = new PDFRenderer(document);
+                BufferedImage bim = pdfRenderer.renderImageWithDPI(index - 1, 300);
+                ImageIOUtil.writeImage(bim, String.format("%s/%s_page_%d.png", imageOutputDir, type, index), 300);
             }
 
             logger.info("Pdf to image conversion successful for page " + index);
@@ -171,6 +174,10 @@ public class PDFUtils {
             logger.info(String.format("Exception while converting pdf %s into pages: %s", pdfFilePath,
                     ExceptionUtils.getStackTrace(e)));
             throw new RuntimeException(message);
+        } finally {
+            if (isTempDownload && pdfFile != null && pdfFile.delete()) {
+                logger.info("Temporary PDF file deleted successfully");
+            }
         }
     }
 

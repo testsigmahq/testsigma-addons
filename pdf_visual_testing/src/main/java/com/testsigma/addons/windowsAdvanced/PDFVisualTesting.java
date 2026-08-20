@@ -2,8 +2,8 @@ package com.testsigma.addons.windowsAdvanced;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testsigma.addons.web.util.Constants;
-import com.testsigma.addons.web.util.Coordinate;
 import com.testsigma.addons.web.util.ResponseObject;
+import com.testsigma.addons.windowsAdvanced.util.PDFUtils;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
 import com.testsigma.sdk.WindowsAdvancedAction;
@@ -12,15 +12,7 @@ import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.TestStepResult;
 import lombok.Data;
 import okhttp3.*;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.entity.EntityBuilder;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
@@ -28,12 +20,13 @@ import org.apache.pdfbox.tools.imageio.ImageIOUtil;
 import org.openqa.selenium.NoSuchElementException;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -57,12 +50,6 @@ public class PDFVisualTesting extends WindowsAdvancedAction {
     @TestStepResult
     private com.testsigma.sdk.TestStepResult testStepResult;
 
-
-    RequestConfig config = RequestConfig.custom()
-            .setSocketTimeout(10 * 60 * 1000)
-            .setConnectionRequestTimeout(60 * 1000)
-            .setConnectTimeout(60 * 1000)
-            .build();
     ObjectMapper mapper = new ObjectMapper();
     ResponseObject responseObject = new ResponseObject();
 
@@ -72,13 +59,14 @@ public class PDFVisualTesting extends WindowsAdvancedAction {
         Result result = Result.SUCCESS;
         String basePdfPath = basePdfPath_.getValue().toString();
         String actualPdfPath = actualPdfPath_.getValue().toString();
+        PDFUtils pdfUtils = new PDFUtils(logger);
 
         int page;
         try {
-            File basePDF = urlToFileConverter("base.pdf", basePdfPath);
-            File actualPDF = urlToFileConverter("actual.pdf", actualPdfPath);
+            File basePDF = pdfUtils.urlToFileConverter("base.pdf", basePdfPath);
+            File actualPDF = pdfUtils.urlToFileConverter("actual.pdf", actualPdfPath);
 
-            if (!basePDF.getName().endsWith(".pdf") && !actualPDF.getName().endsWith(".pdf")) {
+            if (!basePDF.getName().endsWith(".pdf") || !actualPDF.getName().endsWith(".pdf")) {
                 setErrorMessage("Unsupported file types give only pdf files as input");
                 throw new RuntimeException("Unsupported file types");
             }
@@ -122,8 +110,12 @@ public class PDFVisualTesting extends WindowsAdvancedAction {
             logger.info("No errors in the directories");
             logger.info("Initiating visual testing");
             boolean compareResult = true;
-            BufferedImage combined = null;
 
+            // Each differing page gets its own merged side-by-side image (a fresh buffer per
+            // page, not one buffer overwritten across pages), then all of them are stacked into
+            // a single vertical strip below - otherwise only the last differing page would
+            // survive in the uploaded screenshot, cropped to that page's own dimensions.
+            List<BufferedImage> differingPageImages = new ArrayList<>();
             for (page = 1; page <= actualPdfDirImages.length; page++) {
                 File file1 = new File(basePdfDirectoryPath + File.separator + "input1_page_" + page + ".png");
                 File file2 = new File(actualPdfDirectoryPath + File.separator + "input2_page_" + page + ".png");
@@ -134,7 +126,8 @@ public class PDFVisualTesting extends WindowsAdvancedAction {
                     boolean apiResult = performApiCall(file1, file2, page);
                     if (!apiResult) {
                         compareResult = false;
-                        combined = mergeImagesAndHighlightDifferences(baseImage , actualImage, combined, responseObject.getDiff_coordinates());
+                        differingPageImages.add(pdfUtils.mergeImagesAndHighlightDifferences(baseImage, actualImage,
+                                null, responseObject.getDiff_coordinates()));
                     }
                 }
             }
@@ -142,16 +135,17 @@ public class PDFVisualTesting extends WindowsAdvancedAction {
 
             // if there are no changes in the pdf, uploading the first page of the actualPdf
             if (compareResult) {
-                boolean uploadS3Result = uploadFile(s3Url, actualPdfDirImages[0].getAbsolutePath());
+                boolean uploadS3Result = pdfUtils.uploadFile(s3Url, actualPdfDirImages[0].getAbsolutePath());
                 if (!uploadS3Result) {
                     logger.info("Error occurred while uploading combined image to s3, screenshot might not be displayed");
                 }
-                System.out.println("Upload complete.");
+                logger.info("Upload complete.");
                 setSuccessMessage("Successfully verified that the base pdf and actual pdf is same by visual testing. (Note: Step screenshot contains the image of actual PDF)");
             } else {
-                // uploading the screenshot of the image where we encounter the difference (side-by-side).
+                // uploading the screenshot of every differing page, stacked vertically.
+                BufferedImage combined = stackVertically(differingPageImages);
                 ImageIO.write(combined, "png", combinedImage);
-                boolean uploadS3Result = uploadFile(s3Url, combinedImage.getAbsolutePath());
+                boolean uploadS3Result = pdfUtils.uploadFile(s3Url, combinedImage.getAbsolutePath());
                 if (!uploadS3Result) {
                     logger.info("Error occurred while uploading combined image to S3, screenshot might not be displayed");
                 }
@@ -169,38 +163,37 @@ public class PDFVisualTesting extends WindowsAdvancedAction {
         return result;
     }
 
-
-    public File urlToFileConverter(String fileName, String url) {
-        try {
-            if (url.startsWith("https://") || url.startsWith("http://")) {
-                logger.info("Given is s3 url ...File name:" + fileName);
-                URL urlObject = new URL(url);
-                File tempFile = File.createTempFile(fileName.split("\\.")[0], "." + fileName.split("\\.")[1]);
-                FileUtils.copyURLToFile(urlObject, tempFile);
-                logger.info("Temp file created with name for s3 file" + tempFile.getName() + " at path " + tempFile.getAbsolutePath());
-                return tempFile;
-            } else {
-                logger.info("Given is local file path..");
-                return new File(url);
-            }
-        } catch (Exception e) {
-            setErrorMessage("Unable to access the given pdfs, please check the given inputs.");
-            logger.info("Error while accessing: " + url);
-            throw new RuntimeException("Unable to access pdfs");
+    private BufferedImage stackVertically(List<BufferedImage> images) {
+        int width = 0;
+        int height = 0;
+        for (BufferedImage image : images) {
+            width = Math.max(width, image.getWidth());
+            height += image.getHeight();
         }
+        BufferedImage combined = new BufferedImage(Math.max(width, 1), Math.max(height, 1), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = combined.createGraphics();
+        g2d.setColor(Color.WHITE);
+        g2d.fillRect(0, 0, combined.getWidth(), combined.getHeight());
+        int y = 0;
+        for (BufferedImage image : images) {
+            g2d.drawImage(image, 0, y, null);
+            y += image.getHeight();
+        }
+        g2d.dispose();
+        return combined;
     }
 
     public void pdfToImages(String pdfFilePath, String imageOutputDir, String type) {
         try {
             logger.info(String.format("Converting every page in pdf at %s path to image and storing those images" +
                     " in directory %s", pdfFilePath, imageOutputDir));
-            PDDocument document = Loader.loadPDF(new File(pdfFilePath));
-            PDFRenderer pdfRenderer = new PDFRenderer(document);
-            for (int page = 0; page < document.getNumberOfPages(); ++page) {
-                BufferedImage bim = pdfRenderer.renderImageWithDPI(page, 300);
-                ImageIOUtil.writeImage(bim, String.format("%s/%s_page_%d.png", imageOutputDir, type, page + 1), 300);
+            try (PDDocument document = Loader.loadPDF(new File(pdfFilePath))) {
+                PDFRenderer pdfRenderer = new PDFRenderer(document);
+                for (int page = 0; page < document.getNumberOfPages(); ++page) {
+                    BufferedImage bim = pdfRenderer.renderImageWithDPI(page, 300);
+                    ImageIOUtil.writeImage(bim, String.format("%s/%s_page_%d.png", imageOutputDir, type, page + 1), 300);
+                }
             }
-            document.close();
             logger.info("Pdf to image conversion successful for the pdf " + pdfFilePath);
         } catch (IOException e) {
             String message = "Unable to convert pdf into image pages";
@@ -238,97 +231,35 @@ public class PDFVisualTesting extends WindowsAdvancedAction {
                     .addHeader("Authorization", "Bearer " + Constants.API_TOKEN)
                     .build();
             logger.info("Making api call to visual server");
-            Response response = client.newCall(request).execute();
-            if (response.isSuccessful()) {
-                logger.info("Response is successful");
-                if (response.body() != null) {
-                    logger.info("Response body received");
-                    String responseBody = response.body().string();
-                    logger.info(String.format("Response body for page %s testing: %s", page, responseBody));
-                    responseObject = mapper.readValue(responseBody, ResponseObject.class);
-                    logger.info("Deserialized the response body");
-                    double percentage = responseObject.getPer_similar();
-                    logger.info("Percentage similarity: " + percentage * 100);
-                    return percentage == 1 && responseObject.getDiff_coordinates().isEmpty();
+            try (Response response = client.newCall(request).execute()) {
+                if (response.isSuccessful()) {
+                    logger.info("Response is successful");
+                    if (response.body() != null) {
+                        logger.info("Response body received");
+                        String responseBody = response.body().string();
+                        logger.info(String.format("Response body for page %s testing: %s", page, responseBody));
+                        responseObject = mapper.readValue(responseBody, ResponseObject.class);
+                        logger.info("Deserialized the response body");
+                        double percentage = responseObject.getPer_similar();
+                        logger.info("Percentage similarity: " + percentage * 100);
+                        return percentage == 1 && responseObject.getDiff_coordinates().isEmpty();
+                    } else {
+                        setErrorMessage(String.format("Visual testing failed at <b>page %s</b> no response body " +
+                                "present in the visual test response", page));
+                        throw new RuntimeException("Visual testing failed with no response body");
+                    }
                 } else {
-                    setErrorMessage(String.format("Visual testing failed at <b>page %s</b> no response body " +
-                            "present in the visual test response", page));
-                    throw new RuntimeException("Visual testing failed with no response body");
+                    setErrorMessage(String.format("Visual testing failed at <b>page %s</b> error occurred internally",
+                            page));
+                    throw new RuntimeException("Visual testing failed with internal server error");
                 }
-            } else {
-                setErrorMessage(String.format("Visual testing failed at <b>page %s</b> error occurred internally",
-                        page));
-                throw new RuntimeException("Visual testing failed with internal server error");
             }
         } catch (IOException e) {
-
             logger.info(String.format("Exception occurred while performing visual test at page %s : %s", page,
                     ExceptionUtils.getStackTrace(e)));
             setErrorMessage(String.format("Unable to perform visual testing for : <b>page %s</b>", page));
             throw new RuntimeException("Error occurred while performing visual test at page " + page);
         }
     }
-
-    private boolean uploadFile(String s3SignedURL, String localPath) {
-        logger.debug("s3SignedURL - " + s3SignedURL);
-        logger.debug("localPath - " + localPath);
-        boolean localUrlExists = new File(localPath).exists();
-        if (localUrlExists) {
-            logger.info(String.format("Uploading test asset to storage, presigned-URL:%s, localFilePath:%s", s3SignedURL, localPath));
-            try (CloseableHttpClient httpclient = HttpClients.custom().setDefaultRequestConfig(config).build()) {
-                HttpPut httpPut = new HttpPut(s3SignedURL);
-
-                File file = new File(localPath);
-                HttpEntity entity = EntityBuilder.create().setFile(file).build();
-                httpPut.setEntity(entity);
-                HttpResponse response = httpclient.execute(httpPut);
-                logger.info("Response from s3: " + response.getStatusLine().getStatusCode());
-                logger.info("Upload completed");
-                return true;
-            } catch (Exception e) {
-                logger.info("Exception while uploading custom screenshot to s3: "+ExceptionUtils.getStackTrace(e));
-                return false;
-            }
-        }
-        else {
-            logger.info("Local path does not exist");
-            return false;
-        }
-    }
-
-    private BufferedImage mergeImagesAndHighlightDifferences(BufferedImage baseImage, BufferedImage overlayImage, BufferedImage combined, List<Coordinate> coordinates) {
-        int height = Math.max(baseImage.getHeight(), overlayImage.getHeight());
-        int width = baseImage.getWidth() + overlayImage.getWidth();
-
-        if (combined == null) {
-            combined = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        }
-
-        Graphics2D g2d = combined.createGraphics();
-        g2d.setColor(Color.WHITE); // Optional: Set a background color
-        g2d.fillRect(0, 0, width, height); // Optional: Fill the background
-
-        g2d.drawImage(baseImage, 0, 0, null);
-        g2d.drawImage(overlayImage, baseImage.getWidth(), 0, null);
-
-        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.2f)); // 0.5f for 50% transparency
-
-        // Set the color for filling rectangles
-        g2d.setColor(new Color(255, 0, 0)); // Red color
-
-        // Iterate over the list of coordinates and fill rectangles
-        for (Coordinate coordinate : coordinates) {
-            g2d.fillRect(coordinate.getX(), coordinate.getY(), coordinate.getW(), coordinate.getH());
-        }
-
-        for (Coordinate coordinate : coordinates) {
-            g2d.fillRect(coordinate.getX() + baseImage.getWidth(), coordinate.getY(), coordinate.getW(), coordinate.getH());
-        }
-
-        g2d.dispose();
-
-        return combined;
-    }
-
 
 }
