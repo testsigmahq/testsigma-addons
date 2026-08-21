@@ -2,6 +2,7 @@ package com.testsigma.addons.WindowsAdvanced;
 
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.Result;
+import com.testsigma.sdk.StepActionType;
 import com.testsigma.sdk.WindowsAdvancedAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
@@ -20,9 +21,10 @@ import java.util.Set;
                 + "compare numerically when both values are numeric, otherwise lexicographically. "
                 + "'contains' and 'does not contains' always operate on the raw text of both values.",
         applicationType = ApplicationType.WINDOWS_ADVANCED,
+        actionType = StepActionType.WHILE_LOOP,
         displayName = "Verify if strings match the condition",
         useCustomScreenshot = false)
-public class VerifyIfStringsMatchTheOperator extends WindowsAdvancedAction {
+public class VerifyIfStringsMatchTheOperatorWhileLoop extends WindowsAdvancedAction {
 
     private static final String OP_EQ = "==";
     private static final String OP_NEQ = "!=";
@@ -74,6 +76,10 @@ public class VerifyIfStringsMatchTheOperator extends WindowsAdvancedAction {
         if (!SUPPORTED_OPERATORS.contains(op)) {
             setErrorMessage("Unsupported operator: '" + operator.getValue()
                     + "'. Supported operators: " + SUPPORTED_OPERATORS);
+            // NOTE: in a WHILE_LOOP action this looks identical to a normal
+            // "condition is false" exit. If the SDK exposes a distinct error
+            // result, prefer it here so config mistakes are not mistaken for a
+            // clean loop termination.
             return Result.FAILED;
         }
 
