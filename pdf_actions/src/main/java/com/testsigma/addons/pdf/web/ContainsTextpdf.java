@@ -6,6 +6,8 @@ import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import lombok.Data;
+
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.testng.Assert;
@@ -43,18 +45,21 @@ public class ContainsTextpdf extends WebAction {
             fileParse = new BufferedInputStream(is);   //reads data from file
             doc = PDDocument.load(fileParse); //loads the file as pdf
             sb.append(new PDFTextStripper().getText(doc));
-            Assert.assertTrue(sb.toString().contains((CharSequence) testData.getValue()));
-            setSuccessMessage(String.format(SUCCESS_MESSAGE + " " + testData.getValue()));
-           return Result.SUCCESS;
-        } catch (IOException e) {
-        	
-            e.printStackTrace();
-            setErrorMessage(String.format(ERROR_MESSAGE + "" + testData.getValue() + "   " + "Cause of Exception:" + e.getCause().toString()));
-            return Result.FAILED;
-        }
-        
-
-       
+            if (sb.toString().contains((CharSequence) testData.getValue())) {
+            	setSuccessMessage(SUCCESS_MESSAGE + " " + testData.getValue());
+            	logger.info(SUCCESS_MESSAGE + " " + testData.getValue());
+                return Result.SUCCESS;
+            } else {
+            	setErrorMessage(ERROR_MESSAGE + " " + testData.getValue());
+            	logger.warn(ERROR_MESSAGE + " " + testData.getValue() +":" +sb.toString());
+                return Result.FAILED;
+            }
+        } catch (Exception e) {
+    		String errorMessage = ExceptionUtils.getStackTrace(e);
+    		setErrorMessage(ERROR_MESSAGE + "" + testData.getValue() + "   " + "Cause of Exception:" + errorMessage);
+    		logger.warn(ERROR_MESSAGE + "" + testData.getValue() + "   " + "Cause of Exception:" + errorMessage);
+    		return Result.FAILED;
+    	} 
     }
 }
   
