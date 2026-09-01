@@ -64,9 +64,10 @@ public class VerifyIfCellValuesInExcel extends WebAction {
             try (FileInputStream fis1 = new FileInputStream(excelFile1);
                  XSSFWorkbook workbook1 = new XSSFWorkbook(fis1)) {
                 
-                if (sheetIdx >= workbook1.getNumberOfSheets()) {
+                if (sheetIdx < 0 || sheetIdx >= workbook1.getNumberOfSheets()) {
                     setErrorMessage("Sheet index " + sheetIdx + " is out of range for Excel file 1. " +
-                            "File contains only " + workbook1.getNumberOfSheets() + " sheet(s).");
+                            "Valid range is 0 to " + (workbook1.getNumberOfSheets() - 1) + " (0-based index). " +
+                            "File contains " + workbook1.getNumberOfSheets() + " sheet(s).");
                     return com.testsigma.sdk.Result.FAILED;
                 }
                 
@@ -79,9 +80,10 @@ public class VerifyIfCellValuesInExcel extends WebAction {
             try (FileInputStream fis2 = new FileInputStream(excelFile2);
                  XSSFWorkbook workbook2 = new XSSFWorkbook(fis2)) {
                 
-                if (sheetIdx >= workbook2.getNumberOfSheets()) {
+                if (sheetIdx < 0 || sheetIdx >= workbook2.getNumberOfSheets()) {
                     setErrorMessage("Sheet index " + sheetIdx + " is out of range for Excel file 2. " +
-                            "File contains only " + workbook2.getNumberOfSheets() + " sheet(s).");
+                            "Valid range is 0 to " + (workbook2.getNumberOfSheets() - 1) + " (0-based index). " +
+                            "File contains " + workbook2.getNumberOfSheets() + " sheet(s).");
                     return com.testsigma.sdk.Result.FAILED;
                 }
                 
