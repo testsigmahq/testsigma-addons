@@ -1,20 +1,20 @@
 package com.web;
 
 import com.testsigma.sdk.ApplicationType;
+import com.testsigma.sdk.Result;
 import com.testsigma.sdk.WebAction;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.RunTimeData;
 import com.testsigma.sdk.annotation.TestData;
 import lombok.Data;
+import utils.GmailUtils;
 
 import javax.mail.*;
-import java.util.Properties;
 
 @Data
 @Action(actionText = "Get complete email content from Gmail using EmailID and Password and store it in a runtime variable var1",
         description = "Get complete email content from Gmail using EmailID and Password and store it in a runtime variable var1",
         applicationType = ApplicationType.WEB)
-
 public class GetGmailContent extends WebAction {
 
     @TestData(reference = "EmailID")
@@ -27,85 +27,56 @@ public class GetGmailContent extends WebAction {
     private com.testsigma.sdk.RunTimeData runTimeData;
 
     @Override
-    public com.testsigma.sdk.Result execute() {
-
-        com.testsigma.sdk.Result result = com.testsigma.sdk.Result.SUCCESS;
+    public Result execute() {
         logger.info("Initiating execution");
-        String host = "imap.gmail.com";
-        String port = "993";
-        String username = EmailID.getValue().toString();
-        String password = Password.getValue().toString();
+        String username = GmailUtils.sanitizeUsername(EmailID.getValue().toString());
+        String password = GmailUtils.sanitizePassword(Password.getValue().toString());
         logger.info("username: " + username);
-        logger.info("password: " + password);
-        Properties props = new Properties();
-        props.setProperty("mail.store.protocol", "imaps");
-        props.setProperty("mail.imaps.host", host);
-        props.setProperty("mail.imaps.port", port);
-        props.setProperty("mail.imaps.auth", "true");
-        props.setProperty("mail.imaps.starttls.enable", "true");
-        props.setProperty("mail.imap.ssl.protocols", "TLSv1.2");
-        props.setProperty("mail.imap.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
 
-        logger.info("properties fixed");
+        Store store = null;
+        Folder inbox = null;
         try {
-
-            Session session = Session.getInstance(props, new Authenticator() {
-                protected PasswordAuthentication getPasswordAuthentication() {
-                    return new PasswordAuthentication(username, password);
-                }
-            });
-            logger.info("");
-
-            Store store = session.getStore("imaps");
-            store.connect(host, username, password);
-            logger.info("store ");
-            Folder inbox = store.getFolder("INBOX");
+            store = GmailUtils.connectToGmail(username, password, logger);
+            inbox = store.getFolder("INBOX");
             inbox.open(Folder.READ_ONLY);
             Message[] messages = inbox.getMessages();
             logger.info("messages: " + messages.length);
-            Message latestMessage = messages[messages.length - 1];
-            logger.info("latestMessage" + latestMessage.getContent());
-            Object content = latestMessage.getContent();
-            BodyPart bodyPart = null;
-            String FullMessage = null;
-            if (content instanceof String) {
-                System.out.println(content);
-                FullMessage = (String) content;
 
-            } else if (content instanceof Multipart) {
-                // content is already a Multipart object, so just cast it and process the body part
-                Multipart multipart = (Multipart) content;
-                bodyPart = multipart.getBodyPart(0);
-                Object bodycontent = bodyPart.getContent();
-                if (bodycontent instanceof String) {
-                    FullMessage = (String) bodycontent;
-
-                } else if (bodycontent instanceof Multipart) {
-                    Multipart bodymultipart = (Multipart) bodycontent;
-                    logger.info("Body content" + bodymultipart.getBodyPart(0).getContent());
-                    logger.info("Body content type:" + bodymultipart.getContentType());
-                    FullMessage = (String) bodymultipart.getBodyPart(0).getContent();
-                }
-            } else {
-                System.out.println("No content");
-                logger.info("NO CONTENT");
+            if (messages.length == 0) {
+                setErrorMessage("No emails found in the INBOX for '" + username + "'. The mailbox is empty.");
+                return Result.FAILED;
             }
 
-            logger.info(FullMessage);
+            Message latestMessage = messages[messages.length - 1];
+            logger.info("latestMessage subject: " + latestMessage.getSubject());
+
+            String fullMessage = GmailUtils.extractContent(latestMessage.getContent());
+
+            if (fullMessage == null || fullMessage.trim().isEmpty()) {
+                setErrorMessage("Latest email (Subject: " + latestMessage.getSubject() +
+                        ") was found but the email body is empty or could not be read.");
+                return Result.FAILED;
+            }
+
+            logger.info("Extracted content length: " + fullMessage.length());
             runTimeData = new com.testsigma.sdk.RunTimeData();
-            runTimeData.setValue(FullMessage);
+            runTimeData.setValue(fullMessage);
             runTimeData.setKey(var1.getValue().toString());
-            setSuccessMessage("Email content stored in runtime variable: " + var1.getValue().toString() + "and value: " + FullMessage);
+            setSuccessMessage("Email content stored in runtime variable: " + var1.getValue().toString() +
+                    " and value: " + fullMessage);
+            return Result.SUCCESS;
 
-            inbox.close(false);
-            store.close();
-
+        } catch (AuthenticationFailedException e) {
+            setErrorMessage("Gmail authentication failed for '" + username +
+                    "'. Please verify: 1) App password is valid 2) 2-Step Verification is ON 3) IMAP is enabled in Gmail settings. Error: " + e.getMessage());
+            logger.warn("Authentication failed: " + e.getMessage());
+            return Result.FAILED;
         } catch (Exception e) {
-
-            result = com.testsigma.sdk.Result.FAILED;
-            setErrorMessage("Could not retrieve the email content. The error is " + e.getMessage());
+            setErrorMessage("Failed to retrieve email content. Error: " + e.getMessage());
             logger.warn(e.getMessage());
+            return Result.FAILED;
+        } finally {
+            GmailUtils.closeQuietly(inbox, store);
         }
-        return result;
     }
 }
