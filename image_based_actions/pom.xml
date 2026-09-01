@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.testsigma.addons</groupId>
     <artifactId>image_based_actions</artifactId>
-    <version>1.0.16</version>
+    <version>1.0.17</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -67,6 +67,12 @@
             <version>3.17.0</version>
         </dependency>
 
+        <!-- Apache HTTP Client for S3 uploads -->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.14</version>
+        </dependency>
     </dependencies>
 
     <build>
