@@ -1,31 +1,22 @@
 package com.testsigma.addons.ios;
 
-import com.github.os72.protocjar.Protoc;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
-import com.google.gson.stream.JsonReader;
-import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.util.JsonFormat;
+import com.testsigma.addons.common.GrpcClientUtils;
 import com.testsigma.sdk.ApplicationType;
 import com.testsigma.sdk.IOSAction;
 import com.testsigma.sdk.Result;
 import com.testsigma.sdk.annotation.Action;
 import com.testsigma.sdk.annotation.TestData;
 import com.testsigma.sdk.annotation.RunTimeData;
-import io.grpc.CallOptions;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.MethodDescriptor;
-import io.grpc.protobuf.ProtoUtils;
-import io.grpc.stub.ClientCalls;
 import lombok.Data;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
@@ -33,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 @Data
 @Action(
         actionText = "Call gRPC service from proto file proto-file-path at url grpc-url for service service-name, method method-name with json request json-request and store response in variable-name",
-        description = "Dynamically calls a gRPC service using a .proto file and JSON request. Automatically generates descriptors at runtime and stores the JSON response in a runtime variable.",
+        description = "Dynamically calls a gRPC service using a .proto file and JSON request. Uses protoc's bundled standard well-known type imports, generates descriptors at runtime, and stores the JSON response in a runtime variable.",
         applicationType = ApplicationType.IOS
 )
 public class GrpcClientAction extends IOSAction {
@@ -66,32 +57,31 @@ public class GrpcClientAction extends IOSAction {
 
         try {
             File protoFile = new File(protoFilePath.getValue().toString());
-            String protoDir = protoFile.getParent();
+            String protoDir = protoFile.getParent() != null ? protoFile.getParent() : ".";
             String protoFileName = protoFile.getName();
 
-            tempDescriptorFile = generateDescriptor(protoDir, protoFileName);
+            tempDescriptorFile = GrpcClientUtils.generateDescriptor(protoDir, protoFileName, logger);
 
             Descriptors.MethodDescriptor methodDescriptor =
-                    loadServiceDescriptors(tempDescriptorFile, serviceName.getValue().toString(), methodName.getValue().toString());
+                    GrpcClientUtils.loadServiceDescriptors(tempDescriptorFile, serviceName.getValue().toString(), methodName.getValue().toString());
 
-            String rawJson = sanitizeJson(jsonRequest.getValue().toString());
+            String rawJson = GrpcClientUtils.sanitizeJson(jsonRequest.getValue().toString());
 
             DynamicMessage.Builder requestBuilder = DynamicMessage.newBuilder(methodDescriptor.getInputType());
             JsonFormat.parser().ignoringUnknownFields().merge(rawJson, requestBuilder);
             DynamicMessage requestMessage = requestBuilder.build();
 
-            channel = ManagedChannelBuilder.forTarget(grpcUrl.getValue().toString())
-                    .usePlaintext()
-                    .build();
-            MethodDescriptor<DynamicMessage, DynamicMessage> grpcMethod = buildGrpcMethod(methodDescriptor);
+            ManagedChannelBuilder<?> channelBuilder = GrpcClientUtils.buildChannel(grpcUrl.getValue().toString());
+            channel = channelBuilder.build();
+            MethodDescriptor<DynamicMessage, DynamicMessage> grpcMethod = GrpcClientUtils.buildGrpcMethod(methodDescriptor);
 
-            DynamicMessage responseMessage = performDynamicCall(channel, grpcMethod, requestMessage);
+            DynamicMessage responseMessage = GrpcClientUtils.performDynamicCall(channel, grpcMethod, requestMessage);
 
             String jsonResponse = JsonFormat.printer().print(responseMessage);
             runTimeData.setKey(variableName.getValue().toString());
             runTimeData.setValue(jsonResponse);
 
-            setSuccessMessage("Successfully called gRPC service and stored the response in runtime variable: " + variableName.getValue());
+            setSuccessMessage("Successfully called gRPC service and stored the response in runtime variable: " + variableName.getValue() + ", value: " + jsonResponse);
             return Result.SUCCESS;
 
         } catch (Exception e) {
@@ -111,84 +101,9 @@ public class GrpcClientAction extends IOSAction {
                 try {
                     Files.delete(tempDescriptorFile);
                 } catch (Exception e) {
-                    logger.warn("Failed to delete temporary descriptor file: " + tempDescriptorFile + " " + ExceptionUtils.getStackTrace(e));
+                    logger.warn("Failed to delete temporary descriptor file: " + tempDescriptorFile + e);
                 }
             }
-        }
-    }
-
-    private Path generateDescriptor(String protoDir, String protoFile) throws Exception {
-        Path tempFile = Files.createTempFile("descriptor", ".pb");
-
-        String[] args = new String[]{
-                "--proto_path=" + protoDir,
-                "--include_imports",
-                "--descriptor_set_out=" + tempFile.toAbsolutePath().toString(),
-                protoFile
-        };
-
-        logger.info("Executing embedded protoc with args: " + String.join(" ", args));
-
-        int exitCode = Protoc.runProtoc(args);
-        if (exitCode != 0) {
-            throw new RuntimeException("protoc compilation failed with exit code " + exitCode);
-        }
-        return tempFile;
-    }
-
-    private Descriptors.MethodDescriptor loadServiceDescriptors(Path descriptorPath, String serviceName, String methodName) throws Exception {
-        try (FileInputStream descriptorStream = new FileInputStream(descriptorPath.toFile())) {
-            DescriptorProtos.FileDescriptorSet descriptorSet = DescriptorProtos.FileDescriptorSet.parseFrom(descriptorStream);
-            if (descriptorSet.getFileCount() == 0) {
-                throw new RuntimeException("Descriptor set is empty. Check your proto file.");
-            }
-            DescriptorProtos.FileDescriptorProto fileDescriptorProto = descriptorSet.getFile(0);
-
-            Descriptors.FileDescriptor fileDescriptor = Descriptors.FileDescriptor.buildFrom(fileDescriptorProto, new Descriptors.FileDescriptor[]{});
-
-            Descriptors.ServiceDescriptor serviceDescriptor = fileDescriptor.findServiceByName(serviceName);
-            if (serviceDescriptor == null) {
-                throw new RuntimeException("Service not found: " + serviceName);
-            }
-
-            Descriptors.MethodDescriptor methodDescriptor = serviceDescriptor.findMethodByName(methodName);
-            if (methodDescriptor == null) {
-                throw new RuntimeException("Method not found: " + methodName);
-            }
-            return methodDescriptor;
-        }
-    }
-
-    private MethodDescriptor<DynamicMessage, DynamicMessage> buildGrpcMethod(Descriptors.MethodDescriptor methodDescriptor) {
-        return MethodDescriptor.<DynamicMessage, DynamicMessage>newBuilder()
-                .setType(MethodDescriptor.MethodType.UNARY)
-                .setFullMethodName(MethodDescriptor.generateFullMethodName(
-                        methodDescriptor.getService().getFullName(), methodDescriptor.getName()))
-                .setRequestMarshaller(ProtoUtils.marshaller(
-                        DynamicMessage.getDefaultInstance(methodDescriptor.getInputType())))
-                .setResponseMarshaller(ProtoUtils.marshaller(
-                        DynamicMessage.getDefaultInstance(methodDescriptor.getOutputType())))
-                .build();
-    }
-
-    private DynamicMessage performDynamicCall(ManagedChannel channel,
-                                              MethodDescriptor<DynamicMessage, DynamicMessage> method,
-                                              DynamicMessage request) {
-        return ClientCalls.blockingUnaryCall(channel, method, CallOptions.DEFAULT, request);
-    }
-
-    private String sanitizeJson(String input) {
-        String cleaned = input
-                .replace("\uFEFF", "")
-                .replaceAll("[\\u00A0\\u2007\\u202F]", " ")
-                .trim();
-
-        try (JsonReader reader = new JsonReader(new StringReader(cleaned))) {
-            reader.setLenient(true);
-            JsonElement parsed = JsonParser.parseReader(reader);
-            return parsed.toString();
-        } catch (Exception e) {
-            throw new RuntimeException("Invalid JSON request (after normalization): " + cleaned, e);
         }
     }
 }

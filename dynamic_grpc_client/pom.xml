@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.testsigma.addons</groupId>
     <artifactId>dynamic_grpc_client</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.5</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -91,7 +91,11 @@
             <artifactId>protobuf-java-util</artifactId>
             <version>3.24.3</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>3.24.3</version> <!-- Use the latest stable version -->
+        </dependency>
     </dependencies>
     <build>
         <finalName>dynamic_grpc_client</finalName>
