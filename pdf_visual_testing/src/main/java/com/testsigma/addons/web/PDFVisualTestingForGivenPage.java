@@ -94,7 +94,7 @@ public class PDFVisualTestingForGivenPage extends WebAction {
             File basePDF = pdfUtils.urlToFileConverter("base.pdf", basePdfPath);
             File actualPDF = pdfUtils.urlToFileConverter("actual.pdf", actualPdfPath);
 
-            if (!basePDF.getName().endsWith(".pdf") || !actualPDF.getName().endsWith(".pdf")) {
+            if (!basePDF.getName().endsWith(".pdf") && !actualPDF.getName().endsWith(".pdf")) {
                 String message = "Unsupported file types give only pdf files as input, screenshot" +
                         " might not be displayed";
                 errorMessageBuilder.append(message);
