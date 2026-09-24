@@ -7,12 +7,19 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.FileEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.SystemDefaultRoutePlanner;
+import org.apache.http.ssl.SSLContexts;
 
 import javax.imageio.ImageIO;
+import javax.net.ssl.SSLContext;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.net.ProxySelector;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 
 public class ScreenshotUtils {
 
@@ -100,7 +107,7 @@ public class ScreenshotUtils {
             logger.info("Local file does not exist: " + localPath);
             return false;
         }
-        try (CloseableHttpClient httpclient = HttpClients.custom().setDefaultRequestConfig(config).build()) {
+        try (CloseableHttpClient httpclient = buildHttpClient()) {
             HttpPut httpPut = new HttpPut(s3SignedURL);
             httpPut.setEntity(new FileEntity(file));
             HttpResponse response = httpclient.execute(httpPut);
@@ -115,6 +122,37 @@ public class ScreenshotUtils {
         } catch (Exception e) {
             logger.info("Exception while uploading screenshot to S3: " + e.getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Mirrors test-engine's TestsigmaHttpClientBuilder: the agent relaunches its JVM with
+     * -DTS_DELEGATE_SSL_VALIDATION / -DTS_USE_SYSTEM_PROXY / -DTS_USE_SYSTEM_PROPERTIES when the
+     * user configures certificate/proxy settings (e.g. a corporate MITM proxy like Zscaler whose
+     * root CA isn't in the JVM's own cacerts). AI requests already honor these because they route
+     * through test-engine's own HttpClient; a plain HttpClients.custom() build here does not, so
+     * this reads the same system properties directly (addon code runs in the same JVM).
+     */
+    private static CloseableHttpClient buildHttpClient() {
+        HttpClientBuilder builder = HttpClientBuilder.create().setDefaultRequestConfig(config);
+
+        if (Boolean.getBoolean("TS_USE_SYSTEM_PROXY")) {
+            builder.setRoutePlanner(new SystemDefaultRoutePlanner(ProxySelector.getDefault()));
+        }
+        if (Boolean.getBoolean("TS_USE_SYSTEM_PROPERTIES")) {
+            builder.useSystemProperties();
+        }
+        if (Boolean.getBoolean("TS_DELEGATE_SSL_VALIDATION")) {
+            builder.setSSLContext(trustAllSslContext());
+        }
+        return builder.build();
+    }
+
+    private static SSLContext trustAllSslContext() {
+        try {
+            return SSLContexts.custom().loadTrustMaterial((chain, authType) -> true).build();
+        } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
+            return SSLContexts.createDefault();
         }
     }
 }
