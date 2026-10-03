@@ -92,7 +92,10 @@ public class ExcelFileUtils {
      */
     public String convertCsvRowToJson(String filePath, int rowNumber) throws IOException {
         try (Reader reader = Files.newBufferedReader(Paths.get(filePath));
-             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.builder().setHeader().build())) {
+             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.builder()
+                 .setHeader()
+                 .setAllowMissingColumnNames(true)
+                 .build())) {
 
             List<String> headers = csvParser.getHeaderNames();
             List<CSVRecord> records = csvParser.getRecords();
@@ -104,8 +107,12 @@ public class ExcelFileUtils {
             CSVRecord record = records.get(rowNumber - 1); // Convert to 0-based index
             Map<String, String> rowData = new LinkedHashMap<>();
 
-            for (String header : headers) {
-                String value = record.get(header);
+            for (int i = 0; i < record.size(); i++) {
+                String header = i < headers.size() ? headers.get(i) : null;
+                if (header == null || header.trim().isEmpty()) {
+                    header = "Column_" + (i + 1);
+                }
+                String value = record.get(i);
                 rowData.put(header, value != null ? value : "");
             }
 
@@ -123,6 +130,21 @@ public class ExcelFileUtils {
      * @throws IOException if file cannot be read or row doesn't exist
      */
     public String convertExcelRowToJson(String filePath, int rowNumber, boolean isXlsx) throws IOException {
+        return convertExcelRowToJson(filePath, rowNumber, isXlsx, null, -1);
+    }
+
+    /**
+     * Converts an Excel row to JSON format with sheet selection
+     *
+     * @param filePath Path to the Excel file
+     * @param rowNumber Row number (1-based, where 1 is the first data row after header)
+     * @param isXlsx true if XLSX format, false if XLS format
+     * @param sheetName Sheet name (null if using sheetIndex)
+     * @param sheetIndex Sheet index (0-based, -1 if using sheetName)
+     * @return JSON string representation of the row
+     * @throws IOException if file cannot be read or row doesn't exist
+     */
+    public String convertExcelRowToJson(String filePath, int rowNumber, boolean isXlsx, String sheetName, int sheetIndex) throws IOException {
         Workbook workbook = null;
         try (FileInputStream fis = new FileInputStream(filePath)) {
             if (isXlsx) {
@@ -131,7 +153,23 @@ public class ExcelFileUtils {
                 workbook = new HSSFWorkbook(fis);
             }
 
-            Sheet sheet = workbook.getSheetAt(0); // Get first sheet
+            Sheet sheet;
+            if (sheetName != null && !sheetName.trim().isEmpty()) {
+                // Use sheet name
+                sheet = workbook.getSheet(sheetName);
+                if (sheet == null) {
+                    throw new IOException("Sheet with name '" + sheetName + "' not found in the Excel file");
+                }
+            } else if (sheetIndex >= 0) {
+                // Use sheet index
+                if (sheetIndex >= workbook.getNumberOfSheets()) {
+                    throw new IOException("Sheet index " + sheetIndex + " exceeds total sheets (" + workbook.getNumberOfSheets() + ") in Excel file");
+                }
+                sheet = workbook.getSheetAt(sheetIndex);
+            } else {
+                // Default to first sheet
+                sheet = workbook.getSheetAt(0);
+            }
 
             // Read header row (row 0)
             Row headerRow = sheet.getRow(0);
@@ -176,6 +214,21 @@ public class ExcelFileUtils {
      * @throws IOException if file cannot be read or row doesn't exist
      */
     public String convertRowToJson(String filePath, int rowNumber) throws IOException {
+        return convertRowToJson(filePath, rowNumber, null, -1);
+    }
+
+    /**
+     * Converts a row from Excel or CSV file to JSON format with sheet selection.
+     * Automatically detects file type based on extension.
+     *
+     * @param filePath Path to the file (can be URL or local path)
+     * @param rowNumber Row number (1-based, where 1 is the first data row after header)
+     * @param sheetName Sheet name (null if using sheetIndex, ignored for CSV files)
+     * @param sheetIndex Sheet index (0-based, -1 if using sheetName, ignored for CSV files)
+     * @return JSON string representation of the row
+     * @throws IOException if file cannot be read or row doesn't exist
+     */
+    public String convertRowToJson(String filePath, int rowNumber, String sheetName, int sheetIndex) throws IOException {
         // Convert URL to file if needed
         File file = urlToFileConverter(filePath);
         String fileName = file.getName().toLowerCase();
@@ -184,9 +237,9 @@ public class ExcelFileUtils {
         if (fileName.contains(".csv")) {
             return convertCsvRowToJson(file.getAbsolutePath(), rowNumber);
         } else if (fileName.contains(".xlsx")) {
-            return convertExcelRowToJson(file.getAbsolutePath(), rowNumber, true);
+            return convertExcelRowToJson(file.getAbsolutePath(), rowNumber, true, sheetName, sheetIndex);
         } else if (fileName.contains(".xls")) {
-            return convertExcelRowToJson(file.getAbsolutePath(), rowNumber, false);
+            return convertExcelRowToJson(file.getAbsolutePath(), rowNumber, false, sheetName, sheetIndex);
         } else {
             throw new IOException("Unsupported file format. Supported formats: .csv, .xls, .xlsx");
         }
@@ -257,6 +310,276 @@ public class ExcelFileUtils {
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
                 .replace("\t", "\\t");
+    }
+
+    /**
+     * Converts Excel column name (A, B, C, etc.) to 0-based column index
+     * @param columnName Column name like "A", "B", "AA", etc.
+     * @return 0-based column index
+     */
+    private int columnNameToIndex(String columnName) {
+        int index = 0;
+        columnName = columnName.toUpperCase().trim();
+        for (int i = 0; i < columnName.length(); i++) {
+            char c = columnName.charAt(i);
+            if (c < 'A' || c > 'Z') {
+                throw new IllegalArgumentException("Invalid column name: " + columnName);
+            }
+            index = index * 26 + (c - 'A' + 1);
+        }
+        return index - 1; // Convert to 0-based
+    }
+
+    /**
+     * Gets a single column value from a specific row
+     * @param filePath Path to the file (can be URL or local path)
+     * @param rowNumber Row number (1-based, where 1 is the first data row after header)
+     * @param columnIdentifier Column identifier: can be index (0-based), column name (A, B, C), or header value
+     * @param sheetName Sheet name (null if using sheetIndex, ignored for CSV files)
+     * @param sheetIndex Sheet index (0-based, -1 if using sheetName, ignored for CSV files)
+     * @return Column value as string
+     * @throws IOException if file cannot be read or row/column doesn't exist
+     */
+    public String getColumnValue(String filePath, int rowNumber, String columnIdentifier, String sheetName, int sheetIndex) throws IOException {
+        File file = urlToFileConverter(filePath);
+        String fileName = file.getName().toLowerCase();
+
+        if (fileName.contains(".csv")) {
+            return getCsvColumnValue(file.getAbsolutePath(), rowNumber, columnIdentifier);
+        } else if (fileName.contains(".xlsx")) {
+            return getExcelColumnValue(file.getAbsolutePath(), rowNumber, columnIdentifier, true, sheetName, sheetIndex);
+        } else if (fileName.contains(".xls")) {
+            return getExcelColumnValue(file.getAbsolutePath(), rowNumber, columnIdentifier, false, sheetName, sheetIndex);
+        } else {
+            throw new IOException("Unsupported file format. Supported formats: .csv, .xls, .xlsx");
+        }
+    }
+
+    /**
+     * Gets multiple column values from a specific row and returns as JSON
+     * @param filePath Path to the file (can be URL or local path)
+     * @param rowNumber Row number (1-based, where 1 is the first data row after header)
+     * @param columnIdentifiers Comma-separated column identifiers: can be indices (0-based), column names (A, B, C), or header values
+     * @param sheetName Sheet name (null if using sheetIndex, ignored for CSV files)
+     * @param sheetIndex Sheet index (0-based, -1 if using sheetName, ignored for CSV files)
+     * @return JSON string with column values
+     * @throws IOException if file cannot be read or row/columns don't exist
+     */
+    public String getColumnsToJson(String filePath, int rowNumber, String columnIdentifiers, String sheetName, int sheetIndex) throws IOException {
+        File file = urlToFileConverter(filePath);
+        String fileName = file.getName().toLowerCase();
+
+        String[] columns = columnIdentifiers.split(",");
+        for (int i = 0; i < columns.length; i++) {
+            columns[i] = columns[i].trim();
+        }
+
+        if (fileName.contains(".csv")) {
+            return getCsvColumnsToJson(file.getAbsolutePath(), rowNumber, columns);
+        } else if (fileName.contains(".xlsx")) {
+            return getExcelColumnsToJson(file.getAbsolutePath(), rowNumber, columns, true, sheetName, sheetIndex);
+        } else if (fileName.contains(".xls")) {
+            return getExcelColumnsToJson(file.getAbsolutePath(), rowNumber, columns, false, sheetName, sheetIndex);
+        } else {
+            throw new IOException("Unsupported file format. Supported formats: .csv, .xls, .xlsx");
+        }
+    }
+
+    private String getCsvColumnValue(String filePath, int rowNumber, String columnIdentifier) throws IOException {
+        try (Reader reader = Files.newBufferedReader(Paths.get(filePath));
+             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.builder()
+                 .setHeader()
+                 .setAllowMissingColumnNames(true)
+                 .build())) {
+
+            List<String> headers = csvParser.getHeaderNames();
+            List<CSVRecord> records = csvParser.getRecords();
+
+            if (rowNumber > records.size()) {
+                throw new IOException("Row number " + rowNumber + " exceeds total rows (" + records.size() + ") in CSV file");
+            }
+
+            CSVRecord record = records.get(rowNumber - 1);
+            int columnIndex = resolveColumnIndex(headers, columnIdentifier);
+            
+            if (columnIndex < 0 || columnIndex >= headers.size()) {
+                throw new IOException("Column '" + columnIdentifier + "' not found in CSV file");
+            }
+
+            String value = record.get(columnIndex);
+            return value != null ? value : "";
+        }
+    }
+
+    private String getCsvColumnsToJson(String filePath, int rowNumber, String[] columnIdentifiers) throws IOException {
+        try (Reader reader = Files.newBufferedReader(Paths.get(filePath));
+             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.builder()
+                 .setHeader()
+                 .setAllowMissingColumnNames(true)
+                 .build())) {
+
+            List<String> headers = csvParser.getHeaderNames();
+            List<CSVRecord> records = csvParser.getRecords();
+
+            if (rowNumber > records.size()) {
+                throw new IOException("Row number " + rowNumber + " exceeds total rows (" + records.size() + ") in CSV file");
+            }
+
+            CSVRecord record = records.get(rowNumber - 1);
+            Map<String, String> columnData = new LinkedHashMap<>();
+
+            for (String columnId : columnIdentifiers) {
+                int columnIndex = resolveColumnIndex(headers, columnId);
+                if (columnIndex >= 0 && columnIndex < headers.size()) {
+                    String header = headers.get(columnIndex);
+                    String value = record.get(columnIndex);
+                    columnData.put(header, value != null ? value : "");
+                } else {
+                    throw new IOException("Column '" + columnId + "' not found in CSV file");
+                }
+            }
+
+            return convertMapToJson(columnData);
+        }
+    }
+
+    private String getExcelColumnValue(String filePath, int rowNumber, String columnIdentifier, boolean isXlsx, String sheetName, int sheetIndex) throws IOException {
+        Workbook workbook = null;
+        try (FileInputStream fis = new FileInputStream(filePath)) {
+            if (isXlsx) {
+                workbook = new XSSFWorkbook(fis);
+            } else {
+                workbook = new HSSFWorkbook(fis);
+            }
+
+            Sheet sheet = getSheet(workbook, sheetName, sheetIndex);
+            Row headerRow = sheet.getRow(0);
+            if (headerRow == null) {
+                throw new IOException("Header row is empty or file is invalid");
+            }
+
+            List<String> headers = new ArrayList<>();
+            for (Cell cell : headerRow) {
+                headers.add(getCellValueAsString(cell));
+            }
+
+            int columnIndex = resolveColumnIndex(headers, columnIdentifier);
+            if (columnIndex < 0 || columnIndex >= headers.size()) {
+                throw new IOException("Column '" + columnIdentifier + "' not found in Excel file");
+            }
+
+            Row dataRow = sheet.getRow(rowNumber);
+            if (dataRow == null) {
+                throw new IOException("Row number " + rowNumber + " does not exist in the Excel file");
+            }
+
+            Cell cell = dataRow.getCell(columnIndex);
+            return getCellValueAsString(cell);
+        } finally {
+            if (workbook != null) {
+                workbook.close();
+            }
+        }
+    }
+
+    private String getExcelColumnsToJson(String filePath, int rowNumber, String[] columnIdentifiers, boolean isXlsx, String sheetName, int sheetIndex) throws IOException {
+        Workbook workbook = null;
+        try (FileInputStream fis = new FileInputStream(filePath)) {
+            if (isXlsx) {
+                workbook = new XSSFWorkbook(fis);
+            } else {
+                workbook = new HSSFWorkbook(fis);
+            }
+
+            Sheet sheet = getSheet(workbook, sheetName, sheetIndex);
+            Row headerRow = sheet.getRow(0);
+            if (headerRow == null) {
+                throw new IOException("Header row is empty or file is invalid");
+            }
+
+            List<String> headers = new ArrayList<>();
+            for (Cell cell : headerRow) {
+                headers.add(getCellValueAsString(cell));
+            }
+
+            Row dataRow = sheet.getRow(rowNumber);
+            if (dataRow == null) {
+                throw new IOException("Row number " + rowNumber + " does not exist in the Excel file");
+            }
+
+            Map<String, String> columnData = new LinkedHashMap<>();
+            for (String columnId : columnIdentifiers) {
+                int columnIndex = resolveColumnIndex(headers, columnId);
+                if (columnIndex >= 0 && columnIndex < headers.size()) {
+                    String header = headers.get(columnIndex);
+                    Cell cell = dataRow.getCell(columnIndex);
+                    String value = getCellValueAsString(cell);
+                    columnData.put(header, value);
+                } else {
+                    throw new IOException("Column '" + columnId + "' not found in Excel file");
+                }
+            }
+
+            return convertMapToJson(columnData);
+        } finally {
+            if (workbook != null) {
+                workbook.close();
+            }
+        }
+    }
+
+    private Sheet getSheet(Workbook workbook, String sheetName, int sheetIndex) throws IOException {
+        if (sheetName != null && !sheetName.trim().isEmpty()) {
+            Sheet sheet = workbook.getSheet(sheetName);
+            if (sheet == null) {
+                throw new IOException("Sheet with name '" + sheetName + "' not found in the Excel file");
+            }
+            return sheet;
+        } else if (sheetIndex >= 0) {
+            if (sheetIndex >= workbook.getNumberOfSheets()) {
+                throw new IOException("Sheet index " + sheetIndex + " exceeds total sheets (" + workbook.getNumberOfSheets() + ") in Excel file");
+            }
+            return workbook.getSheetAt(sheetIndex);
+        } else {
+            return workbook.getSheetAt(0);
+        }
+    }
+
+    /**
+     * Resolves column identifier to 0-based index
+     * Supports: column index (0-based), column name (A, B, C), or header value
+     */
+    private int resolveColumnIndex(List<String> headers, String columnIdentifier) throws IOException {
+        String colId = columnIdentifier.trim();
+        
+        // Try as column name (A, B, C, etc.)
+        if (colId.matches("^[A-Z]+$")) {
+            try {
+                return columnNameToIndex(colId);
+            } catch (IllegalArgumentException e) {
+                // Not a valid column name, continue to other methods
+            }
+        }
+        
+        // Try as numeric index (0-based)
+        try {
+            int index = Integer.parseInt(colId);
+            if (index >= 0 && index < headers.size()) {
+                return index;
+            }
+            throw new IOException("Column index " + index + " is out of range. Valid range: 0 to " + (headers.size() - 1));
+        } catch (NumberFormatException e) {
+            // Not a number, try as header value
+        }
+        
+        // Try as header value
+        for (int i = 0; i < headers.size(); i++) {
+            if (headers.get(i).equalsIgnoreCase(colId)) {
+                return i;
+            }
+        }
+        
+        throw new IOException("Column '" + columnIdentifier + "' not found. Use column index (0-based), column name (A, B, C), or header value");
     }
 }
 
