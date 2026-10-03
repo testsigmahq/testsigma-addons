@@ -65,14 +65,14 @@ public class NoofCharaftertext extends WebAction {
             runTimeData = new com.testsigma.sdk.RunTimeData();
             runTimeData.setValue(list2.toString().replaceAll("[^a-zA-Z0-9]", ""));
             runTimeData.setKey(testData3.getValue().toString());
-            setSuccessMessage(String.format("Extracted "+testData1.getValue()+" characters i.e "+list2.toString().replaceAll("[^a-zA-Z0-9]", "")+" and stored it in runtime variable "+testData3.getValue().toString() ));
+            setSuccessMessage("Extracted "+testData1.getValue()+" characters i.e "+list2.toString().replaceAll("[^a-zA-Z0-9]", "")+" and stored it in runtime variable "+testData3.getValue().toString());
             return Result.SUCCESS;
            
 
         } catch (IOException e) {
 
             e.printStackTrace();
-            setErrorMessage(String.format(ERROR_MESSAGE + "" + "Cause of Exception:" + e.getCause().toString()));
+            setErrorMessage(ERROR_MESSAGE + "" + "Cause of Exception:" + e.getCause().toString());
             return Result.FAILED;
         }
 

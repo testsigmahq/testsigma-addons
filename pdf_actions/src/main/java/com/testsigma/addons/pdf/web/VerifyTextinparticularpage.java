@@ -48,14 +48,20 @@ public class VerifyTextinparticularpage extends WebAction {
             reader.setStartPage(Integer.parseInt(testData2.getValue().toString()));
             reader.setEndPage(Integer.parseInt(testData3.getValue().toString()));
             String content = reader.getText(doc);
-            Assert.assertTrue(content.contains(testData.getValue().toString()));
-            setSuccessMessage(String.format(SUCCESS_MESSAGE +testData.getValue().toString()+" in given range of pages "));
-            logger.info(content);
-            return Result.SUCCESS;
-
-        } catch (IOException e) {
+            
+            if(content.contains(testData.getValue().toString())){
+            	setSuccessMessage(SUCCESS_MESSAGE +testData.getValue().toString()+" in given range of pages ");
+                logger.info(content);
+                return Result.SUCCESS;
+            	
+            }else {
+            	setErrorMessage(ERROR_MESSAGE +testData.getValue().toString()+" in given range of pages ");
+                logger.warn(content);
+                return Result.FAILED;
+            }
+        } catch (Exception e) {
             e.printStackTrace();
-            setErrorMessage(String.format(ERROR_MESSAGE + " " + "Cause of Exception:" + e.getCause().toString()));
+            setErrorMessage(ERROR_MESSAGE + " " + "Cause of Exception:" + e.getCause().toString());
             return Result.FAILED;
         }
 

@@ -68,13 +68,13 @@ public class NoofwordsBeforetext extends WebAction {
             runTimeData.setKey(testData3.getValue().toString());
            
           
-          setSuccessMessage(String.format(SUCCESS_MESSAGE  +" "+"Previous " + testData1.getValue() + " words are " + list2.toString().replaceAll("[^a-zA-Z0-9]", " ")+"stored in runtime variable "+testData3.getValue().toString()));
-           System.out.println(String.format(SUCCESS_MESSAGE  +" "+"Previous " + testData1.getValue() + " words are " + list2.toString().replaceAll("[^a-zA-Z0-9]", " ")+"stored in runtime variable "+testData3.getValue().toString()));
+          setSuccessMessage(SUCCESS_MESSAGE  +" "+"Previous " + testData1.getValue() + " words are " + list2.toString().replaceAll("[^a-zA-Z0-9]", " ")+"stored in runtime variable "+testData3.getValue().toString());
+           System.out.println(SUCCESS_MESSAGE  +" "+"Previous " + testData1.getValue() + " words are " + list2.toString().replaceAll("[^a-zA-Z0-9]", " ")+"stored in runtime variable "+testData3.getValue().toString());
           return Result.SUCCESS;
 
         } catch (IOException e) {
             e.printStackTrace();
-            setErrorMessage(String.format(ERROR_MESSAGE+ "" + "Cause of Exception:" + e.getCause().toString()));
+            setErrorMessage(ERROR_MESSAGE+ "" + "Cause of Exception:" + e.getCause().toString());
             return Result.FAILED;
         }
     }

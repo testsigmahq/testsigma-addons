@@ -64,12 +64,12 @@ public class NoofwordsAftertext extends WebAction {
             runTimeData = new com.testsigma.sdk.RunTimeData();
             runTimeData.setValue(list2.toString().replaceAll("[^a-zA-Z0-9]", " "));
             runTimeData.setKey(testData3.getValue().toString());
-            setSuccessMessage(String.format(SUCCESS_MESSAGE  +""+"Next " + testData1.getValue() + " words are " + list2.toString().replaceAll("[^a-zA-Z0-9]", " ")+" which is stored in runtime variable "+testData3.getValue().toString()));
-            System.out.println(String.format(SUCCESS_MESSAGE  +""+"Next " + testData1.getValue() + " words are " + list2.toString().replaceAll("[^a-zA-Z0-9]", " ")+" which is stored in runtime variable "+testData3.getValue().toString()));
+            setSuccessMessage(SUCCESS_MESSAGE  +""+"Next " + testData1.getValue() + " words are " + list2.toString().replaceAll("[^a-zA-Z0-9]", " ")+" which is stored in runtime variable "+testData3.getValue().toString());
+            System.out.println(SUCCESS_MESSAGE  +""+"Next " + testData1.getValue() + " words are " + list2.toString().replaceAll("[^a-zA-Z0-9]", " ")+" which is stored in runtime variable "+testData3.getValue().toString());
             return Result.SUCCESS;
         } catch (IOException e) {
             e.printStackTrace();
-            setErrorMessage(String.format(ERROR_MESSAGE + "" + "Cause of Exception:" + e.getCause().toString()));
+            setErrorMessage(ERROR_MESSAGE + "" + "Cause of Exception:" + e.getCause().toString());
             return Result.FAILED;
         }
 
